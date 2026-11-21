@@ -1,0 +1,55 @@
+# ANTAREJA NMS — tahap 1a (collector + database + penyimpanan grafik)
+# Jalankan dari folder deploy:  cp .env.example .env  (isi nilainya)  lalu  docker compose up -d
+name: antareja-core
+
+services:
+  db:
+    image: postgres:17.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: antareja
+      POSTGRES_USER: antareja
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?isi DB_PASSWORD di .env}
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U antareja -d antareja"]
+      interval: 10s
+      retries: 10
+
+  metrics:
+    image: victoriametrics/victoria-metrics:v1.123.0
+    restart: unless-stopped
+    command:
+      - -storageDataPath=/storage
+      - -retentionPeriod=${METRICS_RETENTION:-400d}
+      - -httpListenAddr=:8428
+    volumes:
+      - metrics:/storage
+
+  collector:
+    build:
+      context: ..
+      dockerfile: collector/Dockerfile
+    image: antareja-collector:${ANTAREJA_TAG:-0.1.0-dev}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      metrics:
+        condition: service_started
+    # ICMP tanpa hak istimewa untuk semua grup (bawaan Docker; ditulis eksplisit agar jelas)
+    sysctls:
+      net.ipv4.ping_group_range: "0 2147483647"
+    environment:
+      ANTAREJA_DATABASE_URL: postgres://antareja:${DB_PASSWORD}@db:5432/antareja?sslmode=disable
+      ANTAREJA_APP_KEY: ${ANTAREJA_APP_KEY:?isi ANTAREJA_APP_KEY di .env}
+      ANTAREJA_VM_URL: http://metrics:8428
+      ANTAREJA_PING_INTERVAL: ${PING_INTERVAL:-60s}
+      ANTAREJA_SNMP_INTERVAL: ${SNMP_INTERVAL:-5m}
+      ANTAREJA_LATENCY_HIGH_MS: ${LATENCY_HIGH_MS:-150}
+      TZ: ${TZ:-Asia/Jakarta}
+
+volumes:
+  db:
+  metrics:

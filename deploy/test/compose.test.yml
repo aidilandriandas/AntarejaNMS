@@ -1,0 +1,6 @@
+# Lingkungan uji: agen SNMP palsu (net-snmp, hanya untuk pengujian — tidak dikirim ke produksi).
+# docker compose -f compose.yml -f test/compose.test.yml up -d --build
+services:
+  snmpd:
+    build: ./test
+    restart: unless-stopped

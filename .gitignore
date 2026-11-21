@@ -1,0 +1,4 @@
+/deploy/.env
+/collector/bin/
+*.log
+.DS_Store
