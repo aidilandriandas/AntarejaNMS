@@ -15,6 +15,7 @@ type Config struct {
 	VMURL          string // http://victoriametrics:8428 ; kosong = metrik tidak dikirim
 	MigrationsDir  string
 	HealthAddr     string
+	APIAddr        string // API internal untuk web; kosong = mati
 	PingInterval   time.Duration
 	PingCount      int
 	PingTimeout    time.Duration
@@ -34,6 +35,7 @@ func Load() (Config, error) {
 		VMURL:          os.Getenv("ANTAREJA_VM_URL"),
 		MigrationsDir:  env("ANTAREJA_MIGRATIONS_DIR", "/app/migrations"),
 		HealthAddr:     env("ANTAREJA_HEALTH_ADDR", "127.0.0.1:9273"),
+		APIAddr:        os.Getenv("ANTAREJA_API_ADDR"),
 		PingInterval:   dur("ANTAREJA_PING_INTERVAL", 60*time.Second),
 		PingCount:      num("ANTAREJA_PING_COUNT", 3),
 		PingTimeout:    dur("ANTAREJA_PING_TIMEOUT", 2*time.Second),

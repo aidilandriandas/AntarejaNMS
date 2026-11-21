@@ -1,6 +1,6 @@
 # Rancangan ANTAREJA NMS (engine mandiri)
 
-Status: **Tahap 1a — collector** · Dokumen hidup, perbarui setiap ada keputusan desain.
+Status: **Tahap 1b — web** (1a collector selesai) · Dokumen hidup, perbarui setiap ada keputusan desain.
 
 ## 1. Sasaran
 
@@ -35,7 +35,9 @@ Target kapasitas tahap awal: **2.000 perangkat**, ping tiap **60 detik**, SNMP t
 - **PostgreSQL**: data konfigurasi (perangkat, site, kredensial terenkripsi) dan status terkini.
 - **VictoriaMetrics**: semua angka berkala (RTT, loss, counter trafik, CPU, sinyal radio) untuk grafik.
   Counter disimpan mentah; laju (bps) dihitung saat query dengan `rate()`.
-- **web** (tahap 1b): Laravel + desain ANTAREJA; membaca PostgreSQL & VictoriaMetrics.
+- **web** (tahap 1b): Laravel 12 + desain ANTAREJA; membaca PostgreSQL & VictoriaMetrics (dari server, VictoriaMetrics
+  tidak dibuka ke browser). Uji koneksi & "periksa sekarang" diteruskan ke **API internal collector** (`:9274`, hanya
+  jaringan Docker; token = HMAC-SHA256 dari `ANTAREJA_APP_KEY`), sehingga web sendiri tidak pernah menghubungi perangkat.
 
 Satu sumber skema: `db/migrations/*.sql`, dijalankan otomatis oleh collector saat start
 (tabel `schema_migrations`). Web tidak membuat migrasi sendiri.
@@ -86,9 +88,9 @@ Label wajib: `device_id`. Label tambahan sesuai jenis (`if_index`, `if_name`).
 
 | Tahap | Isi | Status |
 |---|---|---|
-| 1a | Collector Go: ping, SNMP v1/v2c/v3 (system, IF-MIB), deteksi down/up/reboot, skema DB, VictoriaMetrics, Docker Compose | **dikerjakan** |
-| 1b | Web Laravel: login & role, tambah/ubah perangkat (uji koneksi), daftar perangkat, detail + grafik, site | berikutnya |
-| 2 | Problem engine & trigger, maintenance, eskalasi (Telegram/WA/email), layar NOC, topologi LLDP/CDP, trafik live | |
+| 1a | Collector Go: ping, SNMP v1/v2c/v3 (system, IF-MIB), deteksi down/up/reboot, skema DB, VictoriaMetrics, Docker Compose | selesai |
+| 1b | Web Laravel: setup awal, login & role (admin/engineer/viewer), tambah/ubah perangkat dengan uji koneksi, daftar & detail perangkat + grafik latensi/trafik, site, kejadian, pengguna, jejak audit | selesai |
+| 2 | **berikutnya:** Problem engine & trigger, maintenance, eskalasi (Telegram/WA/email), layar NOC, topologi LLDP/CDP, trafik live | |
 | 3 | Profil perangkat: MikroTik, Cisco, Ubiquiti (radio PTP: sinyal, CCQ, kapasitas), Hikvision NVR/kamera, UPS (UPS-MIB), server (HOST-RESOURCES) | |
 | 4 | IPAM & konflik IP (ARP), CCTV live view, kualitas jaringan, SLA & laporan bulanan, backup NMS | |
 | 5 | Alat impor dari `antareja-nms` (perangkat, site, grup) dan peralihan | |

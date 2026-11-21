@@ -27,6 +27,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	apiserver "github.com/aidilandriandas/antarejanms/collector/internal/api"
 	"github.com/aidilandriandas/antarejanms/collector/internal/config"
 	"github.com/aidilandriandas/antarejanms/collector/internal/migrate"
 	"github.com/aidilandriandas/antarejanms/collector/internal/ping"
@@ -36,7 +37,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/store"
 )
 
-var version = "0.1.0-dev"
+var version = "0.2.0-dev"
 
 func main() {
 	args := os.Args[1:]
@@ -143,6 +144,17 @@ func run() error {
 			}
 		}()
 		defer srv.Close()
+
+		if cfg.APIAddr != "" {
+			api := &http.Server{Addr: cfg.APIAddr, Handler: (&apiserver.Server{Poller: p, Token: apiserver.Token(box.Key()), Log: log}).Handler(),
+				ReadHeaderTimeout: 5 * time.Second, WriteTimeout: 60 * time.Second}
+			go func() {
+				if err := api.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+					log.Error("API internal gagal", "galat", err)
+				}
+			}()
+			defer api.Close()
+		}
 
 		log.Info("ANTAREJA collector berjalan", "versi", version, "ping", cfg.PingInterval, "snmp", cfg.SNMPInterval,
 			"metrik", cfg.VMURL != "")

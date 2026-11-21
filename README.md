@@ -4,11 +4,10 @@ Network Monitoring System untuk infrastruktur ICT tambang. Engine dan aplikasi d
 (**bukan** fork NMS lain) dan berlisensi tertutup. Lihat `LICENSE`, `docs/CLEAN-ROOM.md`, dan
 `THIRD_PARTY_LICENSES.md`.
 
-> **Status: tahap 1a.** Collector (ping + SNMP), database, dan penyimpanan grafik sudah berjalan.
-> Antarmuka web menyusul di tahap 1b. Sampai saat itu perangkat dikelola lewat perintah
-> `antareja-collector`. Rencana lengkap ada di [`docs/RANCANGAN.md`](docs/RANCANGAN.md).
+> **Status: tahap 1b.** Collector (ping + SNMP) dan aplikasi web sudah berjalan. Tahap berikutnya adalah
+> problem engine, eskalasi, layar NOC, dan topologi. Rencana lengkap ada di [`docs/RANCANGAN.md`](docs/RANCANGAN.md).
 
-## Yang sudah bisa (tahap 1a)
+## Yang sudah bisa
 
 | Fitur | Keterangan |
 |---|---|
@@ -19,7 +18,12 @@ Network Monitoring System untuk infrastruktur ICT tambang. Engine dan aplikasi d
 | Port & trafik | IF-MIB: nama, alias, kecepatan, status, MAC, counter byte & error 64-bit |
 | Kejadian | down, up, reboot, flapping (≥3× down / 15 menit), latensi tinggi (>150 ms), SNMP gagal/pulih |
 | Grafik | Semua angka tersimpan di VictoriaMetrics (bawaan 400 hari) |
-| Keamanan | Kredensial SNMP terenkripsi AES-256 di database. Hanya membaca perangkat, tanpa SNMP SET. Container tanpa root |
+| Keamanan | Kredensial SNMP terenkripsi AES-256 di database. Hanya membaca perangkat, tanpa SNMP SET. Collector tanpa root |
+| **Web** | Setup awal (akun admin pertama), login dengan pembatas percobaan, peran Admin / Engineer / Viewer |
+| Perangkat | Tambah/ubah dengan **uji koneksi** (ping + SNMP) sebelum simpan, daftar dengan filter (status, site, kategori), yang bermasalah di atas |
+| Detail perangkat | Latensi, loss, uptime, info SNMP, grafik latensi/loss dan **trafik per port** (6 jam–30 hari), kejadian |
+| Ringkasan | Ketersediaan, online/down/SNMP gagal, daftar down, latensi tertinggi, kejadian 24 jam, status per site |
+| Lainnya | Site, riwayat kejadian dengan filter, pengguna, jejak audit, ganti password, tema terang/gelap, tampilan HP |
 
 ## Menjalankan (Docker)
 
@@ -49,10 +53,21 @@ docker compose up -d --build
 
 Stack ini bernama `antareja-core` sehingga bisa berjalan berdampingan dengan versi lama di VM yang sama.
 
-## Mengelola perangkat (sementara, sebelum ada web)
+Buka **https://IP-VM:8443** (port bawaan 8443/8080 agar tidak bentrok dengan aplikasi di 443/80; ubah lewat
+`HTTPS_PORT`/`HTTP_PORT` di `.env`). Browser akan memperingatkan sertifikat *self-signed*; pilih lanjutkan. Saat
+pertama dibuka muncul **Setup Awal** untuk membuat akun admin. Setelah itu tambahkan site, lalu perangkat lewat
+menu *Perangkat → Tambah perangkat* dan tekan **Uji sekarang** sebelum menyimpan.
 
-Kredensial **selalu dibaca dari input**, tidak pernah ditulis di argumen, agar tidak tersimpan di
-riwayat shell.
+| Peran | Hak |
+|---|---|
+| Admin | Semua, termasuk pengguna dan jejak audit |
+| Engineer | Tambah/ubah/hapus perangkat dan site, uji koneksi |
+| Viewer | Hanya melihat (cocok untuk layar ruang kontrol / manajemen) |
+
+## Perintah collector (opsional)
+
+Perangkat biasanya dikelola dari web. Perintah berikut berguna untuk diagnosa atau impor massal lewat skrip.
+Kredensial **selalu dibaca dari input**, tidak pernah ditulis di argumen, agar tidak tersimpan di riwayat shell.
 
 Uji koneksi tanpa menyimpan:
 
@@ -104,14 +119,17 @@ docker compose logs -f collector
 | `SNMP_INTERVAL` | `5m` | Jarak antar putaran SNMP |
 | `LATENCY_HIGH_MS` | `150` | Ambang kejadian latensi tinggi |
 | `METRICS_RETENTION` | `400d` | Lama data grafik disimpan |
-| `TZ` | `Asia/Jakarta` | Zona waktu log |
+| `TZ` | `Asia/Jakarta` | Zona waktu log & tampilan |
+| `APP_URL` | — | Alamat web, mis. `https://192.168.x.x:8443` |
+| `HTTPS_PORT` / `HTTP_PORT` | `8443` / `8080` | Port web (HTTP dialihkan ke HTTPS) |
 
 ## Struktur repositori
 
 ```
-collector/          engine Go (ping, SNMP, status, kejadian, metrik)
+collector/          engine Go (ping, SNMP, status, kejadian, metrik, API internal)
   cmd/antareja-collector/   program utama & perintah CLI
-  internal/                 config, secret (enkripsi), ping, snmp, metrics, store, poller, migrate
+  internal/                 config, secret (enkripsi), ping, snmp, metrics, store, poller, migrate, api
+web/                aplikasi web Laravel 12 (app/, resources/views, resources/css, resources/js)
 db/migrations/      skema PostgreSQL (satu-satunya sumber skema)
 deploy/             Docker Compose produksi + test/ (agen SNMP uji)
 docs/               RANCANGAN.md (arsitektur & peta jalan), CLEAN-ROOM.md (aturan hak cipta)
@@ -121,6 +139,10 @@ docs/               RANCANGAN.md (arsitektur & peta jalan), CLEAN-ROOM.md (atura
 
 ```bash
 cd collector && go vet ./... && go test ./...
+```
+
+```bash
+cd web && composer install && npm install && npm run build
 ```
 
 Lingkungan uji dengan agen SNMP palsu (community `uji-tambang`, user v3 `ujiv3`):

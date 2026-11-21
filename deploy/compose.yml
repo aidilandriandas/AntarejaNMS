@@ -1,4 +1,4 @@
-# ANTAREJA NMS — tahap 1a (collector + database + penyimpanan grafik)
+# ANTAREJA NMS — collector + web + database + penyimpanan grafik
 # Jalankan dari folder deploy:  cp .env.example .env  (isi nilainya)  lalu  docker compose up -d
 name: antareja-core
 
@@ -31,7 +31,7 @@ services:
     build:
       context: ..
       dockerfile: collector/Dockerfile
-    image: antareja-collector:${ANTAREJA_TAG:-0.1.0-dev}
+    image: antareja-collector:${ANTAREJA_TAG:-0.2.0-dev}
     restart: unless-stopped
     depends_on:
       db:
@@ -48,6 +48,46 @@ services:
       ANTAREJA_PING_INTERVAL: ${PING_INTERVAL:-60s}
       ANTAREJA_SNMP_INTERVAL: ${SNMP_INTERVAL:-5m}
       ANTAREJA_LATENCY_HIGH_MS: ${LATENCY_HIGH_MS:-150}
+      ANTAREJA_API_ADDR: ":9274"   # API internal untuk web (hanya jaringan Docker, tidak dipublikasikan)
+      TZ: ${TZ:-Asia/Jakarta}
+
+  web:
+    build:
+      context: ..
+      dockerfile: web/Dockerfile
+    image: antareja-web:${ANTAREJA_TAG:-0.2.0-dev}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      collector:
+        condition: service_started
+    ports:
+      - "${HTTPS_PORT:-8443}:443"   # HTTPS (sertifikat self-signed bawaan; ganti dengan sertifikat kantor bila ada)
+      - "${HTTP_PORT:-8080}:80"     # dialihkan ke HTTPS
+    environment:
+      APP_NAME: ANTAREJA NMS
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: ${ANTAREJA_APP_KEY}
+      APP_URL: ${APP_URL:-https://localhost:8443}
+      APP_TIMEZONE: ${TZ:-Asia/Jakarta}
+      APP_FORCE_HTTPS: "true"
+      APP_HTTPS_PORT: ${HTTPS_PORT:-8443}
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_DATABASE: antareja
+      DB_USERNAME: antareja
+      DB_PASSWORD: ${DB_PASSWORD}
+      SESSION_DRIVER: database
+      SESSION_LIFETIME: "720"
+      SESSION_SECURE_COOKIE: "true"
+      CACHE_STORE: database
+      LOG_CHANNEL: stderr
+      ANTAREJA_COLLECTOR_URL: http://collector:9274
+      ANTAREJA_METRICS_URL: http://metrics:8428
+      ANTAREJA_VERSION: ${ANTAREJA_TAG:-0.2.0-dev}
       TZ: ${TZ:-Asia/Jakarta}
 
 volumes:

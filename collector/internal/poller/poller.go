@@ -217,6 +217,39 @@ func (p *Poller) transition(ctx context.Context, d store.Device, status, reason 
 	}
 }
 
+// PollNow menjalankan ping & SNMP untuk satu perangkat segera (dipanggil web setelah perangkat ditambah/diubah).
+func (p *Poller) PollNow(ctx context.Context, id int64) error {
+	d, err := p.Store.Device(ctx, id)
+	if err != nil {
+		return err
+	}
+	now := time.Now().Truncate(time.Second)
+	if d.PingEnabled {
+		r := p.Ping.One(ctx, d.Host)
+		u := p.judgePing(ctx, d, r, now)
+		if err := p.Store.SavePing(ctx, []store.PingUpdate{u}); err != nil {
+			return err
+		}
+		var batch metrics.Batch
+		l := map[string]string{"device_id": strconv.FormatInt(d.ID, 10)}
+		batch.Add("antareja_ping_up", l, b2f(r.OK()), now)
+		batch.Add("antareja_ping_loss_pct", l, r.LossPct, now)
+		if r.OK() {
+			batch.Add("antareja_ping_rtt_ms", l, r.AvgMS, now)
+		}
+		if err := p.Writer.Write(ctx, &batch); err != nil {
+			p.Log.Warn("metrik ping tidak terkirim", "galat", err)
+		}
+		if d, err = p.Store.Device(ctx, id); err != nil {
+			return err
+		}
+	}
+	if d.SNMPEnabled {
+		p.pollSNMP(ctx, d)
+	}
+	return nil
+}
+
 // ---------- SNMP ----------
 
 func (p *Poller) SNMPCycle(ctx context.Context) error {

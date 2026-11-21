@@ -17,8 +17,14 @@ Setiap dependensi baru wajib dicatat di sini **sebelum** di-commit (lihat `docs/
 | golang.org/x/net, x/sync, x/sys, x/text, github.com/google/uuid | — | BSD-3-Clause | Dependensi gosnmp / pro-bing |
 | Go standard library | 1.25 | BSD-3-Clause | — |
 
-Dependensi turunan (transitif) Go tercantum di `collector/go.sum`; periksa lisensinya dengan
-`go-licenses report ./...` sebelum rilis.
+| Laravel Framework + dependensinya (Symfony, Guzzle, Carbon, dll.) | 12.x | MIT / BSD-3-Clause / Apache-2.0 | Aplikasi web (`web/composer.lock`) |
+| nette/utils, nette/schema | — | Lisensi ganda BSD-3-Clause **atau** GPL — dipakai di bawah **BSD-3-Clause** | Dependensi Laravel |
+| uPlot | 1.6 | MIT | Grafik |
+| IBM Plex Sans / IBM Plex Mono (@fontsource) | 5.x | SIL Open Font License 1.1 | Huruf antarmuka |
+| Vite, laravel-vite-plugin | 7.x / 2.x | MIT | Alat build aset (tidak ikut terpasang di server) |
+
+Dependensi turunan tercantum di `collector/go.sum` dan `web/composer.lock`. Periksa sebelum rilis:
+`go-licenses report ./...` (collector) dan `composer licenses --no-dev` (web).
 
 ## Server terpisah (dijalankan sebagai container, tidak digabung ke kode)
 
@@ -26,4 +32,5 @@ Dependensi turunan (transitif) Go tercantum di `collector/go.sum`; periksa lisen
 |---|---|---|
 | PostgreSQL | 17 | PostgreSQL License (permisif) |
 | VictoriaMetrics (single-node) | 1.123 | Apache-2.0 |
+| webdevops/php-nginx (image dasar web: PHP-FPM 8.4 + nginx) | 8.4-alpine | MIT (image); PHP License, BSD (nginx) |
 | net-snmp `snmpd` | — | BSD-like — **hanya** untuk pengujian (`deploy/test`) |

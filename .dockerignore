@@ -1,0 +1,12 @@
+.git
+deploy/.env
+collector/bin
+web/node_modules
+web/vendor
+web/public/build
+web/public/hot
+web/storage/logs/*
+web/storage/framework/cache/*
+web/storage/framework/sessions/*
+web/storage/framework/views/*
+web/.env

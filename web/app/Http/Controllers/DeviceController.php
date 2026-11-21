@@ -1,0 +1,231 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Device;
+use App\Models\Site;
+use App\Services\Audit;
+use App\Services\Collector;
+use App\Services\Metrics;
+use App\Support\Fmt;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+
+class DeviceController extends Controller
+{
+    public function index(Request $request)
+    {
+        $q = Device::with('site')->search($request->query('q'));
+        match ($request->query('status')) {
+            'up', 'down', 'unknown' => $q->where('enabled', true)->where('status', $request->query('status')),
+            'off' => $q->where('enabled', false),
+            'snmp_fail' => $q->where('snmp_enabled', true)->where('snmp_ok', false),
+            default => null,
+        };
+        if ($s = $request->query('site')) {
+            $q->where('site_id', $s);
+        }
+        if ($c = $request->query('category')) {
+            $q->where('category', $c);
+        }
+        // Bermasalah di atas: down, menunggu, lalu online; nonaktif paling bawah
+        $q->orderByRaw("enabled desc, case status when 'down' then 0 when 'unknown' then 1 else 2 end, name");
+
+        return view('devices.index', [
+            'devices' => $q->paginate(100)->withQueryString(),
+            'sites' => Site::orderBy('code')->get(),
+        ]);
+    }
+
+    public function create()
+    {
+        return view('devices.form', ['device' => new Device(['enabled' => true, 'ping_enabled' => true, 'snmp_version' => '2c', 'snmp_port' => 161, 'category' => 'other']),
+            'sites' => Site::orderBy('code')->get()]);
+    }
+
+    public function store(Request $request, Collector $collector)
+    {
+        $device = new Device;
+        $this->fill($device, $request);
+        $device->save();
+        Audit::log('created', "Perangkat {$device->name} ({$device->host}) ditambahkan", $device);
+        $collector->pollNow($device->id);
+
+        return redirect()->route('devices.show', $device)->with('ok', "{$device->name} ditambahkan. Data pertama muncul dalam beberapa detik.");
+    }
+
+    public function show(Device $device, Metrics $metrics)
+    {
+        $device->load('site', 'ports');
+        $traffic = [];
+        if ($device->snmp_enabled && $device->ports->isNotEmpty()) {
+            $sel = '{device_id="' . $device->id . '"}';
+            $traffic = [
+                'in' => $metrics->instant("rate(antareja_if_in_octets_total{$sel}[15m]) * 8", 'if_index'),
+                'out' => $metrics->instant("rate(antareja_if_out_octets_total{$sel}[15m]) * 8", 'if_index'),
+            ];
+        }
+
+        return view('devices.show', [
+            'device' => $device,
+            'traffic' => $traffic,
+            'events' => $device->events()->limit(20)->get(),
+        ]);
+    }
+
+    public function edit(Device $device)
+    {
+        return view('devices.form', ['device' => $device, 'sites' => Site::orderBy('code')->get()]);
+    }
+
+    public function update(Request $request, Device $device, Collector $collector)
+    {
+        $this->fill($device, $request);
+        $changes = Audit::diff($device);
+        $device->save();
+        Audit::log('updated', "Perangkat {$device->name} diubah", $device, $changes);
+        $collector->pollNow($device->id);
+
+        return redirect()->route('devices.show', $device)->with('ok', "Perubahan {$device->name} disimpan.");
+    }
+
+    public function destroy(Device $device)
+    {
+        $device->delete();
+        Audit::log('deleted', "Perangkat {$device->name} ({$device->host}) dihapus beserta riwayat kejadiannya", $device);
+
+        return redirect()->route('devices.index')->with('ok', "{$device->name} dihapus.");
+    }
+
+    public function poll(Device $device, Collector $collector)
+    {
+        $ok = $collector->pollNow($device->id);
+
+        return back()->with($ok ? 'ok' : 'error', $ok ? "Pemeriksaan {$device->name} dijalankan. Muat ulang halaman dalam beberapa detik." : 'Collector tidak dapat dihubungi.');
+    }
+
+    /** Uji koneksi dari form. Kredensial kosong pada perangkat yang sudah ada = pakai yang tersimpan. */
+    public function test(Request $request, Collector $collector): JsonResponse
+    {
+        $d = $request->validate([
+            'host' => ['required', 'string', 'max:255'],
+            'device_id' => ['nullable', 'integer', 'exists:devices,id'],
+            'ping_enabled' => ['boolean'],
+            'snmp_enabled' => ['boolean'],
+            'snmp_version' => ['nullable', Rule::in(['1', '2c', '3'])],
+            'snmp_port' => ['nullable', 'integer', 'between:1,65535'],
+            'snmp_community' => ['nullable', 'string', 'max:128'],
+            'snmp_v3_user' => ['nullable', 'string', 'max:64'],
+            'snmp_v3_level' => ['nullable', Rule::in(['noAuthNoPriv', 'authNoPriv', 'authPriv'])],
+            'snmp_v3_auth_proto' => ['nullable', Rule::in(['MD5', 'SHA', 'SHA224', 'SHA256', 'SHA384', 'SHA512'])],
+            'snmp_v3_auth_pass' => ['nullable', 'string', 'max:128'],
+            'snmp_v3_priv_proto' => ['nullable', Rule::in(['DES', 'AES', 'AES192', 'AES256'])],
+            'snmp_v3_priv_pass' => ['nullable', 'string', 'max:128'],
+        ]);
+        $stored = isset($d['device_id']) ? Device::find($d['device_id']) : null;
+        $snmp = null;
+        if (! empty($d['snmp_enabled'])) {
+            $snmp = [
+                'version' => $d['snmp_version'] ?? '2c', 'port' => (int) ($d['snmp_port'] ?? 161),
+                'community' => ($d['snmp_community'] ?? '') ?: $stored?->secret('snmp_community_enc') ?? '',
+                'user' => $d['snmp_v3_user'] ?? '', 'level' => $d['snmp_v3_level'] ?? 'authPriv',
+                'auth_proto' => $d['snmp_v3_auth_proto'] ?? 'SHA', 'auth_pass' => ($d['snmp_v3_auth_pass'] ?? '') ?: $stored?->secret('snmp_v3_auth_enc') ?? '',
+                'priv_proto' => $d['snmp_v3_priv_proto'] ?? 'AES', 'priv_pass' => ($d['snmp_v3_priv_pass'] ?? '') ?: $stored?->secret('snmp_v3_priv_enc') ?? '',
+            ];
+        }
+        try {
+            $res = $collector->test(trim($d['host']), (bool) ($d['ping_enabled'] ?? false), $snmp);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => 'Collector tidak dapat dihubungi: ' . $e->getMessage()], 502);
+        }
+        if (isset($res['snmp']['uptime_s'])) {
+            $res['snmp']['uptime'] = Fmt::duration((int) $res['snmp']['uptime_s']);
+        }
+
+        return response()->json($res); // tidak memuat kredensial
+    }
+
+    /** Data grafik perangkat (dibaca server dari VictoriaMetrics). */
+    public function metrics(Request $request, Device $device, Metrics $metrics): JsonResponse
+    {
+        $range = Metrics::RANGES[$request->query('range', '24h')] ?? Metrics::RANGES['24h'];
+        $sel = 'device_id="' . $device->id . '"';
+        $step = max(60, intdiv($range, 360));
+        $win = max(2 * $step, 600) . 's';
+
+        $data = match ($request->query('type', 'ping')) {
+            'port' => (function () use ($request, $device, $metrics, $sel, $range, $win) {
+                $if = (int) $request->query('if');
+                abort_unless($device->ports()->where('if_index', $if)->exists(), 404);
+                $s = $sel . ',if_index="' . $if . '"';
+
+                return $metrics->range([
+                    'in' => "rate(antareja_if_in_octets_total{{$s}}[{$win}]) * 8",
+                    'out' => "rate(antareja_if_out_octets_total{{$s}}[{$win}]) * 8",
+                ], $range);
+            })(),
+            default => $metrics->range([
+                'rtt' => "avg_over_time(antareja_ping_rtt_ms{{$sel}}[{$step}s])",
+                'loss' => "avg_over_time(antareja_ping_loss_pct{{$sel}}[{$step}s])",
+            ], $range),
+        };
+
+        return response()->json($data);
+    }
+
+    private function fill(Device $device, Request $request): void
+    {
+        $d = $request->validate([
+            'name' => ['required', 'string', 'max:128'],
+            'host' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9.:_-]+$/'],
+            'site_id' => ['nullable', 'integer', 'exists:sites,id'],
+            'category' => ['required', Rule::in(array_keys(Device::CATEGORIES))],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'enabled' => ['boolean'],
+            'ping_enabled' => ['boolean'],
+            'snmp_enabled' => ['boolean'],
+            'snmp_version' => ['required', Rule::in(['1', '2c', '3'])],
+            'snmp_port' => ['required', 'integer', 'between:1,65535'],
+            'snmp_community' => ['nullable', 'string', 'max:128'],
+            'snmp_v3_user' => ['nullable', 'required_if:snmp_version,3', 'string', 'max:64'],
+            'snmp_v3_level' => ['nullable', Rule::in(['noAuthNoPriv', 'authNoPriv', 'authPriv'])],
+            'snmp_v3_auth_proto' => ['nullable', Rule::in(['MD5', 'SHA', 'SHA224', 'SHA256', 'SHA384', 'SHA512'])],
+            'snmp_v3_auth_pass' => ['nullable', 'string', 'min:8', 'max:128'],
+            'snmp_v3_priv_proto' => ['nullable', Rule::in(['DES', 'AES', 'AES192', 'AES256'])],
+            'snmp_v3_priv_pass' => ['nullable', 'string', 'min:8', 'max:128'],
+        ], [
+            'host.regex' => 'Isi alamat IP atau nama DNS saja (tanpa http:// atau spasi).',
+            'snmp_v3_user.required_if' => 'User SNMPv3 wajib diisi.',
+            'snmp_v3_auth_pass.min' => 'Password SNMPv3 minimal 8 karakter (aturan SNMPv3).',
+            'snmp_v3_priv_pass.min' => 'Password SNMPv3 minimal 8 karakter (aturan SNMPv3).',
+        ]);
+        foreach (['enabled', 'ping_enabled', 'snmp_enabled'] as $b) {
+            $d[$b] = $request->boolean($b);
+        }
+        if (! $d['ping_enabled'] && ! $d['snmp_enabled']) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['ping_enabled' => 'Aktifkan ping, SNMP, atau keduanya — perangkat harus bisa dipantau.']);
+        }
+        $device->fill(collect($d)->except(['snmp_community', 'snmp_v3_auth_pass', 'snmp_v3_priv_pass'])->all());
+        $device->setSecret('snmp_community_enc', $d['snmp_community'] ?? null);
+        $device->setSecret('snmp_v3_auth_enc', $d['snmp_v3_auth_pass'] ?? null);
+        $device->setSecret('snmp_v3_priv_enc', $d['snmp_v3_priv_pass'] ?? null);
+
+        if ($d['snmp_enabled']) {
+            $missing = $d['snmp_version'] === '3'
+                ? (($d['snmp_v3_level'] ?? 'authPriv') !== 'noAuthNoPriv' && ! $device->hasSecret('snmp_v3_auth_enc'))
+                    || (($d['snmp_v3_level'] ?? 'authPriv') === 'authPriv' && ! $device->hasSecret('snmp_v3_priv_enc'))
+                : ! $device->hasSecret('snmp_community_enc');
+            if ($missing) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    $d['snmp_version'] === '3' ? 'snmp_v3_auth_pass' : 'snmp_community' => 'Kredensial SNMP wajib diisi untuk perangkat ini.',
+                ]);
+            }
+        }
+        if ($device->isDirty('host') || $device->isDirty('snmp_enabled')) {
+            // Host/pengaturan berubah: status lama tidak lagi berlaku
+            $device->status = 'unknown';
+            $device->fail_streak = 0;
+        }
+    }
+}

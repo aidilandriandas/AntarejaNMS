@@ -25,6 +25,9 @@ import (
 
 type Box struct{ key []byte }
 
+// Key mengembalikan kunci mentah (untuk menurunkan token API internal).
+func (b *Box) Key() []byte { return b.key }
+
 type payload struct {
 	IV    string `json:"iv"`
 	Value string `json:"value"`
