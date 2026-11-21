@@ -4,8 +4,8 @@ Network Monitoring System untuk infrastruktur ICT tambang. Engine dan aplikasi d
 (**bukan** fork NMS lain) dan berlisensi tertutup. Lihat `LICENSE`, `docs/CLEAN-ROOM.md`, dan
 `THIRD_PARTY_LICENSES.md`.
 
-> **Status: tahap 1b.** Collector (ping + SNMP) dan aplikasi web sudah berjalan. Tahap berikutnya adalah
-> problem engine, eskalasi, layar NOC, dan topologi. Rencana lengkap ada di [`docs/RANCANGAN.md`](docs/RANCANGAN.md).
+> **Status: tahap 2a.** Collector, aplikasi web, problem engine, maintenance, dan notifikasi/eskalasi sudah berjalan.
+> Tahap berikutnya adalah layar NOC dan peta topologi. Rencana lengkap ada di [`docs/RANCANGAN.md`](docs/RANCANGAN.md).
 
 ## Yang sudah bisa
 
@@ -24,6 +24,11 @@ Network Monitoring System untuk infrastruktur ICT tambang. Engine dan aplikasi d
 | Detail perangkat | Latensi, loss, uptime, info SNMP, grafik latensi/loss dan **trafik per port** (6 jam–30 hari), kejadian |
 | Ringkasan | Ketersediaan, online/down/SNMP gagal, daftar down, latensi tertinggi, kejadian 24 jam, status per site |
 | Lainnya | Site, riwayat kejadian dengan filter, pengguna, jejak audit, ganti password, tema terang/gelap, tampilan HP |
+| **Problem** | Dinilai tiap menit: perangkat down, packet loss & latensi (rata-rata 5 menit), SNMP gagal, port dipantau putus/penuh. Selesai otomatis saat pulih; ACK dengan catatan |
+| Korelasi | Isi *perangkat induk* (uplink). Bila induk down, problem anak ditandai **terdampak** dan tidak membanjiri notifikasi |
+| Maintenance | Jadwal per perangkat, per site, atau semua; problem di dalamnya tetap tercatat tetapi tidak dinotifikasi |
+| Notifikasi | **Telegram**, **Email (SMTP)**, **Webhook** (gateway WhatsApp, n8n, sistem tiket). Per kanal: severity minimal, site, kirim saat pulih. Banyak problem sekaligus → 1 pesan ringkasan |
+| Eskalasi | Kanal dengan jeda (mis. 30 menit) hanya dikirimi problem yang **belum di-ACK** selama itu — untuk supervisor/manajemen |
 
 ## Menjalankan (Docker)
 
@@ -58,10 +63,13 @@ Buka **https://IP-VM:8443** (port bawaan 8443/8080 agar tidak bentrok dengan apl
 pertama dibuka muncul **Setup Awal** untuk membuat akun admin. Setelah itu tambahkan site, lalu perangkat lewat
 menu *Perangkat → Tambah perangkat* dan tekan **Uji sekarang** sebelum menyimpan.
 
+Atur notifikasi di *Administrasi → Notifikasi*. Untuk Telegram: buat bot lewat @BotFather, masukkan bot ke grup
+NOC, isi token dan chat ID, lalu tekan **Kirim uji**. Server perlu akses keluar HTTPS ke `api.telegram.org`.
+
 | Peran | Hak |
 |---|---|
 | Admin | Semua, termasuk pengguna dan jejak audit |
-| Engineer | Tambah/ubah/hapus perangkat dan site, uji koneksi |
+| Engineer | Tambah/ubah/hapus perangkat dan site, uji koneksi, ACK problem, jadwal maintenance |
 | Viewer | Hanya melihat (cocok untuk layar ruang kontrol / manajemen) |
 
 ## Perintah collector (opsional)

@@ -21,6 +21,13 @@
     <div class="kpi"><div class="lbl">Status sejak</div><div class="val" style="font-size:22px;padding-top:6px">{{ $device->status_changed_at?->diffForHumans(short: true, syntax: \Carbon\CarbonInterface::DIFF_ABSOLUTE) ?? '–' }}</div><div class="note">{{ $device->status_changed_at?->format('d/m/Y H:i') }}</div></div>
 </div>
 
+@if($problems->isNotEmpty())
+<section class="card" style="margin-bottom:16px">
+    <div class="hd"><h2>Problem aktif</h2><span class="sub">{{ $problems->count() }}</span></div>
+    <div class="bd flush">@include('problems.table', ['problems' => $problems, 'compact' => true])</div>
+</section>
+@endif
+
 <div class="grid g-main">
     <div class="stack">
         <section class="card" data-chart-card data-url="{{ route('devices.metrics', $device) }}">
@@ -39,7 +46,7 @@
                     <div class="empty">{{ $device->snmp_ok === false ? 'SNMP gagal: ' . $device->snmp_error : 'Data port muncul setelah pembacaan SNMP pertama.' }}</div>
                 @else
                 <div class="table-wrap"><table class="t">
-                    <thead><tr><th>Port</th><th>Status</th><th class="num">Kecepatan</th><th class="num">Masuk</th><th class="num">Keluar</th><th>Pemakaian</th></tr></thead>
+                    <thead><tr><th>Port</th><th>Status</th><th class="num">Kecepatan</th><th class="num">Masuk</th><th class="num">Keluar</th><th>Pemakaian</th><th title="Problem bila port putus atau penuh">Pantau</th></tr></thead>
                     <tbody>
                     @foreach($device->ports as $p)
                         @php
@@ -53,6 +60,15 @@
                             <td class="num">{{ \App\Support\Fmt::bps($in) }}</td>
                             <td class="num">{{ \App\Support\Fmt::bps($out) }}</td>
                             <td>@if($util !== null)<div class="bar {{ $util >= 90 ? 'crit' : ($util >= 70 ? 'warn' : '') }}" title="{{ number_format($util, 1, ',', '.') }}%"><span style="width:{{ max(1, $util) }}%"></span></div>@else<span class="muted">–</span>@endif</td>
+                            <td>
+                                @php($mon = in_array($p->if_index, $monitored))
+                                @can('manage-devices')
+                                    <form method="post" action="{{ route('devices.monitor', [$device, $p->if_index]) }}" data-stop>@csrf
+                                        <button class="btn sm {{ $mon ? 'primary' : '' }}" title="{{ $mon ? 'Berhenti memantau' : 'Pantau port ini' }}" aria-pressed="{{ $mon ? 'true' : 'false' }}">{{ $mon ? 'Dipantau' : 'Pantau' }}</button></form>
+                                @else
+                                    {!! $mon ? '<span class="badge info plain">dipantau</span>' : '<span class="muted">–</span>' !!}
+                                @endcan
+                            </td>
                         </tr>
                     @endforeach
                     </tbody>
@@ -67,6 +83,8 @@
         <section class="card"><div class="hd"><h2>Informasi</h2></div><div class="bd">
             <dl class="facts">
                 <dt>Site</dt><dd>{{ $device->site ? $device->site->code . ' — ' . $device->site->name : '–' }}</dd>
+                <dt>Induk</dt><dd>@if($device->parent)<a href="{{ route('devices.show', $device->parent) }}">{{ $device->parent->name }}</a>@else – @endif</dd>
+                @if($device->children->isNotEmpty())<dt>Di bawahnya</dt><dd>@foreach($device->children as $ch)<a href="{{ route('devices.show', $ch) }}">{{ $ch->name }}</a>@if(! $loop->last), @endif @endforeach</dd>@endif
                 <dt>Ping</dt><dd>{{ $device->ping_enabled ? 'aktif, tiap menit' : 'dimatikan' }}</dd>
                 <dt>SNMP</dt><dd>@if(! $device->snmp_enabled) dimatikan @elseif($device->snmp_ok === false)<span style="color:var(--warn)">gagal — {{ $device->snmp_error }}</span>@else v{{ $device->snmp_version }}, port {{ $device->snmp_port }}@if($device->last_snmp_at) · {{ $device->last_snmp_at->diffForHumans() }}@endif @endif</dd>
                 @if($device->sys_name)<dt>sysName</dt><dd>{{ $device->sys_name }}</dd>@endif

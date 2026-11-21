@@ -41,7 +41,7 @@ class DeviceController extends Controller
     public function create()
     {
         return view('devices.form', ['device' => new Device(['enabled' => true, 'ping_enabled' => true, 'snmp_version' => '2c', 'snmp_port' => 161, 'category' => 'other']),
-            'sites' => Site::orderBy('code')->get()]);
+            'sites' => Site::orderBy('code')->get(), 'parents' => Device::orderBy('name')->get(['id', 'name', 'host'])]);
     }
 
     public function store(Request $request, Collector $collector)
@@ -57,7 +57,7 @@ class DeviceController extends Controller
 
     public function show(Device $device, Metrics $metrics)
     {
-        $device->load('site', 'ports');
+        $device->load('site', 'ports', 'parent', 'children');
         $traffic = [];
         if ($device->snmp_enabled && $device->ports->isNotEmpty()) {
             $sel = '{device_id="' . $device->id . '"}';
@@ -71,12 +71,15 @@ class DeviceController extends Controller
             'device' => $device,
             'traffic' => $traffic,
             'events' => $device->events()->limit(20)->get(),
+            'monitored' => $device->monitoredPorts(),
+            'problems' => $device->problems()->whereNull('resolved_at')->triage()->get(),
         ]);
     }
 
     public function edit(Device $device)
     {
-        return view('devices.form', ['device' => $device, 'sites' => Site::orderBy('code')->get()]);
+        return view('devices.form', ['device' => $device, 'sites' => Site::orderBy('code')->get(),
+            'parents' => Device::whereKeyNot($device->id)->orderBy('name')->get(['id', 'name', 'host'])]);
     }
 
     public function update(Request $request, Device $device, Collector $collector)
@@ -174,12 +177,43 @@ class DeviceController extends Controller
         return response()->json($data);
     }
 
+    /** Apakah menjadikan $parentId induk dari $deviceId membuat rantai melingkar? */
+    private function wouldLoop(int $deviceId, int $parentId): bool
+    {
+        $cur = $parentId;
+        for ($i = 0; $i < 32 && $cur; $i++) {
+            if ($cur === $deviceId) {
+                return true;
+            }
+            $cur = (int) Device::whereKey($cur)->value('parent_id');
+        }
+
+        return false;
+    }
+
+    public function toggleMonitor(Device $device, int $ifIndex)
+    {
+        $port = $device->ports()->where('if_index', $ifIndex)->firstOrFail();
+        $q = \Illuminate\Support\Facades\DB::table('monitored_ports')->where(['device_id' => $device->id, 'if_index' => $ifIndex]);
+        if ($q->exists()) {
+            $q->delete();
+            $msg = "Port {$port->label()} tidak lagi dipantau.";
+        } else {
+            \Illuminate\Support\Facades\DB::table('monitored_ports')->insert(['device_id' => $device->id, 'if_index' => $ifIndex]);
+            $msg = "Port {$port->label()} dipantau: problem bila putus atau penuh.";
+        }
+        Audit::log('updated', "{$device->name}: {$msg}", $device);
+
+        return back()->with('ok', $msg);
+    }
+
     private function fill(Device $device, Request $request): void
     {
         $d = $request->validate([
             'name' => ['required', 'string', 'max:128'],
             'host' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9.:_-]+$/'],
             'site_id' => ['nullable', 'integer', 'exists:sites,id'],
+            'parent_id' => ['nullable', 'integer', 'exists:devices,id', Rule::notIn(array_filter([$device->id]))],
             'category' => ['required', Rule::in(array_keys(Device::CATEGORIES))],
             'notes' => ['nullable', 'string', 'max:2000'],
             'enabled' => ['boolean'],
@@ -200,6 +234,9 @@ class DeviceController extends Controller
             'snmp_v3_auth_pass.min' => 'Password SNMPv3 minimal 8 karakter (aturan SNMPv3).',
             'snmp_v3_priv_pass.min' => 'Password SNMPv3 minimal 8 karakter (aturan SNMPv3).',
         ]);
+        if (! empty($d['parent_id']) && $device->exists && $this->wouldLoop($device->id, (int) $d['parent_id'])) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['parent_id' => 'Perangkat induk tidak boleh berada di bawah perangkat ini (rantai melingkar).']);
+        }
         foreach (['enabled', 'ping_enabled', 'snmp_enabled'] as $b) {
             $d[$b] = $request->boolean($b);
         }

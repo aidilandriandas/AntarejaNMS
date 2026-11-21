@@ -21,6 +21,17 @@ $$('form[data-confirm]').forEach((f) => f.addEventListener('submit', (e) => {
     if (!confirm(f.dataset.confirm)) e.preventDefault();
 }));
 
+// Klik tombol di dalam baris port tidak ikut memilih grafik port
+$$('form[data-stop]').forEach((f) => f.addEventListener('click', (e) => e.stopPropagation()));
+
+// Form maintenance: tampilkan isian sesuai cakupan
+const scope = $('[data-scope]');
+if (scope) {
+    const syncScope = () => $$('[data-scope-show]').forEach((el) => { el.hidden = el.dataset.scopeShow !== scope.value; });
+    scope.addEventListener('change', syncScope);
+    syncScope();
+}
+
 // ---------- Form perangkat ----------
 const form = $('[data-device-form]');
 if (form) {

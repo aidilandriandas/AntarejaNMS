@@ -30,8 +30,10 @@ import (
 	apiserver "github.com/aidilandriandas/antarejanms/collector/internal/api"
 	"github.com/aidilandriandas/antarejanms/collector/internal/config"
 	"github.com/aidilandriandas/antarejanms/collector/internal/migrate"
+	"github.com/aidilandriandas/antarejanms/collector/internal/notify"
 	"github.com/aidilandriandas/antarejanms/collector/internal/ping"
 	"github.com/aidilandriandas/antarejanms/collector/internal/poller"
+	"github.com/aidilandriandas/antarejanms/collector/internal/problems"
 	"github.com/aidilandriandas/antarejanms/collector/internal/secret"
 	"github.com/aidilandriandas/antarejanms/collector/internal/snmp"
 	"github.com/aidilandriandas/antarejanms/collector/internal/store"
@@ -128,6 +130,21 @@ func run() error {
 			log.Info("migrasi diterapkan", "versi", done)
 		}
 		p := poller.New(cfg, store.Store{DB: db}, box, log)
+		engine := &problems.Engine{DB: db, Stats: p.Stats}
+		disp := notify.NewDispatcher(db, box, log, cfg.BaseURL)
+		p.AfterPing = func(ctx context.Context) {
+			out, err := engine.Run(ctx)
+			if err != nil {
+				log.Error("penilaian problem gagal", "galat", err)
+				return
+			}
+			if out.Opened > 0 || out.Resolved > 0 {
+				log.Info("problem", "baru", out.Opened, "selesai", out.Resolved, "terbuka", out.Open, "kondisi", out.Summary)
+			}
+			if err := disp.Run(ctx); err != nil {
+				log.Error("notifikasi gagal", "galat", err)
+			}
+		}
 
 		mux := http.NewServeMux()
 		mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -146,7 +163,7 @@ func run() error {
 		defer srv.Close()
 
 		if cfg.APIAddr != "" {
-			api := &http.Server{Addr: cfg.APIAddr, Handler: (&apiserver.Server{Poller: p, Token: apiserver.Token(box.Key()), Log: log}).Handler(),
+			api := &http.Server{Addr: cfg.APIAddr, Handler: (&apiserver.Server{Poller: p, Notify: disp, Token: apiserver.Token(box.Key()), Log: log}).Handler(),
 				ReadHeaderTimeout: 5 * time.Second, WriteTimeout: 60 * time.Second}
 			go func() {
 				if err := api.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

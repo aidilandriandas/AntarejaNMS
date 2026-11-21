@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aidilandriandas/antarejanms/collector/internal/notify"
 	"github.com/aidilandriandas/antarejanms/collector/internal/poller"
 	"github.com/aidilandriandas/antarejanms/collector/internal/snmp"
 )
@@ -33,6 +34,7 @@ func Token(rawKey []byte) string {
 
 type Server struct {
 	Poller *poller.Poller
+	Notify *notify.Dispatcher
 	Token  string
 	Log    *slog.Logger
 }
@@ -41,6 +43,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /v1/test", s.auth(s.test))
 	mux.HandleFunc("POST /v1/devices/{id}/poll", s.auth(s.poll))
+	mux.HandleFunc("POST /v1/channels/{id}/test", s.auth(s.testChannel))
 	return mux
 }
 
@@ -142,6 +145,20 @@ func (s *Server) poll(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	writeJSON(w, http.StatusAccepted, map[string]string{"status": "dijadwalkan"})
+}
+
+// testChannel mengirim pesan uji ke satu kanal notifikasi (sinkron, agar hasilnya langsung terlihat di web).
+func (s *Server) testChannel(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil || s.Notify == nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "kanal tidak ditemukan"})
+		return
+	}
+	if err := s.Notify.Test(r.Context(), id); err != nil {
+		writeJSON(w, http.StatusOK, map[string]any{"ok": false, "error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
 // validHost menolak nilai yang jelas bukan host (mencegah API dipakai untuk hal lain).

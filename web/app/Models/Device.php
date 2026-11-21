@@ -35,7 +35,7 @@ class Device extends Model
     ];
 
     protected $fillable = [
-        'name', 'host', 'site_id', 'category', 'enabled', 'notes', 'ping_enabled', 'snmp_enabled', 'snmp_version', 'snmp_port',
+        'name', 'host', 'site_id', 'parent_id', 'category', 'enabled', 'notes', 'ping_enabled', 'snmp_enabled', 'snmp_version', 'snmp_port',
         'snmp_v3_user', 'snmp_v3_level', 'snmp_v3_auth_proto', 'snmp_v3_priv_proto',
     ];
 
@@ -59,6 +59,27 @@ class Device extends Model
     public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Device::class, 'parent_id');
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(Device::class, 'parent_id');
+    }
+
+    public function problems(): HasMany
+    {
+        return $this->hasMany(Problem::class);
+    }
+
+    /** if_index port yang dipantau. */
+    public function monitoredPorts(): array
+    {
+        return \Illuminate\Support\Facades\DB::table('monitored_ports')->where('device_id', $this->id)->pluck('if_index')->all();
     }
 
     public function ports(): HasMany

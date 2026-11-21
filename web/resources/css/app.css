@@ -270,3 +270,11 @@ tr.port-row.sel td { background: var(--accent-soft) !important; }
     .who > div { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .badge.crit::before { animation: none; } }
+
+/* ACK pop-up */
+details.ack { position: relative; display: inline-block; }
+details.ack summary { list-style: none; }
+details.ack summary::-webkit-details-marker { display: none; }
+.ack-pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 4; width: 300px; padding: 12px; display: grid; gap: 8px; text-align: left; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+.seg .btn { border-radius: 0; border: 0; }
+.seg .btn + .btn { border-left: 1px solid var(--line); }

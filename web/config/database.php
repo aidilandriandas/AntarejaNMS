@@ -97,6 +97,8 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Sesi PostgreSQL memakai zona waktu aplikasi, agar waktu yang ditulis/dibaca web tidak bergeser 7 jam
+            'timezone' => env('DB_TIMEZONE', env('APP_TIMEZONE', 'Asia/Jakarta')),
         ],
 
         'sqlsrv' => [

@@ -49,6 +49,7 @@ services:
       ANTAREJA_SNMP_INTERVAL: ${SNMP_INTERVAL:-5m}
       ANTAREJA_LATENCY_HIGH_MS: ${LATENCY_HIGH_MS:-150}
       ANTAREJA_API_ADDR: ":9274"   # API internal untuk web (hanya jaringan Docker, tidak dipublikasikan)
+      ANTAREJA_BASE_URL: ${APP_URL:-}   # tautan di pesan notifikasi
       TZ: ${TZ:-Asia/Jakarta}
 
   web:

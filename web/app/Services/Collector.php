@@ -42,6 +42,17 @@ class Collector
         return $res->json();
     }
 
+    /** Kirim pesan uji ke kanal notifikasi. @return array{ok: bool, error?: string} */
+    public function testChannel(int $channelId): array
+    {
+        $res = $this->http()->timeout(40)->post("/v1/channels/{$channelId}/test");
+        if (! $res->successful()) {
+            throw new RuntimeException($res->json('error') ?? ('collector menjawab ' . $res->status()));
+        }
+
+        return $res->json();
+    }
+
     /** Minta collector memeriksa satu perangkat sekarang (tidak menunggu hasil). */
     public function pollNow(int $deviceId): bool
     {

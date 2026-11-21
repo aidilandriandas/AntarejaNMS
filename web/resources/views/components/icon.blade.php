@@ -37,5 +37,7 @@
 @case('logout')<path d="M15 4h4v16h-4"/><path d="M10 8l-4 4 4 4M6 12h11"/>@break
 @case('key')<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/>@break
 @case('pulse')<path d="M3 12h4l2-5 4 10 2-5h6"/>@break
+@case('wrench')<path d="M14.5 6.5a4 4 0 0 0-5.3 5.3L4 17l3 3 5.2-5.2a4 4 0 0 0 5.3-5.3l-2.6 2.6-2.4-.6-.6-2.4z"/>@break
+@case('bell')<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>@break
 @default<circle cx="12" cy="12" r="9"/>
 @endswitch</svg>

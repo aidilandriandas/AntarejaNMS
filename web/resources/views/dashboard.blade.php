@@ -26,26 +26,8 @@
 <div class="grid g-main">
     <div class="stack">
         <section class="card">
-            <div class="hd"><h2>Perangkat down</h2><span class="sub">{{ $down->count() }} perangkat</span></div>
-            <div class="bd flush">
-                @if($down->isEmpty())
-                    <div class="empty"><x-icon name="check"/>Semua perangkat online.</div>
-                @else
-                <div class="table-wrap"><table class="t">
-                    <thead><tr><th>Perangkat</th><th>Site</th><th>Penyebab</th><th class="num">Down sejak</th></tr></thead>
-                    <tbody>
-                    @foreach($down as $d)
-                        <tr class="is-down">
-                            <td class="name"><a href="{{ route('devices.show', $d) }}">{{ $d->name }}</a><small class="mono">{{ $d->host }}</small></td>
-                            <td>{{ $d->site?->code ?? '–' }}</td>
-                            <td>{{ $d->status_reason ?? '–' }}</td>
-                            <td class="num" title="{{ $d->status_changed_at?->format('d/m/Y H:i:s') }}">{{ $d->status_changed_at?->diffForHumans(short: true) ?? '–' }}</td>
-                        </tr>
-                    @endforeach
-                    </tbody>
-                </table></div>
-                @endif
-            </div>
+            <div class="hd"><h2>Problem aktif</h2><a class="sub" href="{{ route('problems.index') }}">{{ $problemCount }} terbuka · semua →</a></div>
+            <div class="bd flush">@include('problems.table', ['problems' => $problems, 'empty' => 'Tidak ada problem aktif. Semua normal.'])</div>
         </section>
 
         <section class="card">

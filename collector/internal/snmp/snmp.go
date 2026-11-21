@@ -119,6 +119,12 @@ func Friendly(err error) string {
 	switch {
 	case strings.Contains(m, "timeout") || strings.Contains(m, "i/o timeout"):
 		return "tidak ada jawaban SNMP (timeout): cek community/user, ACL SNMP di perangkat, dan UDP 161 dari server"
+	case strings.Contains(m, "connection refused"):
+		return "perangkat menolak koneksi SNMP (UDP 161 tertutup): agen SNMP belum aktif atau port SNMP berbeda"
+	case strings.Contains(m, "no route to host") || strings.Contains(m, "network is unreachable") || strings.Contains(m, "host is down"):
+		return "perangkat tidak terjangkau dari server (tidak ada rute)"
+	case strings.Contains(m, "no such host"):
+		return "nama host tidak bisa di-resolve (DNS)"
 	case strings.Contains(m, "unknown user") || strings.Contains(m, "UnknownUserName"):
 		return "user SNMPv3 tidak dikenal perangkat"
 	case strings.Contains(m, "wrong digest") || strings.Contains(m, "WrongDigests") || strings.Contains(m, "authentication"):

@@ -2,9 +2,12 @@
 
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ChannelController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\ProblemController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\UserController;
@@ -32,6 +35,15 @@ Route::middleware('auth')->group(function () {
         Route::delete('perangkat/{device}', [DeviceController::class, 'destroy'])->name('devices.destroy');
         Route::post('perangkat/{device}/periksa', [DeviceController::class, 'poll'])->name('devices.poll')->middleware('throttle:10,1');
 
+        Route::post('perangkat/{device}/port/{ifIndex}/pantau', [DeviceController::class, 'toggleMonitor'])->name('devices.monitor')->whereNumber('ifIndex');
+
+        Route::post('problem/{problem}/ack', [ProblemController::class, 'ack'])->name('problems.ack');
+        Route::delete('problem/{problem}/ack', [ProblemController::class, 'unack'])->name('problems.unack');
+
+        Route::post('maintenance', [MaintenanceController::class, 'store'])->name('maintenance.store');
+        Route::post('maintenance/{maintenance}/akhiri', [MaintenanceController::class, 'finish'])->name('maintenance.finish');
+        Route::delete('maintenance/{maintenance}', [MaintenanceController::class, 'destroy'])->name('maintenance.destroy');
+
         Route::post('site', [SiteController::class, 'store'])->name('sites.store');
         Route::put('site/{site}', [SiteController::class, 'update'])->name('sites.update');
         Route::delete('site/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
@@ -41,6 +53,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('site', [SiteController::class, 'index'])->name('sites.index');
     Route::get('kejadian', [EventController::class, 'index'])->name('events.index');
+    Route::get('problem', [ProblemController::class, 'index'])->name('problems.index');
+    Route::get('maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
 
     Route::get('profil', [ProfileController::class, 'edit'])->name('profile');
     Route::put('profil/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
@@ -52,5 +66,14 @@ Route::middleware('auth')->group(function () {
         Route::get('pengguna/{user}/ubah', [UserController::class, 'edit'])->name('users.edit');
         Route::put('pengguna/{user}', [UserController::class, 'update'])->name('users.update');
         Route::get('audit', [AuditController::class, 'index'])->name('audit.index');
+
+        Route::get('notifikasi', [ChannelController::class, 'index'])->name('channels.index');
+        Route::get('notifikasi/tambah', [ChannelController::class, 'create'])->name('channels.create');
+        Route::post('notifikasi', [ChannelController::class, 'store'])->name('channels.store');
+        Route::get('notifikasi/{channel}/ubah', [ChannelController::class, 'edit'])->name('channels.edit');
+        Route::put('notifikasi/{channel}', [ChannelController::class, 'update'])->name('channels.update');
+        Route::delete('notifikasi/{channel}', [ChannelController::class, 'destroy'])->name('channels.destroy');
+        Route::post('notifikasi/{channel}/uji', [ChannelController::class, 'test'])->name('channels.test')->middleware('throttle:10,1');
+        Route::put('ambang', [ChannelController::class, 'thresholds'])->name('thresholds.update');
     });
 });

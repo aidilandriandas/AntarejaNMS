@@ -1,6 +1,8 @@
 package snmp
 
 import (
+	"errors"
+	"strings"
 	"testing"
 	"time"
 )
@@ -32,5 +34,17 @@ func TestMacAndText(t *testing.T) {
 	}
 	if s := text([]byte("ether1\x00\x00")); s != "ether1" {
 		t.Fatalf("%q", s)
+	}
+}
+
+func TestFriendly(t *testing.T) {
+	for in, want := range map[string]string{
+		"error reading from socket: read udp 172.18.0.5:60361->10.255.0.9:161: recvfrom: connection refused": "UDP 161 tertutup",
+		"request timeout (after 1 retries)":        "timeout",
+		"dial udp: lookup nvr-pit-a: no such host": "DNS",
+	} {
+		if got := Friendly(errors.New(in)); !strings.Contains(got, want) {
+			t.Errorf("Friendly(%q) = %q", in, got)
+		}
 	}
 }

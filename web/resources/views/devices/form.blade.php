@@ -29,6 +29,13 @@
                     @foreach(\App\Models\Device::CATEGORIES as $k => $v)<option value="{{ $k }}" @selected(old('category', $device->category) === $k)>{{ $v }}</option>@endforeach
                 </select></div>
         </div>
+        <div class="field"><label for="parent_id">Perangkat induk (uplink) <span class="muted">(opsional)</span></label>
+            <select class="input @error('parent_id') is-err @enderror" id="parent_id" name="parent_id">
+                <option value="">— Tanpa induk —</option>
+                @foreach($parents as $pd)<option value="{{ $pd->id }}" @selected(old('parent_id', $device->parent_id) == $pd->id)>{{ $pd->name }} ({{ $pd->host }})</option>@endforeach
+            </select>
+            <div class="hint">Perangkat yang dilewati untuk menjangkau perangkat ini (mis. radio PTP atau switch distribusi). Bila induk down, problem perangkat ini ditandai <em>terdampak</em> dan tidak membanjiri notifikasi.</div>
+            <x-field-error name="parent_id"/></div>
         <div class="field"><label for="notes">Catatan <span class="muted">(opsional)</span></label>
             <textarea class="input" id="notes" name="notes" rows="2" placeholder="Lokasi rak, PIC, nomor sirkuit…">{{ old('notes', $device->notes) }}</textarea></div>
 
@@ -43,7 +50,7 @@
             <div class="row r3">
                 <div class="field"><label for="snmp_version">Versi</label>
                     <select class="input" id="snmp_version" name="snmp_version" data-toggle="v3">
-                        @foreach(['2c' => 'v2c', '3' => 'v3', '1' => 'v1'] as $k => $v)<option value="{{ $k }}" @selected(old('snmp_version', $device->snmp_version) === $k)>{{ $v }}</option>@endforeach
+                        @foreach(['2c' => 'v2c', '3' => 'v3', '1' => 'v1'] as $k => $v)<option value="{{ $k }}" @selected((string) old('snmp_version', $device->snmp_version) === (string) $k)>{{ $v }}</option>@endforeach
                     </select></div>
                 <div class="field"><label for="snmp_port">Port UDP</label>
                     <input class="input" id="snmp_port" name="snmp_port" type="number" min="1" max="65535" value="{{ old('snmp_port', $device->snmp_port) }}"></div>

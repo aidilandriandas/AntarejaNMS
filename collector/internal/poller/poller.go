@@ -35,13 +35,17 @@ type Poller struct {
 	Writer metrics.Writer
 	Log    *slog.Logger
 
+	Stats *Stats
+	// AfterPing dipanggil setelah setiap putaran ping (penilaian problem & notifikasi).
+	AfterPing func(ctx context.Context)
+
 	lastPing atomic.Int64 // unix detik putaran ping terakhir selesai
 	lastSNMP atomic.Int64
 }
 
 func New(cfg config.Config, st store.Store, box *secret.Box, log *slog.Logger) *Poller {
 	return &Poller{
-		Cfg: cfg, Store: st, Box: box, Log: log,
+		Cfg: cfg, Store: st, Box: box, Log: log, Stats: NewStats(),
 		Ping:   ping.Pinger{Count: cfg.PingCount, Timeout: cfg.PingTimeout, Privileged: cfg.PingPrivileged, Workers: cfg.Workers},
 		SNMP:   snmp.Client{Timeout: cfg.SNMPTimeout, Retries: cfg.SNMPRetries},
 		Writer: metrics.Writer{URL: cfg.VMURL},
@@ -143,6 +147,7 @@ func (p *Poller) PingCycle(ctx context.Context) error {
 	for _, d := range targets {
 		r := results[d.Host]
 		u := p.judgePing(ctx, d, r, now)
+		p.Stats.AddPing(d.ID, r.OK(), r.AvgMS, r.LossPct)
 		ups = append(ups, u)
 		if u.Status == "down" {
 			down++
@@ -162,6 +167,9 @@ func (p *Poller) PingCycle(ctx context.Context) error {
 	}
 	p.lastPing.Store(time.Now().Unix())
 	p.Log.Info("putaran ping", "perangkat", len(targets), "down", down)
+	if p.AfterPing != nil {
+		p.AfterPing(ctx)
+	}
 	return nil
 }
 
@@ -339,9 +347,11 @@ func (p *Poller) pollSNMP(ctx context.Context, d store.Device) bool {
 		if err := p.Store.SaveSNMP(ctx, u); err != nil {
 			p.Log.Error("simpan SNMP gagal", "perangkat", d.ID, "galat", err)
 		}
+		p.Stats.SNMPResult(d.ID, false)
 		return false
 	}
 
+	p.Stats.SNMPResult(d.ID, true)
 	u.OK = true
 	up := sys.UptimeSeconds()
 	u.SysName, u.SysDescr, u.SysObjectID, u.SysLoc, u.Uptime = &sys.Name, &sys.Descr, &sys.ObjectID, &sys.Location, &up
@@ -375,8 +385,9 @@ func (p *Poller) pollSNMP(ctx context.Context, d store.Device) bool {
 	} else {
 		rows := make([]store.InterfaceRow, 0, len(ifs))
 		for _, it := range ifs {
+			inBps, outBps, util := p.Stats.Rate(d.ID, it.Index, it.InOctets, it.OutOctets, it.SpeedBps, now)
 			rows = append(rows, store.InterfaceRow{Index: it.Index, Name: it.Name, Alias: it.Alias, Descr: it.Descr, MAC: it.MAC,
-				Type: it.Type, SpeedBps: int64(it.SpeedBps), AdminUp: it.AdminUp, OperUp: it.OperUp})
+				Type: it.Type, SpeedBps: int64(it.SpeedBps), AdminUp: it.AdminUp, OperUp: it.OperUp, InBps: inBps, OutBps: outBps, Util: util})
 			l := map[string]string{"device_id": dl["device_id"], "if_index": strconv.Itoa(it.Index), "if_name": it.Name}
 			batch.Add("antareja_if_oper_up", l, b2f(it.OperUp), now)
 			batch.Add("antareja_if_speed_bps", l, float64(it.SpeedBps), now)

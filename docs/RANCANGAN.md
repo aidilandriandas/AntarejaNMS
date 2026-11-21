@@ -1,6 +1,6 @@
 # Rancangan ANTAREJA NMS (engine mandiri)
 
-Status: **Tahap 1b — web** (1a collector selesai) · Dokumen hidup, perbarui setiap ada keputusan desain.
+Status: **Tahap 2a — problem & notifikasi** (1a, 1b selesai) · Dokumen hidup, perbarui setiap ada keputusan desain.
 
 ## 1. Sasaran
 
@@ -84,13 +84,36 @@ Label wajib: `device_id`. Label tambahan sesuai jenis (`if_index`, `if_name`).
 - **Latensi tinggi** bila RTT > ambang (bawaan 150 ms) — dicatat saat melewati ambang, bukan tiap menit.
 - **Flapping** bila ≥ 3 kali down dalam 15 menit.
 
-## 7. Peta jalan
+## 7. Problem & notifikasi (tahap 2a)
+
+Engine problem berjalan di collector setelah setiap putaran ping (±1 menit):
+
+| Problem | Kondisi | Severity |
+|---|---|---|
+| `down` | status down (2 putaran ping gagal, atau SNMP bila ping dimatikan) | High; Core/Distribution/Firewall = Disaster |
+| `loss` | rata-rata loss 5 putaran > ambang (bawaan 20%) | Average; ≥ 50% = High |
+| `latency` | rata-rata RTT 5 putaran > ambang (bawaan 150 ms) | Warning |
+| `snmp` | SNMP gagal ≥ N putaran berturut-turut (bawaan 2) sementara ping normal | Warning |
+| `port_down` | port yang ditandai *Pantau* admin-up tetapi oper-down | High |
+| `port_util` | port *Pantau* dengan pemakaian ≥ ambang (bawaan 90%) | Average |
+
+- Satu problem terbuka per (perangkat, jenis, port). Problem selesai otomatis saat kondisi hilang.
+- Data yang belum cukup (setelah collector restart, sedang menuju down, SNMP baru gagal sekali) dianggap
+  *belum diketahui*: problem yang sudah terbuka dibiarkan, tidak ditutup lalu dibuka ulang.
+- **Ditekan** (tetap tampil, tidak dinotifikasi): perangkat dalam maintenance, atau salah satu induknya (rantai
+  `parent_id`, maks. 16 tingkat) sedang down.
+- Notifikasi per kanal: severity minimal, filter site, `delay_minutes` (0 = segera; > 0 = eskalasi, hanya bila
+  belum di-ACK), kirim saat pulih. Setiap (problem, kanal, jenis) dikirim sekali. ≥ 5 problem sekaligus → satu
+  pesan ringkasan. Kanal yang gagal dicoba lagi setelah 5 menit. Konfigurasi kanal tersimpan terenkripsi.
+
+## 8. Peta jalan
 
 | Tahap | Isi | Status |
 |---|---|---|
 | 1a | Collector Go: ping, SNMP v1/v2c/v3 (system, IF-MIB), deteksi down/up/reboot, skema DB, VictoriaMetrics, Docker Compose | selesai |
 | 1b | Web Laravel: setup awal, login & role (admin/engineer/viewer), tambah/ubah perangkat dengan uji koneksi, daftar & detail perangkat + grafik latensi/trafik, site, kejadian, pengguna, jejak audit | selesai |
-| 2 | **berikutnya:** Problem engine & trigger, maintenance, eskalasi (Telegram/WA/email), layar NOC, topologi LLDP/CDP, trafik live | |
+| 2a | Problem engine, korelasi perangkat induk, maintenance, notifikasi Telegram/email/webhook, eskalasi bila belum di-ACK, ambang dari web | selesai |
+| 2b | **berikutnya:** layar NOC, topologi LLDP/CDP, trafik live | |
 | 3 | Profil perangkat: MikroTik, Cisco, Ubiquiti (radio PTP: sinyal, CCQ, kapasitas), Hikvision NVR/kamera, UPS (UPS-MIB), server (HOST-RESOURCES) | |
 | 4 | IPAM & konflik IP (ARP), CCTV live view, kualitas jaringan, SLA & laporan bulanan, backup NMS | |
 | 5 | Alat impor dari `antareja-nms` (perangkat, site, grup) dan peralihan | |

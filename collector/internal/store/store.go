@@ -117,6 +117,7 @@ type InterfaceRow struct {
 	Type                    int
 	SpeedBps                int64
 	AdminUp, OperUp         bool
+	InBps, OutBps, Util     *float64 // nil = belum bisa dihitung
 }
 
 // SaveInterfaces menyimpan daftar port terbaru; port yang sudah hilang dari perangkat dihapus.
@@ -129,13 +130,13 @@ func (s Store) SaveInterfaces(ctx context.Context, deviceID int64, rows []Interf
 	idx := make([]int32, 0, len(rows))
 	for _, r := range rows {
 		idx = append(idx, int32(r.Index))
-		if _, err := tx.Exec(ctx, `INSERT INTO interfaces (device_id, if_index, name, alias, descr, if_type, speed_bps, admin_up, oper_up, mac, last_change_at, updated_at)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NULLIF($10,''), now(), now())
+		if _, err := tx.Exec(ctx, `INSERT INTO interfaces (device_id, if_index, name, alias, descr, if_type, speed_bps, admin_up, oper_up, mac, in_bps, out_bps, util_pct, last_change_at, updated_at)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NULLIF($10,''),$11,$12,$13, now(), now())
 			ON CONFLICT (device_id, if_index) DO UPDATE SET name = EXCLUDED.name, alias = EXCLUDED.alias, descr = EXCLUDED.descr,
 				if_type = EXCLUDED.if_type, speed_bps = EXCLUDED.speed_bps, admin_up = EXCLUDED.admin_up, mac = EXCLUDED.mac,
 				last_change_at = CASE WHEN interfaces.oper_up IS DISTINCT FROM EXCLUDED.oper_up THEN now() ELSE interfaces.last_change_at END,
-				oper_up = EXCLUDED.oper_up, updated_at = now()`,
-			deviceID, r.Index, r.Name, r.Alias, r.Descr, r.Type, r.SpeedBps, r.AdminUp, r.OperUp, r.MAC); err != nil {
+				oper_up = EXCLUDED.oper_up, in_bps = EXCLUDED.in_bps, out_bps = EXCLUDED.out_bps, util_pct = EXCLUDED.util_pct, updated_at = now()`,
+			deviceID, r.Index, r.Name, r.Alias, r.Descr, r.Type, r.SpeedBps, r.AdminUp, r.OperUp, r.MAC, r.InBps, r.OutBps, r.Util); err != nil {
 			return err
 		}
 	}
