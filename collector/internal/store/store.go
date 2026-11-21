@@ -223,3 +223,62 @@ func (s Store) List(ctx context.Context) ([]Summary, error) {
 	}
 	return out, rows.Err()
 }
+
+type NeighborRow struct {
+	LocalIfIndex                                           int
+	LocalPort, Protocol, Name, Port, Chassis, IP, Platform string
+}
+
+// SaveNeighbors mengganti daftar tetangga perangkat lalu mencocokkannya dengan perangkat yang dipantau
+// (berdasarkan IP manajemen = host, sysName, atau MAC chassis = MAC salah satu port) dan port lawannya.
+func (s Store) SaveNeighbors(ctx context.Context, deviceID int64, rows []NeighborRow) error {
+	tx, err := s.DB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+	if _, err := tx.Exec(ctx, `DELETE FROM neighbors WHERE device_id = $1`, deviceID); err != nil {
+		return err
+	}
+	for _, r := range rows {
+		var local *int
+		if r.LocalIfIndex > 0 {
+			local = &r.LocalIfIndex
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO neighbors (device_id, local_if_index, local_port, protocol, remote_name, remote_port, remote_chassis, remote_ip, remote_platform)
+			VALUES ($1,$2,NULLIF($3,''),$4,NULLIF($5,''),NULLIF($6,''),NULLIF($7,''),NULLIF($8,''),NULLIF($9,''))`,
+			deviceID, local, cut(r.LocalPort), r.Protocol, cut(r.Name), cut(r.Port), r.Chassis, r.IP, cut(r.Platform)); err != nil {
+			return err
+		}
+	}
+	// Cocokkan tetangga ke perangkat yang dipantau
+	if _, err := tx.Exec(ctx, `
+		UPDATE neighbors n SET remote_device_id = (
+			SELECT d.id FROM devices d
+			WHERE d.id <> n.device_id AND (
+				(n.remote_ip IS NOT NULL AND d.host = n.remote_ip)
+				OR (n.remote_name IS NOT NULL AND d.sys_name IS NOT NULL AND (
+					lower(d.sys_name) = lower(n.remote_name)
+					OR lower(split_part(d.sys_name, '.', 1)) = lower(split_part(n.remote_name, '.', 1))))
+				OR (n.remote_chassis IS NOT NULL AND EXISTS (SELECT 1 FROM interfaces i WHERE i.device_id = d.id AND i.mac = n.remote_chassis)))
+			ORDER BY (n.remote_ip IS NOT NULL AND d.host = n.remote_ip) DESC LIMIT 1)
+		WHERE n.device_id = $1`, deviceID); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `
+		UPDATE neighbors n SET remote_if_index = (
+			SELECT i.if_index FROM interfaces i WHERE i.device_id = n.remote_device_id AND n.remote_port IS NOT NULL
+			  AND (lower(i.name) = lower(n.remote_port) OR lower(i.descr) = lower(n.remote_port) OR lower(i.alias) = lower(n.remote_port) OR i.mac = lower(n.remote_port))
+			ORDER BY i.if_index LIMIT 1)
+		WHERE n.device_id = $1 AND n.remote_device_id IS NOT NULL`, deviceID); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+func cut(s string) string {
+	if len(s) > 255 {
+		return s[:255]
+	}
+	return s
+}

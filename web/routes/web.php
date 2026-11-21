@@ -7,9 +7,11 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\NocController;
 use App\Http\Controllers\ProblemController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SiteController;
+use App\Http\Controllers\TopologyController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -44,6 +46,10 @@ Route::middleware('auth')->group(function () {
         Route::post('maintenance/{maintenance}/akhiri', [MaintenanceController::class, 'finish'])->name('maintenance.finish');
         Route::delete('maintenance/{maintenance}', [MaintenanceController::class, 'destroy'])->name('maintenance.destroy');
 
+        Route::post('topologi/sambungan', [TopologyController::class, 'storeLink'])->name('topology.links.store');
+        Route::delete('topologi/sambungan/{link}', [TopologyController::class, 'destroyLink'])->name('topology.links.destroy')->whereNumber('link');
+        Route::post('topologi/posisi', [TopologyController::class, 'savePositions'])->name('topology.positions');
+
         Route::post('site', [SiteController::class, 'store'])->name('sites.store');
         Route::put('site/{site}', [SiteController::class, 'update'])->name('sites.update');
         Route::delete('site/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
@@ -55,6 +61,12 @@ Route::middleware('auth')->group(function () {
     Route::get('kejadian', [EventController::class, 'index'])->name('events.index');
     Route::get('problem', [ProblemController::class, 'index'])->name('problems.index');
     Route::get('maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
+    Route::get('topologi', [TopologyController::class, 'index'])->name('topology.index');
+    Route::get('topologi/data', [TopologyController::class, 'data'])->name('topology.data');
+    Route::post('topologi/live', [TopologyController::class, 'live'])->name('topology.live')->middleware('throttle:40,1');
+    Route::get('topologi/port/{device}', [TopologyController::class, 'ports'])->name('topology.ports');
+    Route::get('noc', [NocController::class, 'index'])->name('noc');
+    Route::get('noc/data', [NocController::class, 'data'])->name('noc.data');
 
     Route::get('profil', [ProfileController::class, 'edit'])->name('profile');
     Route::put('profil/password', [ProfileController::class, 'updatePassword'])->name('profile.password');

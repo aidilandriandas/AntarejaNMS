@@ -20,11 +20,13 @@
         <a class="brand" href="{{ route('dashboard') }}"><span class="mark">A</span><span><b>ANTAREJA</b><small>NETWORK MONITORING</small></span></a>
         <nav class="nav">
             <a href="{{ route('dashboard') }}" class="{{ $nav('dashboard') }}"><x-icon name="home"/>Ringkasan</a>
+            <a href="{{ route('noc') }}"><x-icon name="monitor"/>Layar NOC</a>
             <a href="{{ route('problems.index') }}" class="{{ $nav('problems.*') }}"><x-icon name="alert"/>Problem
                 @if($probCount)<span class="count" title="{{ $probCount }} problem belum di-ACK">{{ $probCount }}</span>@endif</a>
             <div class="grp">Pemantauan</div>
             <a href="{{ route('devices.index') }}" class="{{ $nav('devices.*') }}"><x-icon name="server"/>Perangkat
                 @if($downCount)<span class="count" title="{{ $downCount }} perangkat down">{{ $downCount }}</span>@endif</a>
+            <a href="{{ route('topology.index') }}" class="{{ $nav('topology.*') }}"><x-icon name="share"/>Topologi</a>
             <a href="{{ route('events.index') }}" class="{{ $nav('events.*') }}"><x-icon name="pulse"/>Kejadian</a>
             <a href="{{ route('sites.index') }}" class="{{ $nav('sites.*') }}"><x-icon name="map-pin"/>Site</a>
             <a href="{{ route('maintenance.index') }}" class="{{ $nav('maintenance.*') }}"><x-icon name="wrench"/>Maintenance</a>

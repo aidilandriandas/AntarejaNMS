@@ -1,6 +1,6 @@
 # Rancangan ANTAREJA NMS (engine mandiri)
 
-Status: **Tahap 2a — problem & notifikasi** (1a, 1b selesai) · Dokumen hidup, perbarui setiap ada keputusan desain.
+Status: **Tahap 2 selesai** (1a, 1b, 2a, 2b) · berikutnya tahap 3 · Dokumen hidup, perbarui setiap ada keputusan desain.
 
 ## 1. Sasaran
 
@@ -106,14 +106,25 @@ Engine problem berjalan di collector setelah setiap putaran ping (±1 menit):
   belum di-ACK), kirim saat pulih. Setiap (problem, kanal, jenis) dikirim sekali. ≥ 5 problem sekaligus → satu
   pesan ringkasan. Kanal yang gagal dicoba lagi setelah 5 menit. Konfigurasi kanal tersimpan terenkripsi.
 
-## 8. Peta jalan
+## 8. Topologi (tahap 2b)
+
+- Tiap putaran SNMP collector membaca `lldpRemTable` (+ `lldpLocPortTable`, `lldpRemManAddrTable`) dan
+  `cdpCacheTable`, lalu menyimpannya di `neighbors`. Tetangga dicocokkan ke perangkat terdaftar lewat IP
+  manajemen = host, sysName (juga tanpa domain), atau MAC chassis = MAC salah satu port; port lawan lewat
+  nama/deskripsi/alias/MAC port.
+- Graf web = tetangga yang cocok + `device_links` (manual) + `parent_id` (garis logis bila tak ada sambungan fisik).
+  Tetangga yang belum terdaftar tampil sebagai node abu-abu.
+- Trafik live: browser mengirim daftar port (maks. 60) tiap 5 detik → web → collector `POST /v1/live` (SNMP GET
+  ifHCIn/OutOctets) → browser menghitung bps dari selisih dua pembacaan. Tidak disimpan.
+
+## 9. Peta jalan
 
 | Tahap | Isi | Status |
 |---|---|---|
 | 1a | Collector Go: ping, SNMP v1/v2c/v3 (system, IF-MIB), deteksi down/up/reboot, skema DB, VictoriaMetrics, Docker Compose | selesai |
 | 1b | Web Laravel: setup awal, login & role (admin/engineer/viewer), tambah/ubah perangkat dengan uji koneksi, daftar & detail perangkat + grafik latensi/trafik, site, kejadian, pengguna, jejak audit | selesai |
 | 2a | Problem engine, korelasi perangkat induk, maintenance, notifikasi Telegram/email/webhook, eskalasi bila belum di-ACK, ambang dari web | selesai |
-| 2b | **berikutnya:** layar NOC, topologi LLDP/CDP, trafik live | |
-| 3 | Profil perangkat: MikroTik, Cisco, Ubiquiti (radio PTP: sinyal, CCQ, kapasitas), Hikvision NVR/kamera, UPS (UPS-MIB), server (HOST-RESOURCES) | |
+| 2b | Topologi dari LLDP-MIB & CISCO-CDP-MIB + sambungan manual + perangkat induk, trafik live (API internal `/v1/live`), Layar NOC | selesai |
+| 3 | **berikutnya:** Profil perangkat: MikroTik, Cisco, Ubiquiti (radio PTP: sinyal, CCQ, kapasitas), Hikvision NVR/kamera, UPS (UPS-MIB), server (HOST-RESOURCES) | |
 | 4 | IPAM & konflik IP (ARP), CCTV live view, kualitas jaringan, SLA & laporan bulanan, backup NMS | |
 | 5 | Alat impor dari `antareja-nms` (perangkat, site, grup) dan peralihan | |

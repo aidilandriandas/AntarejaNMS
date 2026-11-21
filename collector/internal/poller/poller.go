@@ -399,6 +399,17 @@ func (p *Poller) pollSNMP(ctx context.Context, d store.Device) bool {
 		if err := p.Store.SaveInterfaces(ctx, d.ID, rows); err != nil {
 			p.Log.Error("simpan port gagal", "perangkat", d.ID, "galat", err)
 		}
+		// Tetangga LLDP/CDP untuk peta topologi
+		if nbs, err := p.SNMP.Neighbors(d.Host, cr, ifs); err == nil {
+			nrows := make([]store.NeighborRow, 0, len(nbs))
+			for _, n := range nbs {
+				nrows = append(nrows, store.NeighborRow{LocalIfIndex: n.LocalIfIndex, LocalPort: n.LocalPortName, Protocol: n.Protocol,
+					Name: n.RemoteName, Port: n.RemotePort, Chassis: n.RemoteChassis, IP: n.RemoteIP, Platform: n.RemotePlatform})
+			}
+			if err := p.Store.SaveNeighbors(ctx, d.ID, nrows); err != nil {
+				p.Log.Error("simpan tetangga gagal", "perangkat", d.ID, "galat", err)
+			}
+		}
 	}
 	if err := p.Writer.Write(ctx, &batch); err != nil {
 		p.Log.Warn("metrik SNMP tidak terkirim", "perangkat", d.ID, "galat", err)

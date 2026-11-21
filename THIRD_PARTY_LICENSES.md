@@ -20,6 +20,7 @@ Setiap dependensi baru wajib dicatat di sini **sebelum** di-commit (lihat `docs/
 | Laravel Framework + dependensinya (Symfony, Guzzle, Carbon, dll.) | 12.x | MIT / BSD-3-Clause / Apache-2.0 | Aplikasi web (`web/composer.lock`) |
 | nette/utils, nette/schema | — | Lisensi ganda BSD-3-Clause **atau** GPL — dipakai di bawah **BSD-3-Clause** | Dependensi Laravel |
 | uPlot | 1.6 | MIT | Grafik |
+| vis-network, vis-data | 9.1 / 7.1 | Lisensi ganda Apache-2.0 **atau** MIT — dipakai di bawah **MIT** | Peta topologi |
 | IBM Plex Sans / IBM Plex Mono (@fontsource) | 5.x | SIL Open Font License 1.1 | Huruf antarmuka |
 | Vite, laravel-vite-plugin | 7.x / 2.x | MIT | Alat build aset (tidak ikut terpasang di server) |
 

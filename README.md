@@ -4,8 +4,8 @@ Network Monitoring System untuk infrastruktur ICT tambang. Engine dan aplikasi d
 (**bukan** fork NMS lain) dan berlisensi tertutup. Lihat `LICENSE`, `docs/CLEAN-ROOM.md`, dan
 `THIRD_PARTY_LICENSES.md`.
 
-> **Status: tahap 2a.** Collector, aplikasi web, problem engine, maintenance, dan notifikasi/eskalasi sudah berjalan.
-> Tahap berikutnya adalah layar NOC dan peta topologi. Rencana lengkap ada di [`docs/RANCANGAN.md`](docs/RANCANGAN.md).
+> **Status: tahap 2 selesai.** Collector, aplikasi web, problem engine, notifikasi/eskalasi, layar NOC, dan peta
+> topologi sudah berjalan. Tahap berikutnya: profil perangkat tambang (MikroTik, Ubiquiti/radio PTP, Hikvision, UPS). Rencana lengkap ada di [`docs/RANCANGAN.md`](docs/RANCANGAN.md).
 
 ## Yang sudah bisa
 
@@ -29,6 +29,8 @@ Network Monitoring System untuk infrastruktur ICT tambang. Engine dan aplikasi d
 | Maintenance | Jadwal per perangkat, per site, atau semua; problem di dalamnya tetap tercatat tetapi tidak dinotifikasi |
 | Notifikasi | **Telegram**, **Email (SMTP)**, **Webhook** (gateway WhatsApp, n8n, sistem tiket). Per kanal: severity minimal, site, kirim saat pulih. Banyak problem sekaligus → 1 pesan ringkasan |
 | Eskalasi | Kanal dengan jeda (mis. 30 menit) hanya dikirimi problem yang **belum di-ACK** selama itu — untuk supervisor/manajemen |
+| **Topologi** | Peta otomatis dari **LLDP** dan **CDP**, sambungan manual (radio, NVR, kamera), garis putus-putus untuk perangkat induk. Warna garis = pemakaian, **trafik live** tiap 5 detik, perangkat down berdenyut, tetangga yang belum terdaftar tampil abu-abu, tata letak bisa disimpan |
+| **Layar NOC** | Layar penuh untuk TV ruang kontrol (tombol `F`): alarm bertingkat (merah hanya untuk High/Disaster belum di-ACK) dengan **bunyi**, dinding status per site bergantian dengan peta topologi, problem aktif, kejadian 1 jam, port tersibuk. Diperbarui tiap 15 detik |
 
 ## Menjalankan (Docker)
 
@@ -62,6 +64,9 @@ Buka **https://IP-VM:8443** (port bawaan 8443/8080 agar tidak bentrok dengan apl
 `HTTPS_PORT`/`HTTP_PORT` di `.env`). Browser akan memperingatkan sertifikat *self-signed*; pilih lanjutkan. Saat
 pertama dibuka muncul **Setup Awal** untuk membuat akun admin. Setelah itu tambahkan site, lalu perangkat lewat
 menu *Perangkat → Tambah perangkat* dan tekan **Uji sekarang** sebelum menyimpan.
+
+Layar NOC: buka *Layar NOC* di PC/TV ruang kontrol, login dengan centang *Ingat saya*, tekan `F` untuk layar
+penuh, lalu klik tombol **SUARA** sekali agar alarm bisa berbunyi (browser mewajibkan satu klik).
 
 Atur notifikasi di *Administrasi → Notifikasi*. Untuk Telegram: buat bot lewat @BotFather, masukkan bot ke grup
 NOC, isi token dan chat ID, lalu tekan **Kirim uji**. Server perlu akses keluar HTTPS ke `api.telegram.org`.

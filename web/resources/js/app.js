@@ -198,3 +198,56 @@ if (card) {
     load();
     setInterval(() => { if (!document.hidden) load(); }, 60000);
 }
+
+// ---------- Halaman topologi ----------
+const topoRoot = $('[data-topology]');
+if (topoRoot) {
+    import('./topology.js').then(({ createTopology, bps }) => {
+        const siteSel = $('[data-topo-site]', topoRoot);
+        try { siteSel.value = localStorage.getItem('ant-topo-site') || ''; } catch (e) { /* abaikan */ }
+        const info = $('[data-topo-info]', topoRoot);
+        const topo = createTopology($('[data-topo-canvas]', topoRoot), {
+            dataUrl: () => `${topoRoot.dataset.url}?site=${siteSel.value}`,
+            liveUrl: topoRoot.dataset.liveUrl,
+            positionsUrl: topoRoot.dataset.positionsUrl,
+            live: true,
+            onStats: (s) => { $('[data-topo-stats]', topoRoot).textContent = `${s.devices} perangkat · ${s.links} sambungan · ${s.down} down${s.unknown_neighbors ? ` · ${s.unknown_neighbors} tetangga belum terdaftar` : ''}`; },
+            onSelect: (n) => {
+                if (!n) return;
+                const rows = [['Alamat', n.host], ['Site', n.site], ['Status', { up: 'Online', problem: 'Ada problem', down: 'DOWN', unknown: 'Menunggu', maintenance: 'Maintenance', external: 'Belum terdaftar' }[n.state]],
+                    ['Penyebab', n.reason], ['RTT', n.rtt != null ? `${Number(n.rtt).toFixed(2).replace('.', ',')} ms` : null], ['Platform', n.platform]].filter(([, v]) => v);
+                info.innerHTML = '';
+                const h = document.createElement('div'); h.style.cssText = 'font-weight:600;margin-bottom:8px'; h.textContent = n.label; info.appendChild(h);
+                const dl = document.createElement('dl'); dl.className = 'facts';
+                rows.forEach(([k, v]) => { const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v; dl.append(dt, dd); });
+                info.appendChild(dl);
+                if (n.url) { const a = document.createElement('a'); a.href = n.url; a.className = 'btn sm'; a.style.marginTop = '12px'; a.textContent = 'Buka detail perangkat'; info.appendChild(a); }
+                else { const p = document.createElement('p'); p.className = 'muted'; p.style.fontSize = '12.5px'; p.textContent = 'Terlihat lewat LLDP/CDP tetapi belum didaftarkan. Tambahkan lewat menu Perangkat agar dipantau.'; info.appendChild(p); }
+            },
+        });
+        topo.load().then(() => topo.startLive(5)).catch(() => {});
+        topo.every(30);
+        siteSel.addEventListener('change', () => { try { localStorage.setItem('ant-topo-site', siteSel.value); } catch (e) { /* abaikan */ } topo.load().then(topo.fit); });
+        $('[data-topo-live]', topoRoot).addEventListener('change', (e) => (e.target.checked ? topo.startLive(5) : topo.stopLive()));
+        $('[data-topo-fit]', topoRoot).addEventListener('click', topo.fit);
+        $('[data-topo-unlock]', topoRoot)?.addEventListener('click', () => topo.setPhysics(true));
+        const save = $('[data-topo-save]', topoRoot);
+        save?.addEventListener('click', async () => {
+            save.disabled = true;
+            try { await topo.savePositions(); save.textContent = 'Tersimpan ✓'; } catch (e) { save.textContent = 'Gagal menyimpan'; }
+            setTimeout(() => { save.textContent = 'Simpan tata letak'; save.disabled = false; }, 2000);
+        });
+        void bps;
+    });
+
+    // Form sambungan manual: muat daftar port perangkat terpilih
+    const lf = $('[data-link-form]');
+    $$('[data-link-device]', lf || document).forEach((sel) => sel.addEventListener('change', async () => {
+        const portSel = $(`[data-link-port="${sel.dataset.linkDevice}"]`, lf);
+        portSel.innerHTML = '<option value="">(tidak diketahui)</option>';
+        if (!sel.value) return;
+        const r = await fetch(`${lf.dataset.portsUrl}/${sel.value}`, { headers: { Accept: 'application/json' } });
+        if (!r.ok) return;
+        (await r.json()).forEach((p) => { const o = document.createElement('option'); o.value = p.if_index; o.textContent = p.label; portSel.appendChild(o); });
+    }));
+}

@@ -12,6 +12,8 @@
     "dependencies": {
         "@fontsource/ibm-plex-mono": "^5.2.7",
         "@fontsource/ibm-plex-sans": "^5.2.8",
-        "uplot": "^1.6.32"
+        "uplot": "^1.6.32",
+        "vis-data": "^7.1.10",
+        "vis-network": "^9.1.13"
     }
 }

@@ -39,5 +39,10 @@
 @case('pulse')<path d="M3 12h4l2-5 4 10 2-5h6"/>@break
 @case('wrench')<path d="M14.5 6.5a4 4 0 0 0-5.3 5.3L4 17l3 3 5.2-5.2a4 4 0 0 0 5.3-5.3l-2.6 2.6-2.4-.6-.6-2.4z"/>@break
 @case('bell')<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>@break
+@case('share')<circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/>@break
+@case('monitor')<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/>@break
+@case('expand')<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>@break
+@case('volume')<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/>@break
+@case('volume-x')<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9.5l4 5M21 9.5l-4 5"/>@break
 @default<circle cx="12" cy="12" r="9"/>
 @endswitch</svg>

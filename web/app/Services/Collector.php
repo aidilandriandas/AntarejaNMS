@@ -53,6 +53,14 @@ class Collector
         return $res->json();
     }
 
+    /** Counter oktet port saat ini (untuk trafik live). @param array<int, array{device_id:int, if_index:int}> $ports */
+    public function live(array $ports): array
+    {
+        $res = $this->http()->timeout(15)->post('/v1/live', ['ports' => array_values($ports)]);
+
+        return $res->successful() ? ($res->json('samples') ?? []) : [];
+    }
+
     /** Minta collector memeriksa satu perangkat sekarang (tidak menunggu hasil). */
     public function pollNow(int $deviceId): bool
     {

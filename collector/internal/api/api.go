@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aidilandriandas/antarejanms/collector/internal/notify"
@@ -44,6 +45,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /v1/test", s.auth(s.test))
 	mux.HandleFunc("POST /v1/devices/{id}/poll", s.auth(s.poll))
 	mux.HandleFunc("POST /v1/channels/{id}/test", s.auth(s.testChannel))
+	mux.HandleFunc("POST /v1/live", s.auth(s.live))
 	return mux
 }
 
@@ -159,6 +161,61 @@ func (s *Server) testChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+// live membaca counter oktet port saat ini (maks. 60 port) untuk trafik live; laju dihitung di browser
+// dari selisih dua pembacaan. Hanya GET SNMP ke perangkat yang sudah terdaftar.
+func (s *Server) live(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Ports []struct {
+			DeviceID int64 `json:"device_id"`
+			IfIndex  int   `json:"if_index"`
+		} `json:"ports"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&in); err != nil || len(in.Ports) > 60 {
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "permintaan tidak valid (maks. 60 port)"})
+		return
+	}
+	byDev := map[int64][]int{}
+	for _, p := range in.Ports {
+		byDev[p.DeviceID] = append(byDev[p.DeviceID], p.IfIndex)
+	}
+	type sample struct {
+		DeviceID int64   `json:"device_id"`
+		IfIndex  int     `json:"if_index"`
+		In       uint64  `json:"in"`
+		Out      uint64  `json:"out"`
+		At       float64 `json:"at"`
+	}
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	out := []sample{}
+	for dev, idx := range byDev {
+		wg.Add(1)
+		go func(dev int64, idx []int) {
+			defer wg.Done()
+			d, err := s.Poller.Store.Device(r.Context(), dev)
+			if err != nil || !d.SNMPEnabled {
+				return
+			}
+			cr, err := s.Poller.Credentials(d)
+			if err != nil {
+				return
+			}
+			c, err := s.Poller.SNMP.Counters(d.Host, cr, idx)
+			if err != nil {
+				return
+			}
+			at := float64(time.Now().UnixMilli()) / 1000
+			mu.Lock()
+			for i, v := range c {
+				out = append(out, sample{DeviceID: dev, IfIndex: i, In: v[0], Out: v[1], At: at})
+			}
+			mu.Unlock()
+		}(dev, idx)
+	}
+	wg.Wait()
+	writeJSON(w, http.StatusOK, map[string]any{"samples": out})
 }
 
 // validHost menolak nilai yang jelas bukan host (mencegah API dipakai untuk hal lain).
