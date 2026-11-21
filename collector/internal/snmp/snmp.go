@@ -349,3 +349,69 @@ func Rebooted(prevTicks, nowTicks uint32, elapsed time.Duration) bool {
 	}
 	return true
 }
+
+// Session adalah koneksi SNMP yang dipakai ulang untuk beberapa GET/WALK (profil perangkat).
+type Session struct {
+	g       *gosnmp.GoSNMP
+	version string
+}
+
+func (c Client) Session(host string, cr Credentials) (*Session, error) {
+	g, err := c.connect(host, cr)
+	if err != nil {
+		return nil, err
+	}
+	return &Session{g: g, version: cr.Version}, nil
+}
+
+func (s *Session) Close() { s.g.Conn.Close() }
+
+// Get membaca beberapa OID skalar. Hasil: OID lengkap (berawalan titik) → nilai; OID yang tidak ada dilewati.
+func (s *Session) Get(oids []string) (map[string]any, error) {
+	out := map[string]any{}
+	for start := 0; start < len(oids); start += 20 {
+		end := min(start+20, len(oids))
+		pkt, err := s.g.Get(oids[start:end])
+		if err != nil {
+			return out, err
+		}
+		for _, v := range pkt.Variables {
+			if !missing(v) {
+				out[v.Name] = pduValue(v)
+			}
+		}
+	}
+	return out, nil
+}
+
+// Walk membaca satu kolom tabel. Hasil: sufiks indeks (mis. "3" atau "0.2.1") → nilai.
+func (s *Session) Walk(base string) (map[string]any, error) {
+	out := map[string]any{}
+	fn := func(v gosnmp.SnmpPDU) error {
+		if !missing(v) && strings.HasPrefix(v.Name, base+".") {
+			out[strings.TrimPrefix(v.Name, base+".")] = pduValue(v)
+		}
+		return nil
+	}
+	var err error
+	if s.version == "1" {
+		err = s.g.Walk(base, fn)
+	} else {
+		err = s.g.BulkWalk(base, fn)
+	}
+	return out, err
+}
+
+// pduValue mengubah nilai SNMP menjadi float64 (angka) atau string (teks/OID/MAC).
+func pduValue(v gosnmp.SnmpPDU) any {
+	switch v.Type {
+	case gosnmp.OctetString:
+		b, _ := v.Value.([]byte)
+		return text(b)
+	case gosnmp.ObjectIdentifier, gosnmp.IPAddress:
+		return text(v.Value)
+	default:
+		f, _ := new(big.Float).SetInt(gosnmp.ToBigInt(v.Value)).Float64()
+		return f
+	}
+}

@@ -112,6 +112,7 @@ if (card) {
     const title = $('[data-chart-title]', card);
     let range = '24h';
     let port = null;
+    let sensor = null; // {key, label, unit}
     let plot = null;
     let last = null;
 
@@ -139,6 +140,17 @@ if (card) {
         const axis = { stroke: css('--muted'), grid: { stroke: css('--line'), width: 1 }, ticks: { stroke: css('--line') } };
         const isPort = port !== null;
         const s = data.series;
+        if (sensor) {
+            const unit = sensor.unit ? ` ${sensor.unit}` : '';
+            plot = new uPlot({
+                width: el.clientWidth, height: 240, scales: { x: { time: true } },
+                axes: [{ ...axis, values: xValues }, { ...axis, values: (u, vals) => vals.map((v) => `${v}${unit}`), size: 70 }],
+                series: [{ label: 'Waktu', value: xLegend }, { label: sensor.label, stroke: css('--accent'), width: 1.6, spanGaps: true, points: { show: true, size: 4, fill: css('--accent') }, value: (u, v) => (v == null ? '–' : `${String(v).replace('.', ',')}${unit}`) }],
+                legend: { live: true }, cursor: { drag: { x: false, y: false } },
+            }, [data.t, s.value], el);
+            if (s.value.every((v) => v == null)) { const n = document.createElement('div'); n.className = 'empty'; n.textContent = 'Belum ada data untuk rentang ini.'; el.prepend(n); }
+            return;
+        }
         const opts = {
             width: el.clientWidth, height: 240,
             scales: { x: { time: true }, y2: { range: [0, 100] } },
@@ -167,6 +179,7 @@ if (card) {
         const u = new URL(card.dataset.url, location.origin);
         u.searchParams.set('range', range);
         if (port !== null) { u.searchParams.set('type', 'port'); u.searchParams.set('if', port); }
+        if (sensor) { u.searchParams.set('type', 'sensor'); u.searchParams.set('key', sensor.key); }
         el.style.opacity = '.5';
         try {
             const r = await fetch(u, { headers: { Accept: 'application/json' } });
@@ -181,10 +194,26 @@ if (card) {
         $$('[data-range]', card).forEach((x) => x.classList.toggle('on', x === b));
         load();
     }));
+    $$('[data-sensor]').forEach((row) => {
+        const pick = () => {
+            const same = sensor?.key === row.dataset.sensor;
+            sensor = same ? null : { key: row.dataset.sensor, label: row.dataset.sensorLabel, unit: row.dataset.sensorUnit };
+            port = null;
+            $$('[data-port]').forEach((r) => r.classList.remove('sel'));
+            $$('[data-sensor]').forEach((r) => r.classList.toggle('sel', !same && r === row));
+            title.textContent = same ? 'Latensi & packet loss' : row.dataset.sensorLabel;
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            load();
+        };
+        row.addEventListener('click', pick);
+        row.addEventListener('keydown', (e) => { if (e.key === 'Enter') pick(); });
+    });
     $$('[data-port]').forEach((row) => {
         const pick = () => {
             const same = port === row.dataset.port;
             port = same ? null : row.dataset.port;
+            sensor = null;
+            $$('[data-sensor]').forEach((r) => r.classList.remove('sel'));
             $$('[data-port]').forEach((r) => r.classList.toggle('sel', !same && r === row));
             title.textContent = same ? 'Latensi & packet loss' : `Trafik ${row.dataset.portName}`;
             card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

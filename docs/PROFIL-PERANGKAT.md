@@ -1,0 +1,55 @@
+# Profil perangkat & sensor
+
+Collector mendeteksi profil tiap perangkat (disimpan, dideteksi ulang tiap 24 jam atau saat sysObjectID berubah),
+lalu membaca sensornya pada setiap putaran SNMP. Semua akses hanya baca (GET/WALK). OID yang tidak dijawab
+perangkat dilewati tanpa galat. Kode: `collector/internal/profiles/`.
+
+| Profil | Deteksi | Sumber MIB | Yang dibaca |
+|---|---|---|---|
+| `host-resources` | semua perangkat | HOST-RESOURCES-MIB (RFC 2790), UCD-SNMP-MIB | CPU (rata-rata hrProcessorLoad), memori (UCD bila ada, selain itu hrStorageRam), disk tetap |
+| `entity-sensor` | semua perangkat | ENTITY-SENSOR-MIB (RFC 3433), ENTITY-MIB | suhu, tegangan, kipas, daya, arus |
+| `mikrotik` | sysObjectID `.1.3.6.1.4.1.14988` atau probe `mtxrHlVoltage` | MIKROTIK-MIB | suhu board/CPU, tegangan input, gauge RouterOS 7; wireless station (sinyal, TX/RX rate, frekuensi), AP (klien, CCQ, noise, frekuensi), klien terlemah |
+| `ubiquiti-airmax` | sysObjectID `.1.3.6.1.4.1.41112` atau probe `ubntWlStatSignal.1` | UBNT-AirMAX-MIB | sinyal, CCQ, noise, TX/RX rate, station, airMAX quality & capacity, frekuensi, daya TX, jarak |
+| `cisco` | sysObjectID `.1.3.6.1.4.1.9.1` / `.9.12` | CISCO-PROCESS-MIB, CISCO-MEMORY-POOL-MIB, CISCO-ENVMON-MIB | CPU 5 menit, memori processor pool, suhu |
+| `ups-mib` | probe `upsBatteryStatus` | UPS-MIB (RFC 1628) | sumber output (normal/baterai/bypass), status & muatan baterai, perkiraan cadangan, beban, tegangan input, suhu baterai |
+| `apc` | sysObjectID `.1.3.6.1.4.1.318` atau probe `upsAdvBatteryCapacity` | PowerNet-MIB (APC) | status output, muatan, cadangan, beban, tegangan input, suhu baterai |
+
+Hikvision NVR/kamera belum punya profil khusus: dipantau lewat ping, uptime, port, dan profil generik bila
+perangkat menjawab HOST-RESOURCES. Profil khusus dibuat setelah ada `snmpwalk` dari perangkat lapangan.
+
+## Ambang bawaan
+
+| Kelas | Peringatan | Kritis |
+|---|---|---|
+| CPU | ≥ 80% | ≥ 95% |
+| Memori, disk | ≥ 85% | ≥ 95% |
+| Suhu (CPU) | ≥ 60 °C (75 °C) | ≥ 75 °C (90 °C) |
+| Sinyal radio | ≤ −70 dBm | ≤ −78 dBm |
+| CCQ, airMAX quality | ≤ 70% | ≤ 50% |
+| Muatan baterai UPS | ≤ 50% | ≤ 20% |
+| Perkiraan cadangan UPS | ≤ 15 menit | ≤ 5 menit |
+| Beban UPS | ≥ 80% | ≥ 95% |
+| UPS di baterai / output mati | — | kritis |
+
+Sensor di luar ambang menjadi problem jenis `sensor` (peringatan → Warning, kritis → High) dan ikut aturan
+notifikasi, maintenance, serta korelasi perangkat induk.
+
+## Verifikasi dengan perangkat asli (wajib sebelum dipakai produksi)
+
+Profil vendor ditulis dari dokumen MIB; skala dan satuan bisa berbeda antarversi firmware. Untuk setiap model
+perangkat di tambang, jalankan dari server ANTAREJA lalu kirimkan hasilnya ke tim pengembang:
+
+```bash
+snmpwalk -v2c -c COMMUNITY -On IP-PERANGKAT .1.3.6.1.2.1.1 > sistem.txt
+```
+
+```bash
+snmpwalk -v2c -c COMMUNITY -On IP-PERANGKAT .1.3.6.1.4.1 > vendor.txt
+```
+
+```bash
+snmpwalk -v2c -c COMMUNITY -On IP-PERANGKAT .1.3.6.1.2.1.25 > host-resources.txt
+```
+
+Untuk UPS tambahkan `.1.3.6.1.2.1.33`. Bandingkan nilai dengan tampilan perangkat (Winbox, airOS, panel UPS):
+bila berbeda, perbaiki skala di berkas profil dan catat model + versi firmware di komentar berkas.

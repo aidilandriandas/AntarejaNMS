@@ -105,3 +105,25 @@ func TestPortsSNMPMaintenance(t *testing.T) {
 		t.Fatal("util port 8 belum diketahui")
 	}
 }
+
+func TestSensors(t *testing.T) {
+	v := -81.0
+	devs := []Device{{ID: 1, Name: "Radio A", Status: "up", Sensors: []Sensor{
+		{Key: "wl:signal:1", Label: "Sinyal (PTP)", Unit: "dBm", Status: "crit", Value: &v, Fresh: true},
+		{Key: "ups:source", Label: "Sumber daya", Text: "BATERAI", Status: "warn", Fresh: true},
+		{Key: "temp:board", Label: "Suhu", Status: "crit", Fresh: false},
+		{Key: "cpu", Label: "CPU", Status: "ok", Fresh: true},
+	}}}
+	r := Evaluate(devs, th)
+	var got []string
+	for _, c := range r.Conds {
+		got = append(got, c.Key()+"="+c.Severity+":"+c.Title)
+	}
+	want := []string{"1/sensor/wl:signal:1=high:Radio A: Sinyal (PTP) -81 dBm", "1/sensor/ups:source=warning:Radio A: Sumber daya BATERAI"}
+	if len(got) != 2 || got[0] != want[0] || got[1] != want[1] {
+		t.Fatalf("%q", got)
+	}
+	if !r.Unknown["1/sensor/temp:board"] {
+		t.Fatal("sensor basi harus unknown")
+	}
+}

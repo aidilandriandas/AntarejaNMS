@@ -26,19 +26,20 @@ type Device struct {
 	SNMPOK          *bool
 	LastSNMPAt      *time.Time
 	UptimeSeconds   *int64
+	SysObjectID     *string
 }
 
 type Store struct{ DB *pgxpool.Pool }
 
 const deviceCols = `id, name, host, ping_enabled, snmp_enabled, snmp_version, snmp_port,
 	snmp_community_enc, snmp_v3_user, snmp_v3_level, snmp_v3_auth_proto, snmp_v3_auth_enc, snmp_v3_priv_proto, snmp_v3_priv_enc,
-	status, status_changed_at, fail_streak, last_rtt_ms, snmp_ok, last_snmp_at, uptime_seconds`
+	status, status_changed_at, fail_streak, last_rtt_ms, snmp_ok, last_snmp_at, uptime_seconds, sys_object_id`
 
 func scanDevice(r pgx.Row) (Device, error) {
 	var d Device
 	err := r.Scan(&d.ID, &d.Name, &d.Host, &d.PingEnabled, &d.SNMPEnabled, &d.SNMPVersion, &d.SNMPPort,
 		&d.CommunityEnc, &d.V3User, &d.V3Level, &d.V3AuthProto, &d.V3AuthEnc, &d.V3PrivProto, &d.V3PrivEnc,
-		&d.Status, &d.StatusChangedAt, &d.FailStreak, &d.LastRTT, &d.SNMPOK, &d.LastSNMPAt, &d.UptimeSeconds)
+		&d.Status, &d.StatusChangedAt, &d.FailStreak, &d.LastRTT, &d.SNMPOK, &d.LastSNMPAt, &d.UptimeSeconds, &d.SysObjectID)
 	return d, err
 }
 
@@ -281,4 +282,51 @@ func cut(s string) string {
 		return s[:255]
 	}
 	return s
+}
+
+type SensorRow struct {
+	Key, Class, Group, Label, Unit, Text, Status string
+	Value                                        *float64
+}
+
+// SaveSensors mengganti pembacaan sensor perangkat (sensor yang tidak lagi dilaporkan dihapus).
+func (s Store) SaveSensors(ctx context.Context, deviceID int64, rows []SensorRow) error {
+	tx, err := s.DB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+	keys := make([]string, 0, len(rows))
+	for _, r := range rows {
+		keys = append(keys, r.Key)
+		if _, err := tx.Exec(ctx, `INSERT INTO device_sensors (device_id, key, class, grp, label, unit, value, text, status, updated_at)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,NULLIF($8,''),$9, now())
+			ON CONFLICT (device_id, key) DO UPDATE SET class = EXCLUDED.class, grp = EXCLUDED.grp, label = EXCLUDED.label, unit = EXCLUDED.unit,
+				value = EXCLUDED.value, text = EXCLUDED.text, status = EXCLUDED.status, updated_at = now()`,
+			deviceID, r.Key, r.Class, r.Group, cut(r.Label), r.Unit, r.Value, r.Text, r.Status); err != nil {
+			return err
+		}
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM device_sensors WHERE device_id = $1 AND NOT (key = ANY($2))`, deviceID, keys); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+// Profiles membaca profil tersimpan; refresh=true bila perlu dideteksi ulang (belum ada / > 24 jam / sysObjectID berubah).
+func (s Store) Profiles(ctx context.Context, deviceID int64, sysObjectID string, prevObjectID *string) (ids string, refresh bool, err error) {
+	var p *string
+	var at *time.Time
+	if err = s.DB.QueryRow(ctx, `SELECT profiles, profiles_at FROM devices WHERE id = $1`, deviceID).Scan(&p, &at); err != nil {
+		return "", true, err
+	}
+	if p == nil || at == nil || time.Since(*at) > 24*time.Hour || (prevObjectID != nil && *prevObjectID != sysObjectID) {
+		return "", true, nil
+	}
+	return *p, false, nil
+}
+
+func (s Store) SetProfiles(ctx context.Context, deviceID int64, ids string) error {
+	_, err := s.DB.Exec(ctx, `UPDATE devices SET profiles = $2, profiles_at = now() WHERE id = $1`, deviceID, ids)
+	return err
 }

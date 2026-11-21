@@ -47,7 +47,7 @@ func (e *Engine) Run(ctx context.Context) (Outcome, error) {
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck
 
-	rows, err := tx.Query(ctx, `SELECT id, device_id, kind, if_index FROM problems WHERE resolved_at IS NULL FOR UPDATE`)
+	rows, err := tx.Query(ctx, `SELECT id, device_id, kind, if_index, sensor_key FROM problems WHERE resolved_at IS NULL FOR UPDATE`)
 	if err != nil {
 		return out, err
 	}
@@ -56,11 +56,16 @@ func (e *Engine) Run(ctx context.Context) (Outcome, error) {
 		var id, dev int64
 		var kind string
 		var idx *int
-		if err := rows.Scan(&id, &dev, &kind, &idx); err != nil {
+		var sk *string
+		if err := rows.Scan(&id, &dev, &kind, &idx, &sk); err != nil {
 			rows.Close()
 			return out, err
 		}
-		open[key(dev, kind, idx)] = id
+		if sk != nil {
+			open[SensorKey(dev, *sk)] = id
+		} else {
+			open[key(dev, kind, idx)] = id
+		}
 	}
 	rows.Close()
 
@@ -74,8 +79,8 @@ func (e *Engine) Run(ctx context.Context) (Outcome, error) {
 				id, c.Severity, c.Title, c.Detail, c.Value, sup, note)
 			continue
 		}
-		b.Queue(`INSERT INTO problems (device_id, kind, if_index, severity, title, detail, last_value, suppressed, suppressed_note)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT DO NOTHING`, c.DeviceID, c.Kind, c.IfIndex, c.Severity, c.Title, c.Detail, c.Value, sup, note)
+		b.Queue(`INSERT INTO problems (device_id, kind, if_index, sensor_key, severity, title, detail, last_value, suppressed, suppressed_note)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT DO NOTHING`, c.DeviceID, c.Kind, c.IfIndex, nullable(c.Sensor), c.Severity, c.Title, c.Detail, c.Value, sup, note)
 		out.Opened++
 	}
 	for k, id := range open {
@@ -192,5 +197,24 @@ func (e *Engine) load(ctx context.Context) ([]Device, error) {
 		p.Util, p.UtilKnown = e.Stats.Util(dev, p.Index)
 		devs[i].Ports = append(devs[i].Ports, p)
 	}
-	return devs, prow.Err()
+	if err := prow.Err(); err != nil {
+		return nil, err
+	}
+
+	srows, err := e.DB.Query(ctx, `SELECT device_id, key, label, unit, COALESCE(text, ''), status, value, updated_at > now() - interval '20 minutes' FROM device_sensors`)
+	if err != nil {
+		return nil, err
+	}
+	defer srows.Close()
+	for srows.Next() {
+		var dev int64
+		var s Sensor
+		if err := srows.Scan(&dev, &s.Key, &s.Label, &s.Unit, &s.Text, &s.Status, &s.Value, &s.Fresh); err != nil {
+			return nil, err
+		}
+		if i, ok := idx[dev]; ok {
+			devs[i].Sensors = append(devs[i].Sensors, s)
+		}
+	}
+	return devs, srows.Err()
 }

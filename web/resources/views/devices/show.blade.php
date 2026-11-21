@@ -80,6 +80,22 @@
     </div>
 
     <div class="stack">
+        @if($sensors->isNotEmpty())
+        <section class="card"><div class="hd"><h2>Kesehatan & sensor</h2><span class="sub">klik untuk grafik</span></div><div class="bd flush">
+            @foreach(\App\Models\DeviceSensor::GROUPS as $g => $gLabel)
+                @continue(! isset($sensors[$g]))
+                <div class="sensor-grp">{{ $gLabel }}</div>
+                <table class="t"><tbody>
+                @foreach($sensors[$g] as $s)
+                    <tr class="sensor-row {{ $s->stale() ? 'is-off' : '' }}" data-sensor="{{ $s->key }}" data-sensor-label="{{ $s->label }}" data-sensor-unit="{{ $s->unit }}" tabindex="0">
+                        <td>{{ $s->label }}</td>
+                        <td class="num">@if($s->status === 'ok'){{ $s->display() }}@else<span class="badge plain {{ $s->tone() }}">{{ $s->display() }}</span>@endif</td>
+                    </tr>
+                @endforeach
+                </tbody></table>
+            @endforeach
+        </div></section>
+        @endif
         <section class="card"><div class="hd"><h2>Informasi</h2></div><div class="bd">
             <dl class="facts">
                 <dt>Site</dt><dd>{{ $device->site ? $device->site->code . ' — ' . $device->site->name : '–' }}</dd>
@@ -90,6 +106,7 @@
                 @if($device->sys_name)<dt>sysName</dt><dd>{{ $device->sys_name }}</dd>@endif
                 @if($device->sys_descr)<dt>Deskripsi</dt><dd>{{ \Illuminate\Support\Str::limit($device->sys_descr, 220) }}</dd>@endif
                 @if($device->sys_location)<dt>Lokasi SNMP</dt><dd>{{ $device->sys_location }}</dd>@endif
+                @if($device->profiles)<dt>Profil</dt><dd>{{ collect(explode(',', $device->profiles))->map(fn ($x) => \App\Models\DeviceSensor::PROFILES[$x] ?? $x)->implode(', ') }}</dd>@endif
                 @if($device->sys_object_id)<dt>sysObjectID</dt><dd class="mono">{{ $device->sys_object_id }}</dd>@endif
                 @if($device->notes)<dt>Catatan</dt><dd style="white-space:pre-line">{{ $device->notes }}</dd>@endif
             </dl>

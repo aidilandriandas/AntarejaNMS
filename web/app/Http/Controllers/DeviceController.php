@@ -73,6 +73,7 @@ class DeviceController extends Controller
             'events' => $device->events()->limit(20)->get(),
             'monitored' => $device->monitoredPorts(),
             'problems' => $device->problems()->whereNull('resolved_at')->triage()->get(),
+            'sensors' => $device->sensors()->get()->groupBy('grp'),
         ]);
     }
 
@@ -167,6 +168,13 @@ class DeviceController extends Controller
                     'in' => "rate(antareja_if_in_octets_total{{$s}}[{$win}]) * 8",
                     'out' => "rate(antareja_if_out_octets_total{{$s}}[{$win}]) * 8",
                 ], $range);
+            })(),
+            'sensor' => (function () use ($request, $device, $metrics, $sel, $range, $step) {
+                $key = (string) $request->query('key');
+                abort_unless($device->sensors()->where('key', $key)->exists(), 404);
+                $k = addcslashes($key, '"\\');
+
+                return $metrics->range(['value' => "avg_over_time(antareja_sensor{{$sel},key=\"{$k}\"}[{$step}s])"], $range);
             })(),
             default => $metrics->range([
                 'rtt' => "avg_over_time(antareja_ping_rtt_ms{{$sel}}[{$step}s])",

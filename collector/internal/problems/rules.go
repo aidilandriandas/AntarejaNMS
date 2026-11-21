@@ -37,6 +37,14 @@ type Device struct {
 	SNMPFails     int
 	InMaintenance string // judul maintenance aktif, kosong bila tidak
 	Ports         []Port
+	Sensors       []Sensor
+}
+
+// Sensor adalah pembacaan sensor tersimpan (lihat profiles). Fresh=false bila tidak diperbarui > 20 menit.
+type Sensor struct {
+	Key, Label, Unit, Text, Status string
+	Value                          *float64
+	Fresh                          bool
 }
 
 type Port struct {
@@ -58,11 +66,20 @@ type Cond struct {
 	Detail     string
 	Value      *float64
 	Suppressed string // "", "maintenance", "parent"
+	Sensor     string // kunci sensor untuk problem jenis "sensor"
 	SupNote    string
 }
 
 // Key unik kondisi (sama dengan indeks unik problem terbuka di database).
-func (c Cond) Key() string { return key(c.DeviceID, c.Kind, c.IfIndex) }
+func (c Cond) Key() string {
+	if c.Sensor != "" {
+		return SensorKey(c.DeviceID, c.Sensor)
+	}
+	return key(c.DeviceID, c.Kind, c.IfIndex)
+}
+
+// SensorKey adalah kunci unik problem sensor.
+func SensorKey(dev int64, sensor string) string { return fmt.Sprintf("%d/sensor/%s", dev, sensor) }
 
 func key(dev int64, kind string, idx *int) string {
 	i := -1
@@ -159,6 +176,26 @@ func Evaluate(devs []Device, th Thresholds) Result {
 				unknown(d.ID, "port_down", &idx)
 				unknown(d.ID, "port_util", &idx)
 			}
+		}
+
+		for _, s := range d.Sensors {
+			if !s.Fresh || d.Status != "up" {
+				res.Unknown[SensorKey(d.ID, s.Key)] = true
+				continue
+			}
+			if s.Status != "warn" && s.Status != "crit" {
+				continue
+			}
+			sev := "warning"
+			if s.Status == "crit" {
+				sev = "high"
+			}
+			val := s.Text
+			if val == "" && s.Value != nil {
+				val = strings.TrimSpace(fmt.Sprintf("%g %s", *s.Value, s.Unit))
+			}
+			add(Cond{Kind: "sensor", Sensor: s.Key, Severity: sev, Value: s.Value, Title: fmt.Sprintf("%s: %s %s", d.Name, s.Label, val),
+				Detail: "di luar ambang normal"})
 		}
 
 		sup, note := "", ""

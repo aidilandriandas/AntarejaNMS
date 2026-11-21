@@ -71,6 +71,11 @@ class Device extends Model
         return $this->hasMany(Device::class, 'parent_id');
     }
 
+    public function sensors(): HasMany
+    {
+        return $this->hasMany(DeviceSensor::class)->orderBy('grp')->orderBy('key');
+    }
+
     public function problems(): HasMany
     {
         return $this->hasMany(Problem::class);

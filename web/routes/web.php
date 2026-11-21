@@ -10,6 +10,7 @@ use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NocController;
 use App\Http\Controllers\ProblemController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SensorController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\TopologyController;
 use App\Http\Controllers\UserController;
@@ -61,6 +62,7 @@ Route::middleware('auth')->group(function () {
     Route::get('kejadian', [EventController::class, 'index'])->name('events.index');
     Route::get('problem', [ProblemController::class, 'index'])->name('problems.index');
     Route::get('maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
+    Route::get('sensor', [SensorController::class, 'index'])->name('sensors.index');
     Route::get('topologi', [TopologyController::class, 'index'])->name('topology.index');
     Route::get('topologi/data', [TopologyController::class, 'data'])->name('topology.data');
     Route::post('topologi/live', [TopologyController::class, 'live'])->name('topology.live')->middleware('throttle:40,1');

@@ -290,3 +290,10 @@ details.ack summary::-webkit-details-marker { display: none; }
 .legend i.hollow { border: 2px dashed var(--off); width: 10px; height: 10px; }
 div.vis-tooltip { font: 400 12.5px/1.5 var(--sans) !important; white-space: pre-line !important; padding: 8px 10px !important; border-radius: 6px !important;
     background: var(--surface) !important; color: var(--ink) !important; border: 1px solid var(--line-strong) !important; box-shadow: 0 6px 20px rgba(0,0,0,.15) !important; }
+
+/* Sensor */
+.sensor-grp { font: 500 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 10px 14px 6px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.sensor-grp:not(:first-child) { border-top: 1px solid var(--line); }
+tr.sensor-row { cursor: pointer; }
+tr.sensor-row.sel td { background: var(--accent-soft) !important; }
+.pivot td.c { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }

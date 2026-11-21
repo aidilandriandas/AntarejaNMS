@@ -4,8 +4,9 @@ Network Monitoring System untuk infrastruktur ICT tambang. Engine dan aplikasi d
 (**bukan** fork NMS lain) dan berlisensi tertutup. Lihat `LICENSE`, `docs/CLEAN-ROOM.md`, dan
 `THIRD_PARTY_LICENSES.md`.
 
-> **Status: tahap 2 selesai.** Collector, aplikasi web, problem engine, notifikasi/eskalasi, layar NOC, dan peta
-> topologi sudah berjalan. Tahap berikutnya: profil perangkat tambang (MikroTik, Ubiquiti/radio PTP, Hikvision, UPS). Rencana lengkap ada di [`docs/RANCANGAN.md`](docs/RANCANGAN.md).
+> **Status: tahap 3 (awal) selesai.** Collector, aplikasi web, problem engine, notifikasi/eskalasi, layar NOC, peta
+> topologi, dan profil perangkat (MikroTik, Ubiquiti airMAX, Cisco, UPS) sudah berjalan. Profil vendor perlu
+> diverifikasi dengan perangkat asli — lihat [`docs/PROFIL-PERANGKAT.md`](docs/PROFIL-PERANGKAT.md). Rencana lengkap ada di [`docs/RANCANGAN.md`](docs/RANCANGAN.md).
 
 ## Yang sudah bisa
 
@@ -29,6 +30,7 @@ Network Monitoring System untuk infrastruktur ICT tambang. Engine dan aplikasi d
 | Maintenance | Jadwal per perangkat, per site, atau semua; problem di dalamnya tetap tercatat tetapi tidak dinotifikasi |
 | Notifikasi | **Telegram**, **Email (SMTP)**, **Webhook** (gateway WhatsApp, n8n, sistem tiket). Per kanal: severity minimal, site, kirim saat pulih. Banyak problem sekaligus → 1 pesan ringkasan |
 | Eskalasi | Kanal dengan jeda (mis. 30 menit) hanya dikirimi problem yang **belum di-ACK** selama itu — untuk supervisor/manajemen |
+| **Profil & sensor** | Deteksi otomatis: MikroTik (suhu, tegangan, sinyal/CCQ/rate wireless), Ubiquiti airMAX (sinyal, CCQ, quality, capacity, jarak link), Cisco (CPU, memori, suhu), UPS-MIB & APC (di baterai, muatan, waktu cadangan, beban), plus CPU/memori/disk/suhu standar. Sensor di luar ambang jadi problem. Halaman **Sensor**: Radio & PTP, Daya & UPS, Sistem & suhu |
 | **Topologi** | Peta otomatis dari **LLDP** dan **CDP**, sambungan manual (radio, NVR, kamera), garis putus-putus untuk perangkat induk. Warna garis = pemakaian, **trafik live** tiap 5 detik, perangkat down berdenyut, tetangga yang belum terdaftar tampil abu-abu, tata letak bisa disimpan |
 | **Layar NOC** | Layar penuh untuk TV ruang kontrol (tombol `F`): alarm bertingkat (merah hanya untuk High/Disaster belum di-ACK) dengan **bunyi**, dinding status per site bergantian dengan peta topologi, problem aktif, kejadian 1 jam, port tersibuk. Diperbarui tiap 15 detik |
 

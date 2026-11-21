@@ -411,6 +411,7 @@ func (p *Poller) pollSNMP(ctx context.Context, d store.Device) bool {
 			}
 		}
 	}
+	p.collectSensors(ctx, d, cr, sys.ObjectID, &batch, now)
 	if err := p.Writer.Write(ctx, &batch); err != nil {
 		p.Log.Warn("metrik SNMP tidak terkirim", "perangkat", d.ID, "galat", err)
 	}

@@ -1,6 +1,6 @@
 # Rancangan ANTAREJA NMS (engine mandiri)
 
-Status: **Tahap 2 selesai** (1a, 1b, 2a, 2b) · berikutnya tahap 3 · Dokumen hidup, perbarui setiap ada keputusan desain.
+Status: **Tahap 3 awal selesai** (profil & sensor) · menunggu verifikasi perangkat lapangan · Dokumen hidup, perbarui setiap ada keputusan desain.
 
 ## 1. Sasaran
 
@@ -125,6 +125,6 @@ Engine problem berjalan di collector setelah setiap putaran ping (±1 menit):
 | 1b | Web Laravel: setup awal, login & role (admin/engineer/viewer), tambah/ubah perangkat dengan uji koneksi, daftar & detail perangkat + grafik latensi/trafik, site, kejadian, pengguna, jejak audit | selesai |
 | 2a | Problem engine, korelasi perangkat induk, maintenance, notifikasi Telegram/email/webhook, eskalasi bila belum di-ACK, ambang dari web | selesai |
 | 2b | Topologi dari LLDP-MIB & CISCO-CDP-MIB + sambungan manual + perangkat induk, trafik live (API internal `/v1/live`), Layar NOC | selesai |
-| 3 | **berikutnya:** Profil perangkat: MikroTik, Cisco, Ubiquiti (radio PTP: sinyal, CCQ, kapasitas), Hikvision NVR/kamera, UPS (UPS-MIB), server (HOST-RESOURCES) | |
+| 3 | Profil perangkat (`collector/internal/profiles`, lihat `docs/PROFIL-PERANGKAT.md`): HOST-RESOURCES, ENTITY-SENSOR, MikroTik, Ubiquiti airMAX, Cisco, UPS-MIB, APC; tabel `device_sensors`, problem `sensor`, halaman Sensor. **Sisa:** verifikasi `snmpwalk` lapangan, profil Hikvision, ambang per perangkat | sebagian |
 | 4 | IPAM & konflik IP (ARP), CCTV live view, kualitas jaringan, SLA & laporan bulanan, backup NMS | |
 | 5 | Alat impor dari `antareja-nms` (perangkat, site, grup) dan peralihan | |

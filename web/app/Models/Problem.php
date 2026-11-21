@@ -26,6 +26,7 @@ class Problem extends Model
         'snmp' => 'SNMP tidak terbaca',
         'port_down' => 'Port putus',
         'port_util' => 'Port penuh',
+        'sensor' => 'Sensor',
     ];
 
     protected function casts(): array
