@@ -47,6 +47,7 @@
                 <a href="{{ route('channels.index') }}" class="{{ $nav('channels.*') }}"><x-icon name="bell"/>Notifikasi</a>
                 <a href="{{ route('users.index') }}" class="{{ $nav('users.*') }}"><x-icon name="users"/>Pengguna</a>
                 <a href="{{ route('backups.index') }}" class="{{ $nav('backups.*') }}"><x-icon name="database"/>Backup</a>
+                <a href="{{ route('status.links') }}" class="{{ $nav('status.*') }}"><x-icon name="share"/>Tautan status</a>
                 <a href="{{ route('audit.index') }}" class="{{ $nav('audit.*') }}"><x-icon name="audit"/>Jejak audit</a>
             @endcan
         </nav>

@@ -469,3 +469,12 @@ if (dashPanel) {
         b.focus();
     });
 }
+
+// Tombol salin (mis. tautan status baru)
+$$('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
+    const src = $('[data-copy-src]');
+    src.select();
+    try { await navigator.clipboard.writeText(src.value); } catch { document.execCommand?.('copy'); }
+    b.textContent = 'Tersalin ✓';
+    setTimeout(() => { b.textContent = 'Salin'; }, 2000);
+}));

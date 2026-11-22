@@ -17,7 +17,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class ReportController extends Controller
 {
-    private function compute(Carbon $start, Carbon $end, ?int $siteId): array
+    public function compute(Carbon $start, Carbon $end, ?int $siteId): array
     {
         $rows = DB::select(<<<'SQL'
             WITH p AS (SELECT ?::timestamptz AS s, LEAST(?::timestamptz, now()) AS e),

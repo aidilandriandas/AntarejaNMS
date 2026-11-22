@@ -23,6 +23,7 @@ use App\Http\Controllers\ReportScheduleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SensorController;
 use App\Http\Controllers\SiteController;
+use App\Http\Controllers\StatusLinkController;
 use App\Http\Controllers\TopologyController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,9 @@ Route::post('setup', [AuthController::class, 'storeSetup'])->name('setup.store')
 
 // Dipanggil nginx (auth_request) untuk tiap koneksi video CCTV; tidak memakai middleware auth agar menjawab 401, bukan redirect.
 Route::get('cctv/auth', [CctvController::class, 'auth'])->name('cctv.auth');
+
+// Halaman status hanya-baca lewat tautan rahasia (tanpa login); token diperiksa terhadap hash di database
+Route::get('status/{token}', [StatusLinkController::class, 'show'])->name('status.public')->where('token', '[A-Za-z0-9]{1,64}')->middleware('throttle:60,1');
 
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthController::class, 'showLogin'])->name('login');
@@ -129,6 +133,9 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:admin')->group(function () {
         Route::post('log/pengaturan', [LogController::class, 'settings'])->name('logs.settings');
         Route::post('peta/pengaturan', [MapController::class, 'settings'])->name('map.settings');
+        Route::get('tautan-status', [StatusLinkController::class, 'index'])->name('status.links');
+        Route::post('tautan-status', [StatusLinkController::class, 'store'])->name('status.links.store')->middleware('throttle:20,1');
+        Route::post('tautan-status/{link}/cabut', [StatusLinkController::class, 'revoke'])->name('status.links.revoke')->whereNumber('link');
         Route::post('peta/denah', [MapController::class, 'planStore'])->name('map.plan.store')->middleware('throttle:10,1');
         Route::delete('peta/denah/{plan}', [MapController::class, 'planDestroy'])->name('map.plan.destroy')->whereNumber('plan');
         Route::get('pengguna', [UserController::class, 'index'])->name('users.index');
