@@ -1,6 +1,6 @@
 # Rancangan ANTAREJA NMS (engine mandiri)
 
-Status: **Tahap 6k selesai** (CSP ketat) · menunggu verifikasi perangkat lapangan · Dokumen hidup, perbarui setiap ada keputusan desain.
+Status: **Tahap 6l selesai** (ekspor/impor konfigurasi) · menunggu verifikasi perangkat lapangan · Dokumen hidup, perbarui setiap ada keputusan desain.
 
 ## 1. Sasaran
 
@@ -146,4 +146,5 @@ Engine problem berjalan di collector setelah setiap putaran ping (±1 menit):
 | 6i | Tautan status: `status_links` (SHA-256 token 40 karakter acak, tautan hanya ditampilkan sekali), cakupan site, kedaluwarsa, cabut, hitung pemakaian; halaman `GET /status/{token}` tanpa login, throttle 60/menit, `noindex`, `no-referrer`, `no-store`, tanpa IP/host; nginx tidak mencatat URL `/status/` (map `$antareja_log`) | selesai |
 | 6j | Audit keamanan: header HTTP (CSP, X-Frame-Options, nosniff, HSTS, Referrer/Permissions-Policy), akun nonaktif langsung keluar, sesi lain keluar saat password diganti (`AuthenticateSession`), ringkasan di `docs/KEAMANAN.md` | selesai |
 | 6k | CSP ketat untuk skrip (`script-src 'self'`): skrip inline & atribut `on…` dipindah ke `app.js` (`data-confirm`, `data-autosubmit`, `data-print`, `data-autoreload`), inisialisasi tema dari `/theme-init.js` | selesai |
+| 6l | Ekspor/impor konfigurasi (`App\Services\ConfigTransfer`, format `antareja-config` v1): rahasia opsional AES-256-GCM + PBKDF2-SHA256 200k dari frasa sandi; impor = pratinjau → terapkan dalam satu transaksi, upsert per kunci alami, nilai divalidasi (kategori, versi/level/protokol SNMP, CIDR, port, koordinat), pengaturan hanya awalan yang diizinkan | selesai |
 | berikutnya | Verifikasi profil `snmpwalk` lapangan; profil Hikvision | |

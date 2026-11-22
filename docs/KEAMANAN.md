@@ -53,7 +53,14 @@ Token acak 40 karakter, disimpan sebagai SHA-256 dan hanya ditampilkan sekali; b
 throttle 60/menit; `noindex`, `no-referrer`, `no-store`; tidak menampilkan IP/host/konfigurasi; URL `/status/`
 tidak dicatat di access log nginx. Siapa pun yang memegang tautan bisa membukanya — cabut bila bocor.
 
-## 6. Batasan yang diketahui
+## 6. Ekspor konfigurasi
+
+Berkas ekspor tanpa rahasia hanya berisi nama, host/IP, dan pengaturan — tetap perlakukan sebagai dokumen internal.
+Bila rahasia disertakan, bagian `secrets` dienkripsi AES-256-GCM dengan kunci PBKDF2-SHA256 (200.000 iterasi) dari
+frasa sandi ekspor (min. 12 karakter), terpisah dari `ANTAREJA_APP_KEY`. Frasa sandi tidak disimpan di mana pun; simpan
+terpisah dari berkasnya. Impor & ekspor khusus admin dan tercatat di jejak audit.
+
+## 7. Batasan yang diketahui
 
 - **CSP masih mengizinkan gaya (CSS) inline** (atribut `style` di template & Leaflet). Skrip inline sudah tidak diizinkan.
   Aturan pengembangan: jangan menulis `<script>` inline atau atribut `onclick`/`onsubmit`/`onchange`; pakai atribut
@@ -67,7 +74,7 @@ tidak dicatat di access log nginx. Siapa pun yang memegang tautan bisa membukany
   dari jaringan manajemen yang tepercaya.
 - **Discovery** bisa memindai subnet mana pun yang diisi engineer (maks. /22); gunakan hanya untuk jaringan sendiri.
 
-## 7. Daftar periksa pemasangan
+## 8. Daftar periksa pemasangan
 
 1. `deploy/.env`: `DB_PASSWORD` & `ANTAREJA_APP_KEY` acak; simpan cadangan `ANTAREJA_APP_KEY` di tempat aman
    (tanpa kunci ini semua kredensial terenkripsi tidak bisa dibuka).

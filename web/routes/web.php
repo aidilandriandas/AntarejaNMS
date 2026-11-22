@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CctvController;
 use App\Http\Controllers\ChannelController;
+use App\Http\Controllers\ConfigTransferController;
 use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
@@ -134,6 +135,10 @@ Route::middleware('auth')->group(function () {
         Route::post('log/pengaturan', [LogController::class, 'settings'])->name('logs.settings');
         Route::post('peta/pengaturan', [MapController::class, 'settings'])->name('map.settings');
         Route::get('tautan-status', [StatusLinkController::class, 'index'])->name('status.links');
+        Route::get('ekspor-impor', [ConfigTransferController::class, 'index'])->name('transfer.index');
+        Route::post('ekspor-impor/ekspor', [ConfigTransferController::class, 'export'])->name('transfer.export')->middleware('throttle:10,1');
+        Route::post('ekspor-impor/pratinjau', [ConfigTransferController::class, 'preview'])->name('transfer.preview')->middleware('throttle:10,1');
+        Route::post('ekspor-impor/terapkan', [ConfigTransferController::class, 'apply'])->name('transfer.apply')->middleware('throttle:10,1');
         Route::post('tautan-status', [StatusLinkController::class, 'store'])->name('status.links.store')->middleware('throttle:20,1');
         Route::post('tautan-status/{link}/cabut', [StatusLinkController::class, 'revoke'])->name('status.links.revoke')->whereNumber('link');
         Route::post('peta/denah', [MapController::class, 'planStore'])->name('map.plan.store')->middleware('throttle:10,1');

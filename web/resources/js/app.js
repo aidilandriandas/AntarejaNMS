@@ -503,3 +503,11 @@ $$('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
     b.textContent = 'Tersalin ✓';
     setTimeout(() => { b.textContent = 'Salin'; }, 2000);
 }));
+
+// Kotak centang yang menampilkan/menyembunyikan bagian lain (mis. frasa sandi ekspor)
+$$('[data-toggle-target]').forEach((cb) => {
+    const t = $(cb.dataset.toggleTarget);
+    const sync = () => { if (t) t.hidden = !cb.checked; };
+    cb.addEventListener('change', sync);
+    sync();
+});
