@@ -479,3 +479,13 @@ pre.code.diff .del { background: var(--crit-soft); color: var(--crit); } pre.cod
 .live-all { margin-left: auto; font-size: 12.5px; }
 .port-row.live-on [data-cell-in], .port-row.live-on [data-cell-out] { color: var(--accent); font-variant-numeric: tabular-nums; }
 @media (max-width: 700px) { .live-stats { grid-template-columns: 1fr; } .live-ctl { flex-wrap: wrap; } }
+/* Halaman port */
+.pg-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 1100px) { .pg-grid { grid-template-columns: 1fr; } }
+.pg-stats td.num { font-variant-numeric: tabular-nums; }
+.pg-sw { display: inline-block; width: 12px; height: 4px; border-radius: 2px; margin-right: 8px; vertical-align: middle; background: var(--accent); }
+.pg-sw.out { background: var(--info); }
+.pspark { display: block; }
+.pspark .i { fill: color-mix(in srgb, var(--accent) 25%, transparent); stroke: var(--accent); stroke-width: 1; }
+.pspark .o { fill: color-mix(in srgb, var(--info) 25%, transparent); stroke: var(--info); stroke-width: 1; }
+.pspark .z { stroke: var(--line); stroke-width: 1; }

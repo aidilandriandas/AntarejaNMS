@@ -188,6 +188,10 @@ type Interface struct {
 	InOctets, OutOctets     *big.Int // nil bila tidak tersedia
 	InErrors, OutErrors     *big.Int
 	HC                      bool // counter 64-bit
+	// Paket & discard (nil bila tidak tersedia). Unicast/multicast/broadcast memakai counter 64-bit bila ada.
+	InUcast, OutUcast, InMcast, OutMcast, InBcast, OutBcast *big.Int
+	InDiscards, OutDiscards                                 *big.Int
+	pktHC                                                   map[string]bool
 }
 
 // IF-MIB: ifTable (.2.2.1.x) dan ifXTable (.31.1.1.1.x)
@@ -198,9 +202,54 @@ var ifColumns = map[string]string{
 	"out": ".1.3.6.1.2.1.2.2.1.16", "outerr": ".1.3.6.1.2.1.2.2.1.20",
 	"name": ".1.3.6.1.2.1.31.1.1.1.1", "hcin": ".1.3.6.1.2.1.31.1.1.1.6", "hcout": ".1.3.6.1.2.1.31.1.1.1.10",
 	"highspeed": ".1.3.6.1.2.1.31.1.1.1.15", "alias": ".1.3.6.1.2.1.31.1.1.1.18",
+	// paket: ifInUcastPkts/ifOutUcastPkts (32-bit), ifInDiscards/ifOutDiscards, ifXTable multicast/broadcast 32 & 64-bit
+	"inucast": ".1.3.6.1.2.1.2.2.1.11", "outucast": ".1.3.6.1.2.1.2.2.1.17",
+	"indisc": ".1.3.6.1.2.1.2.2.1.13", "outdisc": ".1.3.6.1.2.1.2.2.1.19",
+	"inmcast": ".1.3.6.1.2.1.31.1.1.1.2", "inbcast": ".1.3.6.1.2.1.31.1.1.1.3",
+	"outmcast": ".1.3.6.1.2.1.31.1.1.1.4", "outbcast": ".1.3.6.1.2.1.31.1.1.1.5",
+	"hcinucast": ".1.3.6.1.2.1.31.1.1.1.7", "hcinmcast": ".1.3.6.1.2.1.31.1.1.1.8", "hcinbcast": ".1.3.6.1.2.1.31.1.1.1.9",
+	"hcoutucast": ".1.3.6.1.2.1.31.1.1.1.11", "hcoutmcast": ".1.3.6.1.2.1.31.1.1.1.12", "hcoutbcast": ".1.3.6.1.2.1.31.1.1.1.13",
 }
 
-var walkOrder = []string{"descr", "type", "speed", "mac", "admin", "oper", "lastchange", "in", "inerr", "out", "outerr", "name", "hcin", "hcout", "highspeed", "alias"}
+// pktCols: kolom paket → field (32-bit diabaikan bila versi 64-bit sudah terbaca).
+var pktCols = map[string]struct {
+	field string
+	hc    bool
+}{
+	"inucast": {"InUcast", false}, "outucast": {"OutUcast", false}, "inmcast": {"InMcast", false}, "inbcast": {"InBcast", false},
+	"outmcast": {"OutMcast", false}, "outbcast": {"OutBcast", false},
+	"hcinucast": {"InUcast", true}, "hcoutucast": {"OutUcast", true}, "hcinmcast": {"InMcast", true}, "hcinbcast": {"InBcast", true},
+	"hcoutmcast": {"OutMcast", true}, "hcoutbcast": {"OutBcast", true},
+}
+
+func (it *Interface) setPkt(field string, v *big.Int, hc bool) {
+	if it.pktHC == nil {
+		it.pktHC = map[string]bool{}
+	}
+	if !hc && it.pktHC[field] {
+		return
+	}
+	if hc {
+		it.pktHC[field] = true
+	}
+	switch field {
+	case "InUcast":
+		it.InUcast = v
+	case "OutUcast":
+		it.OutUcast = v
+	case "InMcast":
+		it.InMcast = v
+	case "OutMcast":
+		it.OutMcast = v
+	case "InBcast":
+		it.InBcast = v
+	case "OutBcast":
+		it.OutBcast = v
+	}
+}
+
+var walkOrder = []string{"descr", "type", "speed", "mac", "admin", "oper", "lastchange", "in", "inerr", "out", "outerr", "name", "hcin", "hcout", "highspeed", "alias",
+	"inucast", "outucast", "indisc", "outdisc", "hcinucast", "hcoutucast", "hcinmcast", "hcoutmcast", "hcinbcast", "hcoutbcast", "inmcast", "outmcast", "inbcast", "outbcast"}
 
 // Interfaces membaca semua port. Kolom yang tidak didukung perangkat dilewati (mis. ifXTable di SNMPv1).
 func (c Client) Interfaces(host string, cr Credentials) ([]Interface, error) {
@@ -221,7 +270,7 @@ func (c Client) Interfaces(host string, cr Credentials) ([]Interface, error) {
 		return it
 	}
 	for _, col := range walkOrder {
-		if cr.Version == "1" && (col == "hcin" || col == "hcout") {
+		if cr.Version == "1" && strings.HasPrefix(col, "hc") {
 			continue // SNMPv1 tidak mendukung Counter64
 		}
 		base := ifColumns[col]
@@ -275,6 +324,14 @@ func (c Client) Interfaces(host string, cr Credentials) ([]Interface, error) {
 				it.InErrors = gosnmp.ToBigInt(v.Value)
 			case "outerr":
 				it.OutErrors = gosnmp.ToBigInt(v.Value)
+			case "indisc":
+				it.InDiscards = gosnmp.ToBigInt(v.Value)
+			case "outdisc":
+				it.OutDiscards = gosnmp.ToBigInt(v.Value)
+			default:
+				if pc, ok := pktCols[col]; ok {
+					it.setPkt(pc.field, gosnmp.ToBigInt(v.Value), pc.hc)
+				}
 			}
 			return nil
 		}

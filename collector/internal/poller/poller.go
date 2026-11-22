@@ -426,6 +426,14 @@ func (p *Poller) pollSNMP(ctx context.Context, d store.Device) bool {
 			addCounter(&batch, "antareja_if_out_octets_total", l, it.OutOctets, now)
 			addCounter(&batch, "antareja_if_in_errors_total", l, it.InErrors, now)
 			addCounter(&batch, "antareja_if_out_errors_total", l, it.OutErrors, now)
+			addCounter(&batch, "antareja_if_in_ucast_pkts_total", l, it.InUcast, now)
+			addCounter(&batch, "antareja_if_out_ucast_pkts_total", l, it.OutUcast, now)
+			addCounter(&batch, "antareja_if_in_mcast_pkts_total", l, it.InMcast, now)
+			addCounter(&batch, "antareja_if_out_mcast_pkts_total", l, it.OutMcast, now)
+			addCounter(&batch, "antareja_if_in_bcast_pkts_total", l, it.InBcast, now)
+			addCounter(&batch, "antareja_if_out_bcast_pkts_total", l, it.OutBcast, now)
+			addCounter(&batch, "antareja_if_in_discards_total", l, it.InDiscards, now)
+			addCounter(&batch, "antareja_if_out_discards_total", l, it.OutDiscards, now)
 		}
 		if err := p.Store.SaveInterfaces(ctx, d.ID, rows); err != nil {
 			p.Log.Error("simpan port gagal", "perangkat", d.ID, "galat", err)

@@ -167,7 +167,7 @@ export function initLive() {
 
     $$('[data-live-port]').forEach((b) => b.addEventListener('click', (e) => {
         e.stopPropagation(); // jangan buka grafik riwayat
-        open(b.closest('[data-port]'));
+        open(b.closest('[data-port]') || document.querySelector(`[data-port="${b.dataset.livePort}"]`));
     }));
     $$('[data-live-int]', card).forEach((b) => b.addEventListener('click', () => {
         interval = Number(b.dataset.liveInt);

@@ -72,6 +72,18 @@ class Metrics
         return $out;
     }
 
+    /** Satu angka dari kueri instan (deret pertama), null bila tidak ada data. */
+    public function scalar(string $query): ?float
+    {
+        try {
+            $v = $this->http()->get('/api/v1/query', ['query' => $query])->json('data.result.0.value.1');
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return is_numeric($v) ? (float) $v : null;
+    }
+
     /** Nilai terkini per label (mis. trafik per port): [nilai label => angka]. */
     public function instant(string $query, string $byLabel): array
     {

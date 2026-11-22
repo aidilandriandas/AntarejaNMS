@@ -65,6 +65,13 @@ class DeviceController extends Controller
                 'in' => $metrics->instant("rate(antareja_if_in_octets_total{$sel}[15m]) * 8", 'if_index'),
                 'out' => $metrics->instant("rate(antareja_if_out_octets_total{$sel}[15m]) * 8", 'if_index'),
             ];
+            // Grafik mini 24 jam per port (satu kueri per arah untuk semua port perangkat)
+            $end = time() - time() % 1800;
+            foreach (['in', 'out'] as $dir) {
+                foreach ($metrics->matrix("rate(antareja_if_{$dir}_octets_total{$sel}[30m]) * 8", $end - 86400, $end, 1800) as [$l, $vals]) {
+                    $traffic['spark'][(int) ($l['if_index'] ?? 0)][$dir] = $vals;
+                }
+            }
         }
 
         return view('devices.show', [

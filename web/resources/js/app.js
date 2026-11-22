@@ -58,6 +58,7 @@ $$('form[data-confirm]').forEach((f) => f.addEventListener('submit', (e) => {
 
 // Klik tombol di dalam baris port tidak ikut memilih grafik port
 $$('form[data-stop]').forEach((f) => f.addEventListener('click', (e) => e.stopPropagation()));
+$$('[data-stop-row]').forEach((a) => a.addEventListener('click', (e) => e.stopPropagation()));
 
 // Form maintenance: tampilkan isian sesuai cakupan
 const scope = $('[data-scope]');
@@ -270,6 +271,9 @@ if (card) {
 // ---------- Trafik live port (halaman perangkat) ----------
 if (document.querySelector('[data-live-card]')) {
     import('./livetraffic.js').then(({ initLive }) => initLive());
+}
+if (document.querySelector('[data-port-graphs]')) {
+    import('./portgraphs.js').then(({ initPortGraphs }) => initPortGraphs());
 }
 
 // ---------- Halaman topologi ----------

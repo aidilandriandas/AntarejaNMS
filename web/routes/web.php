@@ -19,6 +19,7 @@ use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\IpamController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NocController;
+use App\Http\Controllers\PortController;
 use App\Http\Controllers\ProblemController;
 use App\Http\Controllers\QualityController;
 use App\Http\Controllers\ReportController;
@@ -119,6 +120,8 @@ Route::middleware('auth')->group(function () {
     });
     Route::get('perangkat/{device}', [DeviceController::class, 'show'])->name('devices.show');
     Route::get('perangkat/{device}/grafik', [DeviceController::class, 'metrics'])->name('devices.metrics');
+    Route::get('perangkat/{device}/port/{ifIndex}', [PortController::class, 'show'])->name('ports.show')->whereNumber('ifIndex');
+    Route::get('perangkat/{device}/port/{ifIndex}/data', [PortController::class, 'data'])->name('ports.data')->whereNumber('ifIndex');
     Route::post('perangkat/{device}/live', [DeviceController::class, 'live'])->name('devices.live')->middleware('throttle:150,1');
 
     Route::get('site', [SiteController::class, 'index'])->name('sites.index');

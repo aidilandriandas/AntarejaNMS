@@ -60,14 +60,14 @@
 
         @if($device->snmp_enabled)
         <section class="card" data-ports-card>
-            <div class="hd"><h2>Port</h2><span class="sub">{{ $device->ports->count() }} port · klik baris untuk grafik riwayat, <b>Live</b> untuk trafik saat ini</span>
+            <div class="hd"><h2>Port</h2><span class="sub">{{ $device->ports->count() }} port · klik nama port untuk grafik lengkap, baris untuk grafik ringkas, <b>Live</b> untuk trafik saat ini</span>
                 @if($device->ports->isNotEmpty())<label class="check live-all"><input type="checkbox" data-live-all><span>Live semua port</span></label>@endif</div>
             <div class="bd flush">
                 @if($device->ports->isEmpty())
                     <div class="empty">{{ $device->snmp_ok === false ? 'SNMP gagal: ' . $device->snmp_error : 'Data port muncul setelah pembacaan SNMP pertama.' }}</div>
                 @else
                 <div class="table-wrap"><table class="t">
-                    <thead><tr><th>Port</th><th>Status</th><th class="num">Kecepatan</th><th class="num">Masuk</th><th class="num">Keluar</th><th>Pemakaian</th><th></th><th title="Problem bila port putus atau penuh">Pantau</th></tr></thead>
+                    <thead><tr><th>Port</th><th>Status</th><th class="num">Kecepatan</th><th class="num">Masuk</th><th class="num">Keluar</th><th>Pemakaian</th><th>24 jam</th><th></th><th title="Problem bila port putus atau penuh">Pantau</th></tr></thead>
                     <tbody>
                     @foreach($device->ports as $p)
                         @php
@@ -75,12 +75,13 @@
                             $util = $p->speed_bps > 0 && ($in !== null || $out !== null) ? min(100, max($in ?? 0, $out ?? 0) / $p->speed_bps * 100) : null;
                         @endphp
                         <tr class="port-row {{ $p->oper_up ? '' : 'is-off' }}" data-port="{{ $p->if_index }}" data-port-name="{{ $p->label() }}" data-speed="{{ (int) $p->speed_bps }}" data-up="{{ $p->oper_up ? 1 : 0 }}" tabindex="0">
-                            <td class="name">{{ $p->label() }}<small>{{ $p->alias ?: ($p->descr !== $p->name ? $p->descr : '') }}</small></td>
+                            <td class="name"><a href="{{ route('ports.show', [$device, $p->if_index]) }}" data-stop-row>{{ $p->label() }}</a><small>{{ $p->alias ?: ($p->descr !== $p->name ? $p->descr : '') }}</small></td>
                             <td>@if(! $p->admin_up)<span class="badge">dimatikan</span>@elseif($p->oper_up)<span class="badge ok">up</span>@else<span class="badge">down</span>@endif</td>
                             <td class="num">{{ $p->speed_bps ? \App\Support\Fmt::bps((float) $p->speed_bps) : '–' }}</td>
                             <td class="num" data-cell-in>{{ \App\Support\Fmt::bps($in) }}</td>
                             <td class="num" data-cell-out>{{ \App\Support\Fmt::bps($out) }}</td>
                             <td data-cell-util>@if($util !== null)<div class="bar {{ $util >= 90 ? 'crit' : ($util >= 70 ? 'warn' : '') }}" title="{{ number_format($util, 1, ',', '.') }}%"><span style="width:{{ max(1, $util) }}%"></span></div>@else<span class="muted">–</span>@endif</td>
+                            <td>@include('ports.spark', ['sp' => $traffic['spark'][$p->if_index] ?? []])</td>
                             <td><button type="button" class="btn sm live-btn" data-live-port="{{ $p->if_index }}" title="Trafik live port {{ $p->label() }}">Live</button></td>
                             <td>
                                 @php($mon = in_array($p->if_index, $monitored))
