@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\CapacityController;
 use App\Http\Controllers\CctvController;
 use App\Http\Controllers\ChannelController;
 use App\Http\Controllers\ConfigTransferController;
@@ -138,6 +139,8 @@ Route::middleware('auth')->group(function () {
     Route::get('ipam', [IpamController::class, 'index'])->name('ipam.index');
     Route::get('ipam/cari', [IpamController::class, 'search'])->name('ipam.search');
     Route::get('ipam/subnet/{subnet}', [IpamController::class, 'show'])->name('ipam.show')->whereNumber('subnet');
+    Route::get('kapasitas', [CapacityController::class, 'index'])->name('capacity.index');
+    Route::get('kapasitas.csv', [CapacityController::class, 'csv'])->name('capacity.csv');
     Route::get('layanan', [ServiceController::class, 'index'])->name('services.index');
     Route::get('layanan.csv', [ServiceController::class, 'csv'])->name('services.csv');
     Route::get('layanan/{service}', [ServiceController::class, 'show'])->name('services.show')->whereNumber('service');
@@ -190,6 +193,7 @@ Route::middleware('auth')->group(function () {
         Route::post('notifikasi/{channel}/uji', [ChannelController::class, 'test'])->name('channels.test')->middleware('throttle:10,1');
         Route::put('ambang', [ChannelController::class, 'thresholds'])->name('thresholds.update');
         Route::put('laporan/sla/target', [ReportController::class, 'target'])->name('reports.sla.target');
+        Route::put('kapasitas/batas', [CapacityController::class, 'threshold'])->name('capacity.threshold');
 
         Route::get('backup', [BackupController::class, 'index'])->name('backups.index');
         Route::post('backup', [BackupController::class, 'store'])->name('backups.store')->middleware('throttle:6,1');

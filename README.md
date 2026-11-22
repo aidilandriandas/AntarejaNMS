@@ -65,6 +65,7 @@ berlisensi tertutup milik perusahaan. Lihat [`LICENSE`](LICENSE), [`docs/CLEAN-R
 | Ringkasan | **Bisa diatur per pengguna** (tombol *Atur tampilan*): pilih widget, urutan, dan lebar (setengah/penuh) — angka utama, problem aktif, kejadian 24 jam, latensi & loss tertinggi, per site, sensor di luar ambang, kamera bermasalah, syslog error, perubahan konfigurasi, maintenance, peta lokasi |
 | Lainnya | Site, riwayat kejadian dengan filter, pengguna, jejak audit, ganti password, tema terang/gelap, tampilan HP |
 | **Problem** | Dinilai tiap menit: perangkat down, packet loss & latensi (rata-rata 5 menit), SNMP gagal, port dipantau putus/penuh. Selesai otomatis saat pulih; ACK dengan catatan |
+| **Kapasitas port** | Untuk port yang ditandai *pantau*: puncak harian (persentil 95), pemakaian vs kecepatan port, tren 30/90 hari, dan **perkiraan tanggal penuh** (batas bawaan 80%, bisa diubah admin). Urut dari yang paling mendesak, grafik kecil per port, CSV |
 | **SLA layanan** | Ketersediaan per layanan yang dipakai pengguna (mis. *CCTV Pit A*, *Internet kantor*). Layanan = komponen; komponen = perangkat + syarat "minimal N hidup" (jalur seri atau perangkat cadangan). Status sekarang (Normal / Tanpa cadangan / Terganggu), ketersediaan bulanan vs target per layanan, daftar gangguan & komponen penyebab, sisa jatah downtime, riwayat 12 bulan, CSV, widget Ringkasan |
 | **Insiden** | Satu gangguan nyata = satu insiden berisi semua problem terkait. Dibuat otomatis (problem Disaster, atau ≥ 3 problem High di satu site dalam 10 menit; anak yang terdampak induk ikut masuk) atau manual (centang problem → *Buat insiden*). Alur: Terbuka → Ditangani (penanggung jawab) → Pulih (otomatis) → Ditutup (wajib isi penyebab & tindakan). Kronologi & catatan tim, MTTR 30 hari, ekspor CSV |
 | Korelasi | Isi *perangkat induk* (uplink). Bila induk down, problem anak ditandai **terdampak** dan tidak membanjiri notifikasi |
@@ -363,6 +364,7 @@ Hapus community dari nama berkas/isi sebelum dikirim. Detail: [`docs/PROFIL-PERA
 | Layar NOC (TV ruang kontrol) | *Layar NOC*, login akun viewer dengan *Ingat saya*, tekan `F`, klik **SUARA** sekali, pilih **OTOMATIS** |
 | Peta lokasi | *Peta lokasi → Atur posisi* → pilih site → klik di peta / tempel koordinat |
 | Status untuk manajemen tanpa akun | *Administrasi → Tautan status* |
+| Rencana upgrade link / bandwidth | *Kapasitas port* (tandai dulu port penting sebagai *pantau* di halaman perangkat) |
 | SLA per layanan untuk manajemen | *SLA layanan* → *Tambah layanan* → tambah komponen (pilih perangkat, isi minimal hidup) |
 | Catat gangguan besar, penanggung jawab, penyebab & tindakan | *Insiden* (otomatis) atau *Problem* → centang → *Buat insiden* |
 | Jadwal pekerjaan (alarm tidak dikirim) | *Maintenance* |

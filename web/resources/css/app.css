@@ -453,3 +453,10 @@ pre.code.diff .del { background: var(--crit-soft); color: var(--crit); } pre.cod
 /* SLA layanan */
 .sdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--off); vertical-align: 1px; }
 .sdot.ok { background: var(--ok); } .sdot.crit { background: var(--crit); }
+/* Kapasitas */
+.spark { display: block; overflow: visible; }
+.spark .val { fill: none; stroke: var(--info); stroke-width: 1.5; }
+.spark .trend { stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 3 3; }
+.spark .lim { stroke: var(--crit); stroke-width: 1; opacity: .7; }
+.ubar { width: 70px; height: 6px; border-radius: 3px; background: var(--surface-2); display: inline-block; margin-right: 8px; vertical-align: middle; overflow: hidden; }
+.ubar span { display: block; height: 100%; background: var(--ok); } .ubar span.warn { background: var(--warn); } .ubar span.crit { background: var(--crit); }

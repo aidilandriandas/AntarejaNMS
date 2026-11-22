@@ -48,6 +48,30 @@ class Metrics
         return $out;
     }
 
+    /**
+     * Semua deret dari satu kueri rentang: [[label => nilai], [unix => angka]][].
+     */
+    public function matrix(string $query, int $start, int $end, int $step): array
+    {
+        try {
+            $res = $this->http()->timeout(60)->get('/api/v1/query_range', ['query' => $query, 'start' => $start, 'end' => $end, 'step' => $step . 's']);
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($res->json('data.result') ?? [] as $r) {
+            $vals = [];
+            foreach ($r['values'] ?? [] as [$ts, $v]) {
+                if (is_numeric($v)) {
+                    $vals[(int) $ts] = (float) $v;
+                }
+            }
+            $out[] = [$r['metric'] ?? [], $vals];
+        }
+
+        return $out;
+    }
+
     /** Nilai terkini per label (mis. trafik per port): [nilai label => angka]. */
     public function instant(string $query, string $byLabel): array
     {

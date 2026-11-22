@@ -15,6 +15,7 @@
     <a href="#ack">ACK, eskalasi & notifikasi</a>
     <a href="#insiden">Insiden</a>
     <a href="#layanan">SLA layanan</a>
+    <a href="#kapasitas">Kapasitas port</a>
     <a href="#maintenance">Maintenance & perangkat induk</a>
     <a href="#noc">Layar NOC</a>
     <a href="#sensor">Ambang sensor bawaan</a>
@@ -91,6 +92,15 @@
         <li>Jalur seri (Core → Radio PTP → Switch): semua wajib hidup — isi minimal = jumlah perangkat, atau satu komponen per perangkat. Perangkat cadangan (ISP 1 &amp; ISP 2): isi minimal 1.</li>
         <li>Status: <span class="badge ok">Normal</span> semua hidup · <span class="badge warn">Tanpa cadangan</span> layanan jalan tetapi ada perangkat down (segera perbaiki sebelum cadangannya ikut mati) · <span class="badge crit">Terganggu</span> layanan tidak jalan.</li>
         <li>Ketersediaan dihitung dari riwayat down perangkat (gangguan saat maintenance tidak dihitung), mulai sejak perangkat ditambahkan. <b>Sisa jatah downtime</b> = berapa lama lagi layanan boleh mati bulan ini agar tetap memenuhi target.</li>
+    </ul>
+</div></section>
+
+<section class="card" id="kapasitas"><div class="hd"><h2>Kapasitas port</h2></div><div class="bd">
+    <ul class="help-list">
+        <li>Hanya port yang ditandai <b>pantau</b> (halaman perangkat → tabel port). Tandai uplink, link PTP, dan port ke ISP.</li>
+        <li><b>Puncak harian</b> = persentil 95 trafik hari itu (5% waktu tersibuk diabaikan agar lonjakan sesaat tidak dihitung). Arah masuk atau keluar, mana yang lebih tinggi.</li>
+        <li><b>Perkiraan penuh</b> = kapan garis tren puncak harian mencapai batas (bawaan 80% kecepatan port). Butuh minimal 7 hari data; makin panjang datanya makin bisa dipercaya. "Tren lemah" berarti trafik naik-turun tidak beraturan, perkiraannya kurang bisa diandalkan.</li>
+        <li>Pastikan kecepatan port benar (radio/PTP kadang melaporkan kecepatan Ethernet, bukan kapasitas radio sebenarnya).</li>
     </ul>
 </div></section>
 
