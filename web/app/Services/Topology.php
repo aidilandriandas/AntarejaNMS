@@ -27,6 +27,7 @@ class Topology
         $maint = DB::table('problems')->whereNull('resolved_at')->where('suppressed', 'maintenance')->whereIn('device_id', $ids ?: [0])
             ->pluck('device_id')->flip();
 
+        $urlTpl = route('devices.show', ['device' => '__ID__']); // dibuat sekali (route() per node mahal untuk ribuan perangkat)
         $nodes = [];
         foreach ($devices as $d) {
             $state = $d->status === 'down' ? 'down' : ($d->status === 'unknown' ? 'unknown' : 'up');
@@ -38,22 +39,24 @@ class Topology
             }
             $node = ['id' => $d->id, 'label' => $d->name, 'host' => $d->host, 'site' => $d->site?->code, 'category' => $d->category,
                 'state' => $state, 'rtt' => $d->last_rtt_ms, 'reason' => $d->status === 'down' ? $d->status_reason : null,
-                'url' => route('devices.show', $d->id)];
+                'url' => str_replace('__ID__', (string) $d->id, $urlTpl)];
             if (isset($positions[$d->id])) {
                 [$node['x'], $node['y']] = $positions[$d->id];
             }
             $nodes[] = $node;
         }
 
-        $ports = DB::table('interfaces')->whereIn('device_id', $ids ?: [0])
-            ->get(['device_id', 'if_index', 'name', 'speed_bps', 'oper_up', 'util_pct', 'in_bps', 'out_bps'])
-            ->keyBy(fn ($p) => $p->device_id . ':' . $p->if_index);
-        $port = fn ($dev, $idx) => $idx ? ($ports[$dev . ':' . $idx] ?? null) : null;
+        // Port dimuat SETELAH sambungan diketahui — hanya port yang menjadi ujung sambungan (bukan semua port semua perangkat)
+        $ports = collect();
+        $port = function ($dev, $idx) use (&$ports) {
+            return $idx ? ($ports[$dev . ':' . $idx] ?? null) : null;
+        };
         $snmp = $devices->pluck('snmp_enabled', 'id');
 
         $edges = [];
         $pairs = [];
-        $addEdge = function (int $a, ?int $ai, int $b, ?int $bi, string $source, ?int $linkId = null, ?string $note = null) use (&$edges, &$pairs, $port, $snmp, $idSet) {
+        $byPair = []; // pairKey => indeks sambungan di $edges
+        $addEdge = function (int $a, ?int $ai, int $b, ?int $bi, string $source, ?int $linkId = null, ?string $note = null) use (&$edges, &$pairs, &$byPair, $idSet) {
             if (! isset($idSet[$a], $idSet[$b])) {
                 return;
             }
@@ -63,9 +66,10 @@ class Topology
             }
             $key = "$a:" . ($ai ?? '?') . "-$b:" . ($bi ?? '?');
             $pairKey = "$a-$b";
-            foreach ($edges as $i => $e) {
+            foreach ($byPair[$pairKey] ?? [] as $i) {
+                $e = $edges[$i];
                 // gabungkan sumber yang sama-sama menunjuk pasangan port ini (atau port tak diketahui di salah satu sisi)
-                if ($e['pair'] === $pairKey && (($e['a_if'] ?? null) === $ai || $ai === null || ($e['a_if'] ?? null) === null)
+                if ((($e['a_if'] ?? null) === $ai || $ai === null || ($e['a_if'] ?? null) === null)
                     && (($e['b_if'] ?? null) === $bi || $bi === null || ($e['b_if'] ?? null) === null)) {
                     $edges[$i]['a_if'] ??= $ai;
                     $edges[$i]['b_if'] ??= $bi;
@@ -77,6 +81,7 @@ class Topology
                 }
             }
             $pairs[$pairKey] = true;
+            $byPair[$pairKey][] = count($edges);
             $edges[] = ['id' => $key, 'pair' => $pairKey, 'from' => $a, 'to' => $b, 'a_if' => $ai, 'b_if' => $bi, 'sources' => [$source], 'link_id' => $linkId, 'note' => $note];
         };
 
@@ -89,6 +94,36 @@ class Topology
         foreach ($devices as $d) {
             if ($d->parent_id && ! isset($pairs[min($d->id, $d->parent_id) . '-' . max($d->id, $d->parent_id)])) {
                 $addEdge($d->id, null, $d->parent_id, null, 'induk');
+            }
+        }
+
+        $unknown = DB::table('neighbors')->whereIn('device_id', $ids ?: [0])->whereNull('remote_device_id')
+            ->limit(200)->get(['device_id', 'local_if_index', 'remote_name', 'remote_ip', 'remote_port', 'remote_platform', 'protocol']);
+        $need = [];
+        foreach ($edges as $e) {
+            foreach ([[$e['from'], $e['a_if']], [$e['to'], $e['b_if']]] as [$d, $i]) {
+                if ($i) {
+                    $need[(int) $d][(int) $i] = true;
+                }
+            }
+        }
+        foreach ($unknown as $n) {
+            if ($n->local_if_index) {
+                $need[(int) $n->device_id][(int) $n->local_if_index] = true;
+            }
+        }
+        $pairList = [];
+        foreach ($need as $d => $idx) {
+            foreach (array_keys($idx) as $i) {
+                $pairList[] = [$d, $i];
+            }
+        }
+        foreach (array_chunk($pairList, 5000) as $chunk) {
+            $values = implode(',', array_fill(0, count($chunk), '(?::bigint, ?::int)'));
+            $rows = DB::select("SELECT i.device_id, i.if_index, i.name, i.speed_bps, i.oper_up, i.util_pct, i.in_bps, i.out_bps
+                FROM interfaces i JOIN (VALUES {$values}) AS v(d, x) ON i.device_id = v.d AND i.if_index = v.x", array_merge(...$chunk));
+            foreach ($rows as $r) {
+                $ports[$r->device_id . ':' . $r->if_index] = $r;
             }
         }
 
@@ -117,15 +152,15 @@ class Topology
         unset($e);
 
         // Tetangga yang belum terdaftar → node abu-abu
-        $unknown = DB::table('neighbors')->whereIn('device_id', $ids ?: [0])->whereNull('remote_device_id')
-            ->limit(200)->get(['device_id', 'local_if_index', 'remote_name', 'remote_ip', 'remote_port', 'remote_platform', 'protocol']);
+        $nodeIds = array_flip(array_map(fn ($n) => (string) $n['id'], $nodes));
         foreach ($unknown as $n) {
             $label = $n->remote_name ?: $n->remote_ip;
             if (! $label) {
                 continue;
             }
             $nid = 'x:' . strtolower($label);
-            if (! collect($nodes)->contains('id', $nid)) {
+            if (! isset($nodeIds[$nid])) {
+                $nodeIds[$nid] = true;
                 $nodes[] = ['id' => $nid, 'label' => $label, 'host' => $n->remote_ip, 'state' => 'external', 'category' => 'other',
                     'platform' => $n->remote_platform, 'url' => null];
             }
