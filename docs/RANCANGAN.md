@@ -1,6 +1,6 @@
 # Rancangan ANTAREJA NMS (engine mandiri)
 
-Status: **Tahap 5c selesai** (backup konfigurasi SSH) · menunggu verifikasi perangkat lapangan · Dokumen hidup, perbarui setiap ada keputusan desain.
+Status: **Tahap 6a selesai** (penerima syslog) · menunggu verifikasi perangkat lapangan · Dokumen hidup, perbarui setiap ada keputusan desain.
 
 ## 1. Sasaran
 
@@ -135,4 +135,5 @@ Engine problem berjalan di collector setelah setiap putaran ping (±1 menit):
 | 5a | Cek kesehatan gambar CCTV (collector, lewat go2rtc; gelap / tertutup / beku = sidik seluruh piksel identik 3× / tanpa sinyal setelah 2× gagal) → problem `camera`; impor perangkat dari CSV | selesai |
 | 5b | Kualitas jaringan (ping min/maks/jitter, halaman peringkat avg/p95/maks/jitter/loss), ambang per perangkat (`devices.thresholds` JSON: latensi, loss, util, kelas sensor) | selesai |
 | 5c | Backup konfigurasi via SSH (MikroTik, Cisco IOS; hanya baca): jadwal 24 jam + manual, normalisasi baris volatil, versi terenkripsi (retensi 50), diff Myers, kejadian `config_change`, TOFU host key + reset | selesai |
+| 6a | Syslog: penerima UDP/TCP (port 5514 di container, 514 di VM; collector tetap non-root), urai RFC 3164/5424 toleran, cocok IP → perangkat (host + `device_ips`), batch `COPY` tiap 1 detik / 1.000 baris, batas laju 200/detik (burst 1.000) per IP, antrean 20.000, retensi `syslog.keep_days`, tingkat ≤ `syslog.event_severity` → kejadian `syslog` (maks. 1 per perangkat per 10 menit), indeks trigram untuk cari teks | selesai |
 | berikutnya | Verifikasi profil `snmpwalk` lapangan; profil Hikvision | |

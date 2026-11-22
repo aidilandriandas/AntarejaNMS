@@ -21,6 +21,7 @@ class DeviceEvent extends Model
         'snmp_fail' => ['SNMP gagal', 'warn', 'plug-off'],
         'snmp_ok' => ['SNMP pulih', 'ok', 'plug'],
         'config_change' => ['Konfigurasi berubah', 'info', 'edit'],
+        'syslog' => ['Syslog kritis', 'crit', 'terminal'],
     ];
 
     protected function casts(): array

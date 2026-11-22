@@ -39,6 +39,7 @@ Network Monitoring System untuk infrastruktur ICT tambang. Engine dan aplikasi d
 | **Kualitas jaringan** | Peringkat link terburuk 24 jam / 7 hari / 30 hari: rata-rata, p95, maksimum latensi, **jitter**, loss, ketersediaan ping. Grafik latensi perangkat dengan pita min–maks (gaya SmokePing) |
 | **Ambang per perangkat** | Latensi, loss, port penuh, sinyal radio, CCQ, suhu, CPU, baterai & waktu cadangan UPS bisa diatur khusus per perangkat (mis. radio PTP jarak jauh lebih longgar) |
 | **Backup konfigurasi** | MikroTik (`/export hide-sensitive`) & Cisco IOS (`show running-config`) via SSH tiap 24 jam atau tombol *Backup sekarang*. **Hanya baca**: perintah dipatok, tidak bisa diisi pengguna. Versi terenkripsi (50 terakhir), **diff** berwarna, kejadian *konfigurasi berubah*, unduh `.rsc`/`.txt`. Host key dicatat saat pertama; bila berubah backup ditolak sampai engineer mereset. Hanya admin/engineer |
+| **Log (syslog)** | Penerima syslog UDP/TCP port 514 (RFC 3164 & 5424, format MikroTik & Cisco). Log dicocokkan ke perangkat lewat IP pengirim (IP manajemen atau IP interface dari IPAM); pengirim belum terdaftar tetap tercatat. Cari teks, filter tingkat/site/program/IP, mode *Live*, perangkat paling banyak error, log terbaru di detail perangkat. Log Critical ke atas → kejadian perangkat. Batas laju per pengirim agar banjir log tidak membebani server. Retensi diatur dari web (bawaan 14 hari) |
 | **Backup** | Backup database harian otomatis (jam & jumlah simpanan diatur dari web) + tombol *Backup sekarang*, unduh dari web, pemulihan dengan `./antareja.sh restore`. Arahkan `BACKUP_DIR` ke NAS agar aman bila VM rusak |
 | **SLA bulanan** | Ketersediaan per perangkat & per site, downtime, jumlah gangguan, rata-rata waktu pulih; jam maintenance tidak dihitung; target SLA; ekspor CSV (Excel) & cetak/PDF |
 | **Topologi** | Peta otomatis dari **LLDP** dan **CDP**, sambungan manual (radio, NVR, kamera), garis putus-putus untuk perangkat induk. Warna garis = pemakaian, **trafik live** tiap 5 detik, perangkat down berdenyut, tetangga yang belum terdaftar tampil abu-abu, tata letak bisa disimpan |
@@ -165,6 +166,7 @@ dalam backup tidak bisa dibuka.
 | `BACKUP_DIR` | `./backups` | Folder backup di VM (disarankan folder NAS yang di-mount) |
 | `APP_URL` | — | Alamat web, mis. `https://192.168.x.x:8443` |
 | `HTTPS_PORT` / `HTTP_PORT` | `8443` / `8080` | Port web (HTTP dialihkan ke HTTPS) |
+| `SYSLOG_PORT` | `514` | Port syslog di VM (UDP & TCP). Buka di firewall VM bila perangkat berada di jaringan lain |
 
 ## Struktur repositori
 

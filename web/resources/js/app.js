@@ -327,3 +327,22 @@ if (cctv) {
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) close(); });
     });
 }
+
+// Halaman Log: muat ulang otomatis tiap 10 detik bila "Live" dicentang (hanya di halaman terbaru)
+const logLive = $('[data-log-live]');
+if (logLive) {
+    const KEY = 'antareja.logLive';
+    const first = !new URLSearchParams(location.search).has('before');
+    try { logLive.checked = first && localStorage.getItem(KEY) === '1'; } catch { /* penyimpanan tidak tersedia */ }
+    logLive.disabled = !first;
+    let timer = null;
+    const arm = () => {
+        clearInterval(timer);
+        if (logLive.checked) timer = setInterval(() => { if (!document.hidden) location.reload(); }, 10000);
+    };
+    logLive.addEventListener('change', () => {
+        try { localStorage.setItem(KEY, logLive.checked ? '1' : '0'); } catch { /* abaikan */ }
+        arm();
+    });
+    arm();
+}

@@ -10,6 +10,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\DeviceImportController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\LogController;
 use App\Http\Controllers\IpamController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NocController;
@@ -88,6 +89,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('site', [SiteController::class, 'index'])->name('sites.index');
     Route::get('kejadian', [EventController::class, 'index'])->name('events.index');
+    Route::get('log', [LogController::class, 'index'])->name('logs.index');
     Route::get('problem', [ProblemController::class, 'index'])->name('problems.index');
     Route::get('maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
     Route::get('sensor', [SensorController::class, 'index'])->name('sensors.index');
@@ -110,6 +112,7 @@ Route::middleware('auth')->group(function () {
     Route::put('profil/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     Route::middleware('can:admin')->group(function () {
+        Route::post('log/pengaturan', [LogController::class, 'settings'])->name('logs.settings');
         Route::get('pengguna', [UserController::class, 'index'])->name('users.index');
         Route::get('pengguna/tambah', [UserController::class, 'create'])->name('users.create');
         Route::post('pengguna', [UserController::class, 'store'])->name('users.store');

@@ -133,6 +133,10 @@
                 @if($device->notes)<dt>Catatan</dt><dd style="white-space:pre-line">{{ $device->notes }}</dd>@endif
             </dl>
         </div></section>
+        @if($logs->isNotEmpty())
+        <section class="card"><div class="hd"><h2>Log terbaru</h2><a class="sub" href="{{ route('logs.index', ['device' => $device->id]) }}">Semua →</a></div>
+            <div class="bd flush"><ul class="feed logfeed">@foreach($logs as $l)<li><span class="badge plain {{ $l->sevTone() }}">{{ $l->sevLabel() }}</span><div class="msg mono">{{ \Illuminate\Support\Str::limit($l->message, 160) }}@if($l->app)<small>{{ $l->app }}</small>@endif</div><time title="{{ $l->received_at->format('d/m/Y H:i:s') }}">{{ $l->received_at->diffForHumans(short: true) }}</time></li>@endforeach</ul></div></section>
+        @endif
         <section class="card"><div class="hd"><h2>Kejadian terbaru</h2><a class="sub" href="{{ route('events.index', ['q' => $device->host]) }}">Semua →</a></div>
             <div class="bd flush">@include('events.feed', ['events' => $events, 'showDevice' => false])</div></section>
     </div>

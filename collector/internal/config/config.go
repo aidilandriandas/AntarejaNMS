@@ -19,6 +19,8 @@ type Config struct {
 	BaseURL        string // alamat web untuk tautan di notifikasi
 	Go2rtcURL      string // go2rtc internal untuk cek gambar CCTV; kosong = mati
 	CCTVInterval   time.Duration
+	SyslogUDP      string // mis. ":5514"; kosong = penerima syslog UDP mati
+	SyslogTCP      string
 	PingInterval   time.Duration
 	PingCount      int
 	PingTimeout    time.Duration
@@ -42,6 +44,8 @@ func Load() (Config, error) {
 		BaseURL:        os.Getenv("ANTAREJA_BASE_URL"),
 		Go2rtcURL:      os.Getenv("ANTAREJA_GO2RTC_URL"),
 		CCTVInterval:   dur("ANTAREJA_CCTV_INTERVAL", 15*time.Minute),
+		SyslogUDP:      os.Getenv("ANTAREJA_SYSLOG_UDP"),
+		SyslogTCP:      os.Getenv("ANTAREJA_SYSLOG_TCP"),
 		PingInterval:   dur("ANTAREJA_PING_INTERVAL", 60*time.Second),
 		PingCount:      num("ANTAREJA_PING_COUNT", 3),
 		PingTimeout:    dur("ANTAREJA_PING_TIMEOUT", 2*time.Second),

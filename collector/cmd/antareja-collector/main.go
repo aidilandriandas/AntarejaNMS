@@ -39,6 +39,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/secret"
 	"github.com/aidilandriandas/antarejanms/collector/internal/snmp"
 	"github.com/aidilandriandas/antarejanms/collector/internal/store"
+	"github.com/aidilandriandas/antarejanms/collector/internal/syslog"
 )
 
 var version = "0.2.0-dev"
@@ -211,6 +212,15 @@ func run() error {
 				}
 			}
 		}()
+
+		if cfg.SyslogUDP != "" || cfg.SyslogTCP != "" {
+			sl := &syslog.Server{DB: db, Log: log, UDPAddr: cfg.SyslogUDP, TCPAddr: cfg.SyslogTCP}
+			go func() {
+				if err := sl.Run(ctx); err != nil {
+					log.Error("penerima syslog gagal", "galat", err)
+				}
+			}()
+		}
 
 		log.Info("ANTAREJA collector berjalan", "versi", version, "ping", cfg.PingInterval, "snmp", cfg.SNMPInterval,
 			"metrik", cfg.VMURL != "")

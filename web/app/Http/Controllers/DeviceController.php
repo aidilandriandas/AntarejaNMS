@@ -71,6 +71,7 @@ class DeviceController extends Controller
             'device' => $device,
             'traffic' => $traffic,
             'events' => $device->events()->limit(20)->get(),
+            'logs' => \App\Models\SyslogEntry::where('device_id', $device->id)->where('received_at', '>=', now()->subDay())->orderByDesc('id')->limit(10)->get(),
             'monitored' => $device->monitoredPorts(),
             'problems' => $device->problems()->whereNull('resolved_at')->triage()->get(),
             'sensors' => $device->sensors()->get()->groupBy('grp'),
