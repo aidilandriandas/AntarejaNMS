@@ -31,6 +31,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/cctv"
 	"github.com/aidilandriandas/antarejanms/collector/internal/config"
 	"github.com/aidilandriandas/antarejanms/collector/internal/configbak"
+	"github.com/aidilandriandas/antarejanms/collector/internal/discovery"
 	"github.com/aidilandriandas/antarejanms/collector/internal/migrate"
 	"github.com/aidilandriandas/antarejanms/collector/internal/notify"
 	"github.com/aidilandriandas/antarejanms/collector/internal/ping"
@@ -204,6 +205,23 @@ func run() error {
 			for {
 				if err := cfgRunner.Run(ctx); err != nil && ctx.Err() == nil {
 					log.Warn("backup konfigurasi gagal", "galat", err)
+				}
+				select {
+				case <-ctx.Done():
+					return
+				case <-t.C:
+				}
+			}
+		}()
+
+		// Discovery jaringan (diminta engineer dari web): satu pemindaian sekaligus, cek antrean tiap 5 detik
+		disc := &discovery.Runner{DB: db, Box: box, Log: log, Privileged: cfg.PingPrivileged}
+		go func() {
+			t := time.NewTicker(5 * time.Second)
+			defer t.Stop()
+			for {
+				if err := disc.Run(ctx); err != nil && ctx.Err() == nil {
+					log.Warn("discovery gagal", "galat", err)
 				}
 				select {
 				case <-ctx.Done():

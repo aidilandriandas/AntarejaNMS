@@ -346,3 +346,34 @@ if (logLive) {
     });
     arm();
 }
+
+// Discovery: progres pemindaian & pilihan hasil
+const disc = $('[data-disc]');
+if (disc) {
+    const tick = async () => {
+        const r = await fetch(disc.dataset.disc, { headers: { Accept: 'application/json' } }).catch(() => null);
+        if (!r || !r.ok) return;
+        const s = await r.json();
+        if (!['queued', 'running'].includes(s.status)) { location.reload(); return; }
+        const pct = s.total ? Math.round((s.progress / s.total) * 100) : 2;
+        $('[data-disc-bar]').style.width = `${Math.max(pct, 2)}%`;
+        $('[data-disc-text]').textContent = `${s.progress} / ${s.total || '…'} alamat · ${s.found} menjawab`;
+        $('[data-disc-status]').textContent = s.status === 'running' ? 'Berjalan' : 'Antre';
+    };
+    setInterval(() => { if (!document.hidden) tick(); }, 2000);
+}
+const discForm = $('[data-disc-form]');
+if (discForm) {
+    const boxes = $$('input[name="pick[]"]', discForm);
+    const all = $('[data-disc-all]', discForm);
+    const sync = () => {
+        const n = boxes.filter((b) => b.checked).length;
+        const cnt = $('[data-disc-n]', discForm);
+        if (cnt) cnt.textContent = n;
+        $$('[data-disc-add], [data-disc-ign]', discForm).forEach((b) => { b.disabled = n === 0; });
+        if (all) { all.checked = n > 0 && n === boxes.length; all.indeterminate = n > 0 && n < boxes.length; }
+    };
+    boxes.forEach((b) => b.addEventListener('change', sync));
+    all?.addEventListener('change', () => { boxes.forEach((b) => { b.checked = all.checked; }); sync(); });
+    sync();
+}

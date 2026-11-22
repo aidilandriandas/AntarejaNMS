@@ -9,6 +9,7 @@ use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\DeviceImportController;
+use App\Http\Controllers\DiscoveryController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\IpamController;
@@ -43,6 +44,13 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:manage-devices')->group(function () {
         Route::get('perangkat/tambah', [DeviceController::class, 'create'])->name('devices.create');
         Route::get('perangkat/impor', [DeviceImportController::class, 'form'])->name('devices.import');
+        Route::get('discovery', [DiscoveryController::class, 'index'])->name('discovery.index');
+        Route::post('discovery', [DiscoveryController::class, 'store'])->name('discovery.store')->middleware('throttle:10,1');
+        Route::get('discovery/{scan}', [DiscoveryController::class, 'show'])->name('discovery.show')->whereNumber('scan');
+        Route::get('discovery/{scan}/status', [DiscoveryController::class, 'status'])->name('discovery.status')->whereNumber('scan');
+        Route::post('discovery/{scan}/batal', [DiscoveryController::class, 'cancel'])->name('discovery.cancel')->whereNumber('scan');
+        Route::post('discovery/{scan}/tambah', [DiscoveryController::class, 'add'])->name('discovery.add')->whereNumber('scan');
+        Route::post('discovery/{scan}/abaikan', [DiscoveryController::class, 'ignore'])->name('discovery.ignore')->whereNumber('scan');
         Route::get('perangkat/impor/templat.csv', [DeviceImportController::class, 'template'])->name('devices.import.template');
         Route::post('perangkat/impor/pratinjau', [DeviceImportController::class, 'preview'])->name('devices.import.preview');
         Route::post('perangkat/impor', [DeviceImportController::class, 'store'])->name('devices.import.store');

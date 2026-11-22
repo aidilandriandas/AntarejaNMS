@@ -3,7 +3,7 @@
 @section('content')
 <div class="page-head">
     <div><h1>Perangkat</h1><p>{{ number_format($devices->total(), 0, ',', '.') }} perangkat · yang bermasalah tampil paling atas</p></div>
-    @can('manage-devices')<div class="actions"><a class="btn" href="{{ route('devices.import') }}"><x-icon name="download"/>Impor CSV</a><a class="btn primary" href="{{ route('devices.create') }}"><x-icon name="plus"/>Tambah perangkat</a></div>@endcan
+    @can('manage-devices')<div class="actions"><a class="btn" href="{{ route('discovery.index') }}"><x-icon name="search"/>Discovery</a><a class="btn" href="{{ route('devices.import') }}"><x-icon name="download"/>Impor CSV</a><a class="btn primary" href="{{ route('devices.create') }}"><x-icon name="plus"/>Tambah perangkat</a></div>@endcan
 </div>
 <section class="card">
     <form class="filters" method="get">
