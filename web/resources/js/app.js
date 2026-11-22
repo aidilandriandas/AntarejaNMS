@@ -161,11 +161,15 @@ if (card) {
                 ? [{ label: 'Waktu', value: xLegend }, { label: 'Masuk', stroke: css('--accent'), fill: `${css('--accent')}22`, width: 1.5, value: (u, v) => bps(v) },
                     { label: 'Keluar', stroke: css('--info'), width: 1.5, value: (u, v) => bps(v) }]
                 : [{ label: 'Waktu', value: xLegend }, { label: 'RTT', stroke: css('--accent'), width: 1.5, value: (u, v) => (v == null ? '–' : `${v.toFixed(2)} ms`) },
-                    { label: 'Loss', scale: 'y2', stroke: css('--crit'), fill: `${css('--crit')}33`, width: 1, paths: uPlot.paths.stepped({ align: 1 }), value: (u, v) => (v == null ? '–' : `${Math.round(v)}%`) }],
+                    { label: 'Loss', scale: 'y2', stroke: css('--crit'), fill: `${css('--crit')}33`, width: 1, paths: uPlot.paths.stepped({ align: 1 }), value: (u, v) => (v == null ? '–' : `${Math.round(v)}%`) },
+                    { label: 'Min', stroke: `${css('--accent')}55`, width: 1, value: (u, v) => (v == null ? '–' : `${v.toFixed(2)} ms`) },
+                    { label: 'Maks', stroke: `${css('--accent')}55`, width: 1, value: (u, v) => (v == null ? '–' : `${v.toFixed(2)} ms`) }],
+            // pita min–maks (sebaran latensi, gaya SmokePing)
+            bands: isPort ? [] : [{ series: [4, 3], fill: `${css('--accent')}22` }],
             legend: { live: true },
             cursor: { drag: { x: false, y: false } },
         };
-        const cols = isPort ? [data.t, s.in, s.out] : [data.t, s.rtt, s.loss];
+        const cols = isPort ? [data.t, s.in, s.out] : [data.t, s.rtt, s.loss, s.min || s.rtt.map(() => null), s.max || s.rtt.map(() => null)];
         plot = new uPlot(opts, cols, el);
         if (cols.slice(1).every((c) => c.every((v) => v == null))) {
             const n = document.createElement('div');

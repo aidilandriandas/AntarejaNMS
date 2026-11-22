@@ -36,7 +36,7 @@ func (p *Poller) collectSensors(ctx context.Context, d store.Device, cr snmp.Cre
 	if ids == "" {
 		return
 	}
-	readings := profiles.Collect(sess, strings.Split(ids, ","))
+	readings := profiles.Collect(sess, strings.Split(ids, ","), d.Limits().Classes)
 	rows := make([]store.SensorRow, 0, len(readings))
 	dev := strconv.FormatInt(d.ID, 10)
 	for _, r := range readings {

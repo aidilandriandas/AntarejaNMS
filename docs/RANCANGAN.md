@@ -130,4 +130,5 @@ Engine problem berjalan di collector setelah setiap putaran ping (±1 menit):
 | 4b | IPAM: ipAddrTable & ipNetToMediaTable (router kategori Core/Distribution/Firewall atau MikroTik), subnet otomatis/manual, peta alamat, IP kosong, cari IP/MAC; konflik IP = 2 MAC bergantian ≥ 3× dalam 6 jam di router & port yang sama → problem `ip_conflict` | selesai |
 | 4c | CCTV: go2rtc internal (tanpa port publik), kamera/kanal NVR (password terenkripsi), grid snapshot & live view MSE; nginx hanya membuka `/live/ws` & `/live/frame.jpeg` setelah dicek login Laravel (auth_request); URL RTSP berkredensial tidak pernah ke browser maupun disk | selesai |
 | 5a | Cek kesehatan gambar CCTV (collector, lewat go2rtc; gelap / tertutup / beku = sidik seluruh piksel identik 3× / tanpa sinyal setelah 2× gagal) → problem `camera`; impor perangkat dari CSV | selesai |
-| 5b | **berikutnya:** verifikasi profil dengan `snmpwalk` lapangan, profil Hikvision, ambang per perangkat, kualitas jaringan (jitter) | |
+| 5b | Kualitas jaringan (ping min/maks/jitter, halaman peringkat avg/p95/maks/jitter/loss), ambang per perangkat (`devices.thresholds` JSON: latensi, loss, util, kelas sensor) | selesai |
+| 5c | **berikutnya:** backup konfigurasi perangkat via SSH (hanya baca) + diff; verifikasi profil `snmpwalk` lapangan; profil Hikvision | |

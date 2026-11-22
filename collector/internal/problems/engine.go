@@ -8,6 +8,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/aidilandriandas/antarejanms/collector/internal/store"
 )
 
 // StatsSource adalah pengamatan di memori collector (lihat poller.Stats).
@@ -153,7 +155,7 @@ func (e *Engine) thresholds(ctx context.Context) (Thresholds, error) {
 
 func (e *Engine) load(ctx context.Context, th Thresholds) ([]Device, error) {
 	rows, err := e.DB.Query(ctx, `
-		SELECT d.id, d.name, d.category, d.status, COALESCE(d.status_reason, ''), d.fail_streak, COALESCE(d.parent_id, 0), d.ping_enabled, d.snmp_enabled,
+		SELECT d.id, d.name, d.category, d.status, COALESCE(d.status_reason, ''), d.fail_streak, COALESCE(d.parent_id, 0), d.ping_enabled, d.snmp_enabled, d.thresholds,
 			COALESCE((SELECT m.title FROM maintenances m
 				WHERE now() >= m.starts_at AND now() < m.ends_at
 				  AND (m.scope = 'all' OR (m.scope = 'site' AND m.site_id = d.site_id)
@@ -167,10 +169,13 @@ func (e *Engine) load(ctx context.Context, th Thresholds) ([]Device, error) {
 	idx := map[int64]int{}
 	for rows.Next() {
 		var d Device
-		if err := rows.Scan(&d.ID, &d.Name, &d.Category, &d.Status, &d.Reason, &d.FailStreak, &d.ParentID, &d.PingEnabled, &d.SNMPEnabled, &d.InMaintenance); err != nil {
+		var thr []byte
+		if err := rows.Scan(&d.ID, &d.Name, &d.Category, &d.Status, &d.Reason, &d.FailStreak, &d.ParentID, &d.PingEnabled, &d.SNMPEnabled, &thr, &d.InMaintenance); err != nil {
 			rows.Close()
 			return nil, err
 		}
+		lim := store.ParseLimits(thr)
+		d.LatencyMS, d.LossPct, d.UtilPct = lim.LatencyMS, lim.LossPct, lim.UtilPct
 		rtt, loss, n := e.Stats.PingAvg(d.ID)
 		d.PingKnown, d.RTTAvg, d.LossAvg = n >= 3, rtt, loss
 		d.SNMPFails, d.SNMPKnown = e.Stats.SNMPFails(d.ID)

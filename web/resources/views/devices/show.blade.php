@@ -15,7 +15,7 @@
 
 <div class="kpis">
     <div class="kpi"><div class="lbl">Latensi</div><div class="val">{{ $device->ping_enabled ? \App\Support\Fmt::ms($device->last_rtt_ms) : '–' }}</div>
-        <div class="note">{{ $device->last_ping_at ? 'ping ' . $device->last_ping_at->diffForHumans() : ($device->ping_enabled ? 'menunggu ping pertama' : 'ping dimatikan') }}</div></div>
+        <div class="note">{{ $device->last_jitter_ms !== null ? 'jitter ' . \App\Support\Fmt::ms($device->last_jitter_ms) . ' · ' : '' }}{{ $device->last_ping_at ? 'ping ' . $device->last_ping_at->diffForHumans() : ($device->ping_enabled ? 'menunggu ping pertama' : 'ping dimatikan') }}</div></div>
     <div class="kpi {{ $device->last_loss_pct > 0 ? 'warn' : '' }}"><div class="lbl">Packet loss</div><div class="val">{{ $device->ping_enabled && $device->last_loss_pct !== null ? (int) $device->last_loss_pct : '–' }}<small>%</small></div><div class="note">3 paket per menit</div></div>
     <div class="kpi"><div class="lbl">Uptime</div><div class="val" style="font-size:22px;padding-top:6px">{{ $device->uptimeHuman() ?? '–' }}</div><div class="note">{{ $device->snmp_enabled ? 'dari SNMP' : 'butuh SNMP' }}</div></div>
     <div class="kpi"><div class="lbl">Status sejak</div><div class="val" style="font-size:22px;padding-top:6px">{{ $device->status_changed_at?->diffForHumans(short: true, syntax: \Carbon\CarbonInterface::DIFF_ABSOLUTE) ?? '–' }}</div><div class="note">{{ $device->status_changed_at?->format('d/m/Y H:i') }}</div></div>
@@ -108,6 +108,7 @@
                 @if($device->sys_location)<dt>Lokasi SNMP</dt><dd>{{ $device->sys_location }}</dd>@endif
                 @if($device->profiles)<dt>Profil</dt><dd>{{ collect(explode(',', $device->profiles))->map(fn ($x) => \App\Models\DeviceSensor::PROFILES[$x] ?? $x)->implode(', ') }}</dd>@endif
                 @if($device->sys_object_id)<dt>sysObjectID</dt><dd class="mono">{{ $device->sys_object_id }}</dd>@endif
+                @if(! empty($device->thresholds))<dt>Ambang khusus</dt><dd>{{ collect($device->thresholds)->map(fn ($v, $k) => (\App\Models\Device::THRESHOLDS[$k][0] ?? $k) . ' ' . (is_array($v) ? implode(' / ', $v) : $v))->implode(' · ') }}</dd>@endif
                 @if($device->notes)<dt>Catatan</dt><dd style="white-space:pre-line">{{ $device->notes }}</dd>@endif
             </dl>
         </div></section>

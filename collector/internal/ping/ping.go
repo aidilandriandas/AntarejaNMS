@@ -14,6 +14,9 @@ type Result struct {
 	Sent    int
 	Recv    int
 	AvgMS   float64 // 0 bila tidak ada balasan
+	MinMS   float64
+	MaxMS   float64
+	Jitter  float64 // simpangan baku RTT antarpaket (ms)
 	LossPct float64
 	Err     string // gagal resolve DNS / izin socket, dsb.
 }
@@ -83,6 +86,9 @@ func (p Pinger) One(ctx context.Context, host string) Result {
 	}
 	if st.PacketsRecv > 0 {
 		r.AvgMS = float64(st.AvgRtt.Microseconds()) / 1000
+		r.MinMS = float64(st.MinRtt.Microseconds()) / 1000
+		r.MaxMS = float64(st.MaxRtt.Microseconds()) / 1000
+		r.Jitter = float64(st.StdDevRtt.Microseconds()) / 1000
 	}
 	return r
 }

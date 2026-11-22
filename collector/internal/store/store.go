@@ -3,6 +3,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
 	"strings"
 	"time"
@@ -30,19 +31,20 @@ type Device struct {
 	UptimeSeconds   *int64
 	SysObjectID     *string
 	Category        string
+	ThresholdsJSON  []byte
 }
 
 type Store struct{ DB *pgxpool.Pool }
 
 const deviceCols = `id, name, host, ping_enabled, snmp_enabled, snmp_version, snmp_port,
 	snmp_community_enc, snmp_v3_user, snmp_v3_level, snmp_v3_auth_proto, snmp_v3_auth_enc, snmp_v3_priv_proto, snmp_v3_priv_enc,
-	status, status_changed_at, fail_streak, last_rtt_ms, snmp_ok, last_snmp_at, uptime_seconds, sys_object_id, category`
+	status, status_changed_at, fail_streak, last_rtt_ms, snmp_ok, last_snmp_at, uptime_seconds, sys_object_id, category, thresholds`
 
 func scanDevice(r pgx.Row) (Device, error) {
 	var d Device
 	err := r.Scan(&d.ID, &d.Name, &d.Host, &d.PingEnabled, &d.SNMPEnabled, &d.SNMPVersion, &d.SNMPPort,
 		&d.CommunityEnc, &d.V3User, &d.V3Level, &d.V3AuthProto, &d.V3AuthEnc, &d.V3PrivProto, &d.V3PrivEnc,
-		&d.Status, &d.StatusChangedAt, &d.FailStreak, &d.LastRTT, &d.SNMPOK, &d.LastSNMPAt, &d.UptimeSeconds, &d.SysObjectID, &d.Category)
+		&d.Status, &d.StatusChangedAt, &d.FailStreak, &d.LastRTT, &d.SNMPOK, &d.LastSNMPAt, &d.UptimeSeconds, &d.SysObjectID, &d.Category, &d.ThresholdsJSON)
 	return d, err
 }
 
@@ -72,6 +74,7 @@ func (s Store) Device(ctx context.Context, id int64) (Device, error) {
 type PingUpdate struct {
 	ID         int64
 	RTT        *float64
+	Jitter     *float64
 	Loss       float64
 	FailStreak int
 	Status     string
@@ -83,9 +86,9 @@ type PingUpdate struct {
 func (s Store) SavePing(ctx context.Context, ups []PingUpdate) error {
 	b := &pgx.Batch{}
 	for _, u := range ups {
-		b.Queue(`UPDATE devices SET last_rtt_ms = $2, last_loss_pct = $3, last_ping_at = $4, fail_streak = $5,
+		b.Queue(`UPDATE devices SET last_rtt_ms = $2, last_loss_pct = $3, last_ping_at = $4, fail_streak = $5, last_jitter_ms = $9,
 			status = $6, status_reason = $7, status_changed_at = CASE WHEN $8 THEN $4 ELSE status_changed_at END, updated_at = now()
-			WHERE id = $1`, u.ID, u.RTT, u.Loss, u.At, u.FailStreak, u.Status, u.Reason, u.Changed)
+			WHERE id = $1`, u.ID, u.RTT, u.Loss, u.At, u.FailStreak, u.Status, u.Reason, u.Changed, u.Jitter)
 	}
 	return s.DB.SendBatch(ctx, b).Close()
 }
@@ -416,3 +419,44 @@ func (s Store) PruneIPAM(ctx context.Context) error {
 	_, err := s.DB.Exec(ctx, `DELETE FROM arp_changes WHERE at < now() - interval '30 days'`)
 	return err
 }
+
+// Limits adalah ambang khusus perangkat (kolom thresholds). Nilai 0 / kosong = pakai bawaan.
+type Limits struct {
+	LatencyMS float64
+	LossPct   float64
+	UtilPct   float64
+	Classes   map[string][2]float64 // kelas sensor -> [peringatan, kritis]
+}
+
+// ParseLimits membaca JSON ambang; kunci tak dikenal / nilai salah diabaikan.
+func ParseLimits(raw []byte) Limits {
+	l := Limits{Classes: map[string][2]float64{}}
+	var m map[string]json.RawMessage
+	if len(raw) == 0 || json.Unmarshal(raw, &m) != nil {
+		return l
+	}
+	for k, v := range m {
+		var f float64
+		var pair [2]float64
+		switch k {
+		case "latency_ms", "loss_pct", "util_pct":
+			if json.Unmarshal(v, &f) == nil && f > 0 {
+				switch k {
+				case "latency_ms":
+					l.LatencyMS = f
+				case "loss_pct":
+					l.LossPct = f
+				default:
+					l.UtilPct = f
+				}
+			}
+		default:
+			if json.Unmarshal(v, &pair) == nil && pair[0] != pair[1] {
+				l.Classes[k] = pair
+			}
+		}
+	}
+	return l
+}
+
+func (d Device) Limits() Limits { return ParseLimits(d.ThresholdsJSON) }

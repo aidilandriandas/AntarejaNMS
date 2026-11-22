@@ -29,6 +29,19 @@ class Device extends Model
         'other' => 'Lainnya',
     ];
 
+    /** Ambang yang bisa diatur per perangkat: kunci => [label, satuan, bawaan, jenis (single|pair)] */
+    public const THRESHOLDS = [
+        'latency_ms' => ['Latensi tinggi', 'ms', '150', 'single'],
+        'loss_pct' => ['Packet loss', '%', '20', 'single'],
+        'util_pct' => ['Port dipantau penuh', '%', '90', 'single'],
+        'signal' => ['Sinyal radio', 'dBm', '-70 / -78', 'pair'],
+        'ccq' => ['CCQ / kualitas radio', '%', '70 / 50', 'pair'],
+        'temperature' => ['Suhu', '°C', '60 / 75', 'pair'],
+        'cpu' => ['CPU', '%', '80 / 95', 'pair'],
+        'battery' => ['Muatan baterai UPS', '%', '50 / 20', 'pair'],
+        'runtime' => ['Waktu cadangan UPS', 'menit', '15 / 5', 'pair'],
+    ];
+
     public const CATEGORY_ICONS = [
         'core' => 'router', 'distribution' => 'switch', 'access' => 'switch', 'wireless' => 'wifi', 'ptp' => 'antenna',
         'firewall' => 'shield', 'server' => 'server', 'nvr' => 'nvr', 'cctv' => 'camera', 'ups' => 'battery', 'other' => 'box',
@@ -50,6 +63,8 @@ class Device extends Model
             'snmp_ok' => 'boolean',
             'last_rtt_ms' => 'float',
             'last_loss_pct' => 'float',
+            'last_jitter_ms' => 'float',
+            'thresholds' => 'array',
             'status_changed_at' => 'datetime',
             'last_ping_at' => 'datetime',
             'last_snmp_at' => 'datetime',

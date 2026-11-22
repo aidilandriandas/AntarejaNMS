@@ -42,6 +42,8 @@ type Device struct {
 	Sensors       []Sensor
 	Conflicts     []Conflict // dari tabel ARP yang dilaporkan perangkat ini (router)
 	Cameras       []CamHealth
+	// Ambang khusus perangkat (0 = bawaan)
+	LatencyMS, LossPct, UtilPct float64
 }
 
 // CamHealth adalah hasil cek gambar kamera yang terkait perangkat ini (NVR / kamera).
@@ -125,7 +127,18 @@ func Evaluate(devs []Device, th Thresholds) Result {
 	res := Result{Unknown: map[string]bool{}}
 	unknown := func(dev int64, kind string, idx *int) { res.Unknown[key(dev, kind, idx)] = true }
 
+	base := th
 	for _, d := range devs {
+		th := base
+		if d.LatencyMS > 0 {
+			th.LatencyMS = d.LatencyMS
+		}
+		if d.LossPct > 0 {
+			th.LossPct = d.LossPct
+		}
+		if d.UtilPct > 0 {
+			th.UtilPct = d.UtilPct
+		}
 		var conds []Cond
 		add := func(c Cond) { c.DeviceID = d.ID; conds = append(conds, c) }
 

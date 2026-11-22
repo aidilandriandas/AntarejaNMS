@@ -145,3 +145,21 @@ func TestEntitySensor(t *testing.T) {
 		t.Fatal("sensor tidak tersedia harus dilewati")
 	}
 }
+
+func TestJudgeOverride(t *testing.T) {
+	r := Reading{Class: "signal", Value: -76}
+	Judge(&r)
+	if r.Status != "warn" {
+		t.Fatal("bawaan: -76 dBm = peringatan")
+	}
+	r = Reading{Class: "signal", Value: -76}
+	JudgeWith(&r, map[string][2]float64{"signal": {-80, -86}}) // radio PTP jarak jauh
+	if r.Status != "ok" {
+		t.Fatal("ambang khusus -80/-86: -76 dBm = normal")
+	}
+	r = Reading{Class: "voltage", Value: 11.2}
+	JudgeWith(&r, map[string][2]float64{"voltage": {11.5, 10.8}}) // kelas tanpa ambang bawaan, arah rendah
+	if r.Status != "warn" {
+		t.Fatalf("tegangan 11.2 V dengan ambang 11.5/10.8 = peringatan, dapat %s", r.Status)
+	}
+}

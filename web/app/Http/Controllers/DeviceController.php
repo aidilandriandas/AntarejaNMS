@@ -178,11 +178,40 @@ class DeviceController extends Controller
             })(),
             default => $metrics->range([
                 'rtt' => "avg_over_time(antareja_ping_rtt_ms{{$sel}}[{$step}s])",
+                'min' => "min_over_time(antareja_ping_rtt_min_ms{{$sel}}[{$step}s])",
+                'max' => "max_over_time(antareja_ping_rtt_max_ms{{$sel}}[{$step}s])",
                 'loss' => "avg_over_time(antareja_ping_loss_pct{{$sel}}[{$step}s])",
             ], $range),
         };
 
         return response()->json($data);
+    }
+
+    /** Ambang khusus dari form: kosong = pakai bawaan. Pasangan [peringatan, kritis] harus berbeda. */
+    private function thresholds(Request $r): array
+    {
+        $out = [];
+        foreach (Device::THRESHOLDS as $k => [$label, , , $type]) {
+            if ($type === 'single') {
+                $v = $r->input("thr.$k");
+                if ($v !== null && $v !== '') {
+                    abort_unless(is_numeric($v) && $v > 0, 422, "Ambang {$label} harus angka > 0.");
+                    $out[$k] = (float) $v;
+                }
+                continue;
+            }
+            $w = $r->input("thr.$k.warn");
+            $c = $r->input("thr.$k.crit");
+            if (($w === null || $w === '') && ($c === null || $c === '')) {
+                continue;
+            }
+            if (! is_numeric($w) || ! is_numeric($c) || (float) $w === (float) $c) {
+                throw \Illuminate\Validation\ValidationException::withMessages(["thr.$k" => "Isi peringatan dan kritis {$label} (keduanya angka dan berbeda)."]);
+            }
+            $out[$k] = [(float) $w, (float) $c];
+        }
+
+        return $out;
     }
 
     /** Apakah menjadikan $parentId induk dari $deviceId membuat rantai melingkar? */
@@ -245,6 +274,7 @@ class DeviceController extends Controller
         if (! empty($d['parent_id']) && $device->exists && $this->wouldLoop($device->id, (int) $d['parent_id'])) {
             throw \Illuminate\Validation\ValidationException::withMessages(['parent_id' => 'Perangkat induk tidak boleh berada di bawah perangkat ini (rantai melingkar).']);
         }
+        $device->thresholds = $this->thresholds($request);
         foreach (['enabled', 'ping_enabled', 'snmp_enabled'] as $b) {
             $d[$b] = $request->boolean($b);
         }

@@ -157,3 +157,14 @@ func TestCameraHealth(t *testing.T) {
 		t.Fatal("hasil basi harus unknown")
 	}
 }
+
+func TestDeviceOverride(t *testing.T) {
+	devs := []Device{
+		{ID: 1, Name: "Radio jauh", Status: "up", PingEnabled: true, PingKnown: true, RTTAvg: 200, LatencyMS: 300},
+		{ID: 2, Name: "Switch", Status: "up", PingEnabled: true, PingKnown: true, RTTAvg: 200},
+	}
+	r := Evaluate(devs, th)
+	if find(r, 1, "latency") != nil || find(r, 2, "latency") == nil {
+		t.Fatalf("%+v", r.Conds)
+	}
+}

@@ -91,6 +91,26 @@
             <p class="hint muted" style="margin:0">Kredensial disimpan terenkripsi dan tidak pernah ditampilkan kembali.</p>
         </div>
 
+        <details class="thr" @if($errors->has('thr.*') || ! empty($device->thresholds)) open @endif>
+            <summary class="section-title" style="cursor:pointer;list-style:none">Ambang khusus perangkat ini {{ ! empty($device->thresholds) ? '(' . count($device->thresholds) . ' diatur)' : '' }}</summary>
+            <p class="hint muted" style="margin:10px 0">Kosongkan untuk memakai ambang bawaan. Contoh: radio PTP jarak jauh boleh latensi & sinyal lebih longgar daripada core switch.</p>
+            <div class="thr-grid">
+                @foreach(\App\Models\Device::THRESHOLDS as $k => [$label, $unit, $def, $type])
+                    @php($cur = $device->thresholds[$k] ?? null)
+                    <div class="field"><label>{{ $label }} <span class="muted">({{ $unit }})</span></label>
+                        @if($type === 'single')
+                            <input class="input" type="number" step="any" name="thr[{{ $k }}]" value="{{ old("thr.$k", $cur) }}" placeholder="bawaan {{ $def }}">
+                        @else
+                            <div class="row" style="gap:6px">
+                                <input class="input" type="number" step="any" name="thr[{{ $k }}][warn]" value="{{ old("thr.$k.warn", $cur[0] ?? null) }}" placeholder="peringatan" aria-label="{{ $label }} peringatan">
+                                <input class="input" type="number" step="any" name="thr[{{ $k }}][crit]" value="{{ old("thr.$k.crit", $cur[1] ?? null) }}" placeholder="kritis" aria-label="{{ $label }} kritis">
+                            </div><div class="hint">bawaan {{ $def }}</div>
+                        @endif
+                        <x-field-error :name="'thr.'.$k"/></div>
+                @endforeach
+            </div>
+        </details>
+
         @if($editing)
             <label class="check" style="border-top:1px solid var(--line);padding-top:14px"><input type="checkbox" name="enabled" value="1" @checked(old('enabled', $device->enabled))>
                 <span>Perangkat aktif dipantau<small>Matikan sementara (mis. perangkat dipindah/diperbaiki) tanpa menghapus riwayat.</small></span></label>

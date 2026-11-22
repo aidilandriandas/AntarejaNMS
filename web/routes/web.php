@@ -13,6 +13,7 @@ use App\Http\Controllers\IpamController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NocController;
 use App\Http\Controllers\ProblemController;
+use App\Http\Controllers\QualityController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SensorController;
@@ -84,6 +85,7 @@ Route::middleware('auth')->group(function () {
     Route::get('problem', [ProblemController::class, 'index'])->name('problems.index');
     Route::get('maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
     Route::get('sensor', [SensorController::class, 'index'])->name('sensors.index');
+    Route::get('kualitas', [QualityController::class, 'index'])->name('quality.index');
     Route::get('cctv', [CctvController::class, 'index'])->name('cctv.index');
     Route::post('cctv/{camera}/live', [CctvController::class, 'live'])->name('cctv.live')->middleware('throttle:60,1');
     Route::get('ipam', [IpamController::class, 'index'])->name('ipam.index');

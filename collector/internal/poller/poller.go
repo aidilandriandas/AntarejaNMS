@@ -160,6 +160,9 @@ func (p *Poller) PingCycle(ctx context.Context) error {
 		batch.Add("antareja_ping_loss_pct", l, r.LossPct, now)
 		if r.OK() {
 			batch.Add("antareja_ping_rtt_ms", l, r.AvgMS, now)
+			batch.Add("antareja_ping_rtt_min_ms", l, r.MinMS, now)
+			batch.Add("antareja_ping_rtt_max_ms", l, r.MaxMS, now)
+			batch.Add("antareja_ping_jitter_ms", l, r.Jitter, now)
 		}
 	}
 	if err := p.Store.SavePing(ctx, ups); err != nil {
@@ -179,11 +182,14 @@ func (p *Poller) PingCycle(ctx context.Context) error {
 func (p *Poller) judgePing(ctx context.Context, d store.Device, r ping.Result, now time.Time) store.PingUpdate {
 	u := store.PingUpdate{ID: d.ID, Loss: r.LossPct, At: now, Status: d.Status}
 	if r.OK() {
-		rtt := r.AvgMS
-		u.RTT = &rtt
+		rtt, jit := r.AvgMS, r.Jitter
+		u.RTT, u.Jitter = &rtt, &jit
 		u.FailStreak = 0
 		u.Status = "up"
 		th := p.Cfg.LatencyHighMS
+		if lim := d.Limits(); lim.LatencyMS > 0 {
+			th = lim.LatencyMS
+		}
 		if rtt > th && (d.LastRTT == nil || float64(*d.LastRTT) <= th) {
 			p.event(ctx, d.ID, "latency_high", fmt.Sprintf("%s latensi tinggi %.0f ms (ambang %.0f ms)", d.Name, rtt, th), nil, now)
 		}
@@ -247,6 +253,9 @@ func (p *Poller) PollNow(ctx context.Context, id int64) error {
 		batch.Add("antareja_ping_loss_pct", l, r.LossPct, now)
 		if r.OK() {
 			batch.Add("antareja_ping_rtt_ms", l, r.AvgMS, now)
+			batch.Add("antareja_ping_rtt_min_ms", l, r.MinMS, now)
+			batch.Add("antareja_ping_rtt_max_ms", l, r.MaxMS, now)
+			batch.Add("antareja_ping_jitter_ms", l, r.Jitter, now)
 		}
 		if err := p.Writer.Write(ctx, &batch); err != nil {
 			p.Log.Warn("metrik ping tidak terkirim", "galat", err)

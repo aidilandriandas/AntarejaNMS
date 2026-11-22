@@ -96,7 +96,12 @@ func matchPrefix(oid string, prefixes []string) bool {
 }
 
 // Collect menjalankan profil terpilih dan menilai statusnya. Kunci ganda: pembacaan pertama yang dipakai.
-func Collect(q Q, ids []string) []Reading {
+// overrides: ambang khusus perangkat per kelas [peringatan, kritis] (boleh nil).
+func Collect(q Q, ids []string, overrides ...map[string][2]float64) []Reading {
+	var ov map[string][2]float64
+	if len(overrides) > 0 {
+		ov = overrides[0]
+	}
 	var out []Reading
 	seen := map[string]bool{}
 	for _, id := range ids {
@@ -109,7 +114,7 @@ func Collect(q Q, ids []string) []Reading {
 					continue
 				}
 				seen[r.Key] = true
-				Judge(&r)
+				JudgeWith(&r, ov)
 				out = append(out, r)
 			}
 		}
@@ -137,17 +142,27 @@ var Limits = map[string]limit{
 }
 
 // Judge mengisi Status dari ambang kelas bila profil belum menentukannya.
-func Judge(r *Reading) {
+func Judge(r *Reading) { JudgeWith(r, nil) }
+
+// JudgeWith memakai ambang khusus perangkat bila ada. Arah ditentukan dari urutan: peringatan > kritis berarti
+// "buruk bila rendah" (mis. sinyal −75 / −82 dBm).
+func JudgeWith(r *Reading, ov map[string][2]float64) {
 	if r.Status != "" {
 		return
 	}
 	r.Status = "ok"
-	l, ok := Limits[r.Class]
-	if !ok || math.IsNaN(r.Value) {
+	if math.IsNaN(r.Value) {
 		return
 	}
+	l, ok := Limits[r.Class]
 	if r.Class == "temperature" && strings.Contains(strings.ToLower(r.Label), "cpu") {
 		l = limit{75, 90, false}
+	}
+	if o, has := ov[r.Class]; has {
+		l, ok = limit{o[0], o[1], o[0] > o[1]}, true
+	}
+	if !ok {
+		return
 	}
 	switch {
 	case !l.Low && r.Value >= l.Crit, l.Low && r.Value <= l.Crit:
