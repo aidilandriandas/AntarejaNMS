@@ -37,6 +37,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/ping"
 	"github.com/aidilandriandas/antarejanms/collector/internal/poller"
 	"github.com/aidilandriandas/antarejanms/collector/internal/problems"
+	"github.com/aidilandriandas/antarejanms/collector/internal/report"
 	"github.com/aidilandriandas/antarejanms/collector/internal/secret"
 	"github.com/aidilandriandas/antarejanms/collector/internal/snmp"
 	"github.com/aidilandriandas/antarejanms/collector/internal/store"
@@ -166,8 +167,24 @@ func run() error {
 		}()
 		defer srv.Close()
 
+		reports := &report.Runner{DB: db, Notify: disp, Log: log, BaseURL: strings.TrimRight(cfg.BaseURL, "/")}
+		go func() {
+			t := time.NewTicker(time.Minute)
+			defer t.Stop()
+			for {
+				if err := reports.Run(ctx); err != nil && ctx.Err() == nil {
+					log.Warn("laporan terjadwal gagal", "galat", err)
+				}
+				select {
+				case <-ctx.Done():
+					return
+				case <-t.C:
+				}
+			}
+		}()
+
 		if cfg.APIAddr != "" {
-			api := &http.Server{Addr: cfg.APIAddr, Handler: (&apiserver.Server{Poller: p, Notify: disp, Token: apiserver.Token(box.Key()), Log: log}).Handler(),
+			api := &http.Server{Addr: cfg.APIAddr, Handler: (&apiserver.Server{Poller: p, Notify: disp, Report: reports.Preview, Token: apiserver.Token(box.Key()), Log: log}).Handler(),
 				ReadHeaderTimeout: 5 * time.Second, WriteTimeout: 60 * time.Second}
 			go func() {
 				if err := api.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

@@ -377,3 +377,18 @@ if (discForm) {
     all?.addEventListener('change', () => { boxes.forEach((b) => { b.checked = all.checked; }); sync(); });
     sync();
 }
+
+// Laporan terjadwal: pratinjau dalam iframe sandbox
+const pvModal = $('[data-preview-modal]');
+if (pvModal) {
+    const frame = $('[data-preview-frame]', pvModal);
+    const close = () => { pvModal.hidden = true; frame.removeAttribute('src'); };
+    $$('[data-preview]').forEach((b) => b.addEventListener('click', () => {
+        $('[data-preview-title]', pvModal).textContent = `Pratinjau — ${b.dataset.title}`;
+        frame.src = b.dataset.preview;
+        pvModal.hidden = false;
+    }));
+    $('[data-preview-close]', pvModal).addEventListener('click', close);
+    pvModal.addEventListener('click', (e) => { if (e.target === pvModal) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pvModal.hidden) close(); });
+}

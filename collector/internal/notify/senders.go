@@ -125,9 +125,20 @@ func (Email) Send(ctx context.Context, cfg map[string]string, m Message) error {
 	if err != nil {
 		return err
 	}
-	msg := "From: ANTAREJA NMS <" + from + ">\r\nTo: " + strings.Join(to, ", ") + "\r\nSubject: " + mimeHeader(m.Subject) +
-		"\r\nDate: " + time.Now().Format(time.RFC1123Z) + "\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n" +
-		strings.ReplaceAll(m.Text, "\n", "\r\n") + "\r\n"
+	head := "From: ANTAREJA NMS <" + from + ">\r\nTo: " + strings.Join(to, ", ") + "\r\nSubject: " + mimeHeader(m.Subject) +
+		"\r\nDate: " + time.Now().Format(time.RFC1123Z) + "\r\nMIME-Version: 1.0\r\n"
+	text := strings.ReplaceAll(m.Text, "\n", "\r\n")
+	var msg string
+	if m.EmailHTML == "" {
+		msg = head + "Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n" + text + "\r\n"
+	} else {
+		// multipart/alternative: klien email yang tidak menampilkan HTML tetap mendapat versi teks
+		bnd := fmt.Sprintf("antareja-%d", time.Now().UnixNano())
+		msg = head + "Content-Type: multipart/alternative; boundary=\"" + bnd + "\"\r\n\r\n" +
+			"--" + bnd + "\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" + wrap76(b64(text)) +
+			"--" + bnd + "\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" + wrap76(b64(m.EmailHTML)) +
+			"--" + bnd + "--\r\n"
+	}
 	if _, err := w.Write([]byte(msg)); err != nil {
 		return err
 	}
@@ -135,6 +146,17 @@ func (Email) Send(ctx context.Context, cfg map[string]string, m Message) error {
 		return fmt.Errorf("email ditolak server: %w", err)
 	}
 	return c.Quit()
+}
+
+// wrap76 memotong base64 per 76 karakter (RFC 2045).
+func wrap76(s string) string {
+	var b strings.Builder
+	for len(s) > 76 {
+		b.WriteString(s[:76] + "\r\n")
+		s = s[76:]
+	}
+	b.WriteString(s + "\r\n")
+	return b.String()
 }
 
 func mimeHeader(s string) string {

@@ -18,6 +18,7 @@ use App\Http\Controllers\NocController;
 use App\Http\Controllers\ProblemController;
 use App\Http\Controllers\QualityController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReportScheduleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SensorController;
 use App\Http\Controllers\SiteController;
@@ -129,6 +130,12 @@ Route::middleware('auth')->group(function () {
         Route::get('audit', [AuditController::class, 'index'])->name('audit.index');
 
         Route::get('notifikasi', [ChannelController::class, 'index'])->name('channels.index');
+        Route::get('laporan/terjadwal', [ReportScheduleController::class, 'index'])->name('reports.schedules');
+        Route::post('laporan/terjadwal', [ReportScheduleController::class, 'store'])->name('reports.schedules.store');
+        Route::put('laporan/terjadwal/{schedule}', [ReportScheduleController::class, 'update'])->name('reports.schedules.update')->whereNumber('schedule');
+        Route::delete('laporan/terjadwal/{schedule}', [ReportScheduleController::class, 'destroy'])->name('reports.schedules.destroy')->whereNumber('schedule');
+        Route::post('laporan/terjadwal/{schedule}/kirim', [ReportScheduleController::class, 'sendNow'])->name('reports.schedules.send')->whereNumber('schedule')->middleware('throttle:10,1');
+        Route::get('laporan/terjadwal/{schedule}/pratinjau', [ReportScheduleController::class, 'preview'])->name('reports.schedules.preview')->whereNumber('schedule')->middleware('throttle:20,1');
         Route::get('notifikasi/tambah', [ChannelController::class, 'create'])->name('channels.create');
         Route::post('notifikasi', [ChannelController::class, 'store'])->name('channels.store');
         Route::get('notifikasi/{channel}/ubah', [ChannelController::class, 'edit'])->name('channels.edit');

@@ -50,11 +50,13 @@ type Problem struct {
 
 // Message adalah satu pesan siap kirim.
 type Message struct {
-	Event   string    // problem.open, problem.resolve, summary, test
-	Subject string    // untuk email
-	Text    string    // teks polos
-	HTML    string    // untuk Telegram (subset HTML)
-	Items   []Problem // problem yang dibahas
+	Event   string // problem.open, problem.resolve, summary, test
+	Subject string // untuk email
+	Text    string // teks polos
+	HTML    string // untuk Telegram (subset HTML)
+	// EmailHTML: bila diisi, email dikirim multipart (teks + HTML), mis. laporan terjadwal
+	EmailHTML string
+	Items     []Problem // problem yang dibahas
 }
 
 type Sender interface {
@@ -232,6 +234,18 @@ func (d *Dispatcher) send(ctx context.Context, c Channel, m Message) error {
 	sctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 	return s.Send(sctx, c.Config, m)
+}
+
+// SendTo mengirim pesan ke satu kanal (dipakai laporan terjadwal; kanal nonaktif tetap dikirimi bila dipilih jadwal).
+func (d *Dispatcher) SendTo(ctx context.Context, channelID int64, m Message) error {
+	chs, err := d.channels(ctx, channelID)
+	if err != nil {
+		return err
+	}
+	if len(chs) == 0 {
+		return fmt.Errorf("kanal tidak ditemukan atau konfigurasinya tidak bisa dibuka")
+	}
+	return d.send(ctx, chs[0], m)
 }
 
 // Test mengirim pesan uji ke satu kanal dan mencatat hasilnya.

@@ -53,6 +53,17 @@ class Collector
         return $res->json();
     }
 
+    /** Pratinjau laporan terjadwal (periode penuh terakhir). @return array{ok: bool, subject?: string, html?: string, error?: string} */
+    public function reportPreview(int $scheduleId): array
+    {
+        $res = $this->http()->timeout(40)->get("/v1/reports/{$scheduleId}/preview");
+        if (! $res->successful()) {
+            throw new RuntimeException($res->json('error') ?? ('collector menjawab ' . $res->status()));
+        }
+
+        return $res->json();
+    }
+
     /** Counter oktet port saat ini (untuk trafik live). @param array<int, array{device_id:int, if_index:int}> $ports */
     public function live(array $ports): array
     {
