@@ -446,3 +446,26 @@ if (mapEl) {
         clearBtn?.addEventListener('click', () => { if (confirm('Hapus posisi ini dari peta?')) put(null, null); });
     });
 }
+
+// Ringkasan: atur tampilan (urutan, tampil/sembunyi, lebar) per pengguna
+const dashPanel = $('[data-dash-panel]');
+if (dashPanel) {
+    const btn = $('[data-dash-edit]');
+    const list = $('[data-dash-list]', dashPanel);
+    const toggle = (open) => {
+        dashPanel.hidden = !open;
+        btn.setAttribute('aria-expanded', String(open));
+        btn.classList.toggle('primary', open);
+        if (open) dashPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    btn.addEventListener('click', () => toggle(dashPanel.hidden));
+    $('[data-dash-cancel]', dashPanel).addEventListener('click', () => toggle(false));
+    list.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-up], [data-down]');
+        if (!b) return;
+        const li = b.closest('li');
+        if (b.hasAttribute('data-up') && li.previousElementSibling) list.insertBefore(li, li.previousElementSibling);
+        if (b.hasAttribute('data-down') && li.nextElementSibling) list.insertBefore(li.nextElementSibling, li);
+        b.focus();
+    });
+}

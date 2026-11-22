@@ -41,6 +41,7 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/', DashboardController::class)->name('dashboard');
+    Route::put('ringkasan/susunan', [DashboardController::class, 'layout'])->name('dashboard.layout');
 
     Route::get('perangkat', [DeviceController::class, 'index'])->name('devices.index');
     Route::middleware('can:manage-devices')->group(function () {

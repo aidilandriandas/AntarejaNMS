@@ -106,6 +106,20 @@ svg.i { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none;
 .page-head h1 { font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .page-head p { margin: 4px 0 0; color: var(--muted); }
 .page-head .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.dash { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.dash-w { min-width: 0; }
+.dash-w.w-full { grid-column: 1 / -1; }
+.dash .kpis { margin-bottom: 0; }
+.dash-map { height: 380px; min-height: 0; }
+.dash-edit { margin-bottom: 16px; }
+.dash-list { list-style: none; margin: 0; padding: 0; }
+.dash-list li { display: grid; grid-template-columns: minmax(0, 1fr) 130px auto; gap: 12px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.dash-list li .input { height: 34px; }
+.dash-list li:has(input[type=checkbox]:not(:checked)) .check span { color: var(--muted); }
+.dash-move { display: inline-flex; gap: 4px; }
+.dash-actions { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 16px; }
+.feed .ic.info { background: var(--info-soft); color: var(--info); }
+@media (max-width: 900px) { .dash { grid-template-columns: 1fr; } .dash-list li { grid-template-columns: 1fr; } }
 .map-wrap { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; }
 .map-card { position: relative; overflow: hidden; }
 .map { height: calc(100vh - 210px); min-height: 420px; background: var(--surface-2); z-index: 0; }

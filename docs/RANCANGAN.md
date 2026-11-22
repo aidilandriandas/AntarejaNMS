@@ -1,6 +1,6 @@
 # Rancangan ANTAREJA NMS (engine mandiri)
 
-Status: **Tahap 6e selesai** (denah sebagai latar peta) · menunggu verifikasi perangkat lapangan · Dokumen hidup, perbarui setiap ada keputusan desain.
+Status: **Tahap 6h selesai** (Ringkasan per pengguna) · menunggu verifikasi perangkat lapangan · Dokumen hidup, perbarui setiap ada keputusan desain.
 
 ## 1. Sasaran
 
@@ -142,4 +142,5 @@ Engine problem berjalan di collector setelah setiap putaran ping (±1 menit):
 | 6e | Denah: `map_plans` (gambar BYTEA di database → ikut pg_dump; maks. 15 MB, 16.000 px, divalidasi `getimagesize`), `map_plan_points` (piksel x,y per denah, terpisah dari lat/lng), Leaflet `CRS.Simple` + imageOverlay, gambar dilayani dengan ETag; unggah/hapus khusus admin, penempatan engineer/admin | selesai |
 | 6f | Peta dasar: kontrol lapisan Jalan (URL admin, bawaan OSM) / Topografi (OpenTopoMap, bisa dimatikan) / Satelit (URL & atribusi dari admin, opsional — wajib atribusi), pilihan diingat per browser; daftar site (urut paling parah) untuk lompat & fokus | selesai |
 | 6g | Layar NOC: tampilan *Peta lokasi* (Leaflet dimuat saat pertama ditampilkan, data tiap 30 detik) ikut rotasi otomatis dinding → topologi → peta (bila ada site/perangkat berkoordinat); peta jalan diberi filter gelap di NOC & tema gelap | selesai |
+| 6h | Ringkasan per pengguna: `users.dashboard` (JSON urutan + lebar), daftar widget di `App\Support\Dashboard` (kunci tak dikenal/duplikat dibuang), data hanya dihitung untuk widget yang tampil; widget baru: sensor di luar ambang, kamera bermasalah, syslog error, perubahan konfigurasi (tautan diff hanya admin/engineer), maintenance, peta lokasi | selesai |
 | berikutnya | Verifikasi profil `snmpwalk` lapangan; profil Hikvision | |

@@ -23,7 +23,7 @@ Network Monitoring System untuk infrastruktur ICT tambang. Engine dan aplikasi d
 | **Web** | Setup awal (akun admin pertama), login dengan pembatas percobaan, peran Admin / Engineer / Viewer |
 | Perangkat | Tambah/ubah dengan **uji koneksi** (ping + SNMP) sebelum simpan, daftar dengan filter (status, site, kategori), yang bermasalah di atas |
 | Detail perangkat | Latensi, loss, uptime, info SNMP, grafik latensi/loss dan **trafik per port** (6 jam–30 hari), kejadian |
-| Ringkasan | Ketersediaan, online/down/SNMP gagal, daftar down, latensi tertinggi, kejadian 24 jam, status per site |
+| Ringkasan | **Bisa diatur per pengguna** (tombol *Atur tampilan*): pilih widget, urutan, dan lebar (setengah/penuh) — angka utama, problem aktif, kejadian 24 jam, latensi & loss tertinggi, per site, sensor di luar ambang, kamera bermasalah, syslog error, perubahan konfigurasi, maintenance, peta lokasi |
 | Lainnya | Site, riwayat kejadian dengan filter, pengguna, jejak audit, ganti password, tema terang/gelap, tampilan HP |
 | **Problem** | Dinilai tiap menit: perangkat down, packet loss & latensi (rata-rata 5 menit), SNMP gagal, port dipantau putus/penuh. Selesai otomatis saat pulih; ACK dengan catatan |
 | Korelasi | Isi *perangkat induk* (uplink). Bila induk down, problem anak ditandai **terdampak** dan tidak membanjiri notifikasi |
