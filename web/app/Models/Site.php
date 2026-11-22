@@ -9,6 +9,11 @@ class Site extends Model
 {
     protected $fillable = ['code', 'name', 'description'];
 
+    protected function casts(): array
+    {
+        return ['lat' => 'float', 'lng' => 'float'];
+    }
+
     public function devices(): HasMany
     {
         return $this->hasMany(Device::class);

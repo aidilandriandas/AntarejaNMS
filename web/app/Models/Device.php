@@ -59,6 +59,8 @@ class Device extends Model
     protected function casts(): array
     {
         return [
+            'lat' => 'float',
+            'lng' => 'float',
             'enabled' => 'boolean',
             'ping_enabled' => 'boolean',
             'snmp_enabled' => 'boolean',

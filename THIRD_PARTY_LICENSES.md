@@ -22,6 +22,7 @@ Setiap dependensi baru wajib dicatat di sini **sebelum** di-commit (lihat `docs/
 | nette/utils, nette/schema | — | Lisensi ganda BSD-3-Clause **atau** GPL — dipakai di bawah **BSD-3-Clause** | Dependensi Laravel |
 | uPlot | 1.6 | MIT | Grafik |
 | vis-network, vis-data | 9.1 / 7.1 | Lisensi ganda Apache-2.0 **atau** MIT — dipakai di bawah **MIT** | Peta topologi |
+| leaflet | 1.9.4 | BSD-2-Clause | Peta lokasi (gambar peta dari server tile yang diatur admin; bawaan OpenStreetMap — data © kontributor OpenStreetMap, ODbL) |
 | IBM Plex Sans / IBM Plex Mono (@fontsource) | 5.x | SIL Open Font License 1.1 | Huruf antarmuka |
 | Vite, laravel-vite-plugin | 7.x / 2.x | MIT | Alat build aset (tidak ikut terpasang di server) |
 

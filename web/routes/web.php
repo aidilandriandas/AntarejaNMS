@@ -12,6 +12,7 @@ use App\Http\Controllers\DeviceImportController;
 use App\Http\Controllers\DiscoveryController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\LogController;
+use App\Http\Controllers\MapController;
 use App\Http\Controllers\IpamController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NocController;
@@ -46,6 +47,7 @@ Route::middleware('auth')->group(function () {
         Route::get('perangkat/tambah', [DeviceController::class, 'create'])->name('devices.create');
         Route::get('perangkat/impor', [DeviceImportController::class, 'form'])->name('devices.import');
         Route::get('discovery', [DiscoveryController::class, 'index'])->name('discovery.index');
+        Route::post('peta/posisi', [MapController::class, 'position'])->name('map.position')->middleware('throttle:120,1');
         Route::post('discovery', [DiscoveryController::class, 'store'])->name('discovery.store')->middleware('throttle:10,1');
         Route::get('discovery/{scan}', [DiscoveryController::class, 'show'])->name('discovery.show')->whereNumber('scan');
         Route::get('discovery/{scan}/status', [DiscoveryController::class, 'status'])->name('discovery.status')->whereNumber('scan');
@@ -99,6 +101,8 @@ Route::middleware('auth')->group(function () {
     Route::get('site', [SiteController::class, 'index'])->name('sites.index');
     Route::get('kejadian', [EventController::class, 'index'])->name('events.index');
     Route::get('log', [LogController::class, 'index'])->name('logs.index');
+    Route::get('peta', [MapController::class, 'index'])->name('map.index');
+    Route::get('peta/data', [MapController::class, 'data'])->name('map.data');
     Route::get('problem', [ProblemController::class, 'index'])->name('problems.index');
     Route::get('maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
     Route::get('sensor', [SensorController::class, 'index'])->name('sensors.index');
@@ -122,6 +126,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('can:admin')->group(function () {
         Route::post('log/pengaturan', [LogController::class, 'settings'])->name('logs.settings');
+        Route::post('peta/pengaturan', [MapController::class, 'settings'])->name('map.settings');
         Route::get('pengguna', [UserController::class, 'index'])->name('users.index');
         Route::get('pengguna/tambah', [UserController::class, 'create'])->name('users.create');
         Route::post('pengguna', [UserController::class, 'store'])->name('users.store');

@@ -392,3 +392,53 @@ if (pvModal) {
     pvModal.addEventListener('click', (e) => { if (e.target === pvModal) close(); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pvModal.hidden) close(); });
 }
+
+// Peta lokasi
+const mapEl = $('[data-map]');
+if (mapEl) {
+    import('./map.js').then(({ createMap }) => {
+        const panel = $('[data-map-panel]');
+        const sel = $('[data-map-target]');
+        const msg = $('[data-map-msg]');
+        const clearBtn = $('[data-map-clear]');
+        const say = (t, bad = false) => { if (msg) { msg.textContent = t; msg.style.color = bad ? 'var(--crit)' : ''; } };
+        const target = () => { const [type, id] = (sel?.value || '').split(':'); return type ? { type, id: +id } : null; };
+        const m = createMap(mapEl, { csrf, onSelect: (v) => { if (sel) { sel.value = v; sel.dispatchEvent(new Event('change')); } } });
+        const at = $('[data-map-at]');
+        const refresh = async () => { const j = await m.load(); if (j && at) at.textContent = `Diperbarui ${j.at}`; };
+        refresh();
+        setInterval(() => { if (!document.hidden) refresh(); }, 30000);
+        const put = async (lat, lng) => {
+            const t = target();
+            if (!t) { say('Pilih site atau perangkat dulu.', true); return; }
+            try {
+                await m.save(t.type, t.id, lat, lng);
+                const o = sel.selectedOptions[0];
+                o.dataset.lat = lat ?? ''; o.dataset.lng = lng ?? '';
+                o.textContent = o.textContent.replace(/ · (belum|✓)$/, '') + (lat === null ? (t.type === 'site' ? ' · belum' : '') : (t.type === 'device' ? ' · ✓' : ''));
+                clearBtn.disabled = lat === null;
+                say(lat === null ? 'Posisi dihapus.' : `Tersimpan: ${lat}, ${lng}`);
+            } catch (e) { say(`Gagal menyimpan: ${e.message}`, true); }
+        };
+        m.onClick((lat, lng) => put(lat, lng));
+        $('[data-map-edit]')?.addEventListener('click', (e) => {
+            const on = panel.hidden;
+            panel.hidden = !on;
+            e.currentTarget.classList.toggle('primary', on);
+            m.setEditing(on);
+        });
+        sel?.addEventListener('change', () => {
+            const o = sel.selectedOptions[0];
+            const has = o && o.dataset.lat !== '' && o.dataset.lat !== undefined;
+            clearBtn.disabled = !has;
+            if (has) m.focus(+o.dataset.lat, +o.dataset.lng);
+            say(sel.value ? 'Klik lokasinya di peta, atau geser penandanya.' : '');
+        });
+        $('[data-map-apply]')?.addEventListener('click', () => {
+            const v = $('[data-map-coord]').value.trim().match(/^(-?\d+(?:\.\d+)?)\s*[,; ]\s*(-?\d+(?:\.\d+)?)$/);
+            if (!v || Math.abs(+v[1]) > 90 || Math.abs(+v[2]) > 180) { say('Format koordinat: lintang, bujur — mis. -2.123456, 115.654321', true); return; }
+            put(+(+v[1]).toFixed(6), +(+v[2]).toFixed(6)).then(() => m.focus(+v[1], +v[2]));
+        });
+        clearBtn?.addEventListener('click', () => { if (confirm('Hapus posisi ini dari peta?')) put(null, null); });
+    });
+}

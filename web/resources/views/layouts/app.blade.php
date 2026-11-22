@@ -30,6 +30,7 @@
             <a href="{{ route('devices.index') }}" class="{{ $nav('devices.*') }}"><x-icon name="server"/>Perangkat
                 @if($downCount)<span class="count" title="{{ $downCount }} perangkat down">{{ $downCount }}</span>@endif</a>
             <a href="{{ route('topology.index') }}" class="{{ $nav('topology.*') }}"><x-icon name="share"/>Topologi</a>
+            <a href="{{ route('map.index') }}" class="{{ $nav('map.*') }}"><x-icon name="map-pin"/>Peta lokasi</a>
             <a href="{{ route('quality.index') }}" class="{{ $nav('quality.*') }}"><x-icon name="pulse"/>Kualitas jaringan</a>
             <a href="{{ route('sensors.index') }}" class="{{ $nav('sensors.*') }}"><x-icon name="gauge"/>Sensor</a>
             <a href="{{ route('ipam.index') }}" class="{{ $nav('ipam.*') }}"><x-icon name="grid"/>IPAM</a>

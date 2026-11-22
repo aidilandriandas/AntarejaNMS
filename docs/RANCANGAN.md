@@ -1,6 +1,6 @@
 # Rancangan ANTAREJA NMS (engine mandiri)
 
-Status: **Tahap 6c selesai** (laporan terjadwal) · menunggu verifikasi perangkat lapangan · Dokumen hidup, perbarui setiap ada keputusan desain.
+Status: **Tahap 6d selesai** (peta lokasi) · menunggu verifikasi perangkat lapangan · Dokumen hidup, perbarui setiap ada keputusan desain.
 
 ## 1. Sasaran
 
@@ -138,4 +138,5 @@ Engine problem berjalan di collector setelah setiap putaran ping (±1 menit):
 | 6a | Syslog: penerima UDP/TCP (port 5514 di container, 514 di VM; collector tetap non-root), urai RFC 3164/5424 toleran, cocok IP → perangkat (host + `device_ips`), batch `COPY` tiap 1 detik / 1.000 baris, batas laju 200/detik (burst 1.000) per IP, antrean 20.000, retensi `syslog.keep_days`, tingkat ≤ `syslog.event_severity` → kejadian `syslog` (maks. 1 per perangkat per 10 menit), indeks trigram untuk cari teks | selesai |
 | 6b | Discovery: antrean `discovery_scans` (maks. 3 antre/berjalan, 1 dikerjakan sekaligus), maks. /22, 64 pekerja, ping 2 paket + SNMP v2c GET system (timeout 1,5 s, tanpa retry; opsional juga untuk alamat yang tidak menjawab ping), tebakan vendor/kategori dari nomor enterprise IANA + sysDescr, cocok ke perangkat terdaftar (host + `device_ips`), batal dari web, perangkat dibuat hanya atas pilihan engineer | selesai |
 | 6c | Laporan terjadwal: `report_schedules` (harian/mingguan/bulanan, jam kirim, kanal, site), collector menyusun data (rumus SLA yang sama: problem `down` dikurangi jendela maintenance) dan mengirim tiap menit bila jatuh tempo (`last_key` mencegah kirim ganda, jeda 15 menit setelah gagal), email multipart teks+HTML, pratinjau lewat API internal `GET /v1/reports/{id}/preview` (iframe sandbox + CSP) | selesai |
+| 6d | Peta lokasi: kolom `lat`/`lng` di `sites` & `devices` (perangkat tanpa koordinat ikut site), Leaflet + penanda divIcon, status site = terburuk dari perangkatnya, garis dari graf topologi bila posisi kedua ujung berbeda, simpan posisi lewat `POST /peta/posisi` (engineer/admin, tercatat di audit), URL tile & atribusi di `settings` (admin) | selesai |
 | berikutnya | Verifikasi profil `snmpwalk` lapangan; profil Hikvision | |
