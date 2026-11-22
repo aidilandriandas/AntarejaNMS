@@ -4,7 +4,7 @@
 @php($shown = collect($layout)->keyBy('k'))
 @php($editList = array_merge($layout, collect($W)->keys()->reject(fn ($k) => $shown->has($k))->map(fn ($k) => ['k' => $k, 'w' => $W[$k][1], 'off' => true])->values()->all()))
 @section('content')
-<div class="page-head">
+<div class="page-head" data-autoreload="60">
     <div><h1>Ringkasan</h1><p>Kondisi seluruh perangkat saat ini · diperbarui otomatis tiap 60 detik</p></div>
     <div class="actions">
         <button type="button" class="btn" data-dash-edit aria-expanded="false"><x-icon name="grid"/>Atur tampilan</button>
@@ -51,5 +51,5 @@
     @endforeach
 </div>
 @endif
-@push('scripts')<script>setTimeout(function () { if (document.querySelector('[data-dash-panel]:not([hidden])')) return; if (!document.hidden) location.reload(); else document.addEventListener('visibilitychange', function () { location.reload(); }, { once: true }); }, 60000);</script>@endpush
+
 @endsection

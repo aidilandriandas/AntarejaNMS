@@ -22,7 +22,7 @@
                     <button type="button" class="btn sm" data-preview="{{ route('reports.schedules.preview', $r->id) }}" data-title="{{ $r->name }}">Pratinjau</button>
                     <form method="post" action="{{ route('reports.schedules.send', $r->id) }}" style="display:inline">@csrf<button class="btn sm">Kirim sekarang</button></form>
                     <a class="btn sm" href="{{ route('reports.schedules', ['ubah' => $r->id]) }}">Ubah</a>
-                    <form method="post" action="{{ route('reports.schedules.destroy', $r->id) }}" style="display:inline" onsubmit="return confirm('Hapus jadwal ini?')">@csrf @method('delete')<button class="btn sm danger" aria-label="Hapus"><x-icon name="trash"/></button></form>
+                    <form method="post" action="{{ route('reports.schedules.destroy', $r->id) }}" style="display:inline" data-confirm="Hapus jadwal ini?">@csrf @method('delete')<button class="btn sm danger" aria-label="Hapus"><x-icon name="trash"/></button></form>
                 </td>
             </tr>
         @endforeach

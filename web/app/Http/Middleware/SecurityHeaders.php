@@ -10,12 +10,12 @@ use Symfony\Component\HttpFoundation\Response;
  * Header keamanan untuk semua halaman. Respons yang sudah menetapkan header sendiri (mis. pratinjau laporan
  * dengan CSP sandbox) tidak ditimpa.
  *
- * CSP masih mengizinkan skrip/gaya inline (atribut onsubmit & blok kecil di template); yang dibatasi: asal skrip,
- * koneksi, frame, form, objek, dan base URI. Gambar https diizinkan untuk tile peta dari server yang diatur admin.
+ * Skrip hanya dari server sendiri (tanpa skrip inline / atribut on*). Gaya inline masih diizinkan (atribut style di
+ * template & Leaflet). Gambar https diizinkan untuk tile peta dari server yang diatur admin.
  */
 class SecurityHeaders
 {
-    private const CSP = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
+    private const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
         . "img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'; media-src 'self' blob:; worker-src 'self' blob:; "
         . "frame-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'";
 

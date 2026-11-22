@@ -31,8 +31,8 @@ Perbarui dokumen ini setiap ada fitur yang menyentuh kredensial, perangkat, atau
 
 ## 3. Header HTTP
 
-`Content-Security-Policy` (asal skrip/koneksi/frame/form dibatasi ke server sendiri, `object-src 'none'`,
-`frame-ancestors 'self'`), `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`,
+`Content-Security-Policy` (**skrip hanya dari server sendiri — tanpa skrip inline maupun atribut `on…`**; koneksi/frame/form
+dibatasi ke server sendiri, `object-src 'none'`, `frame-ancestors 'self'`), `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`,
 `Referrer-Policy: same-origin`, `Permissions-Policy` (kamera/mikrofon/lokasi dimatikan),
 `Cross-Origin-Opener-Policy`, `Strict-Transport-Security`. Pratinjau laporan memakai CSP `sandbox` tersendiri.
 
@@ -55,9 +55,9 @@ tidak dicatat di access log nginx. Siapa pun yang memegang tautan bisa membukany
 
 ## 6. Batasan yang diketahui
 
-- **CSP masih mengizinkan skrip inline** (`'unsafe-inline'`) karena beberapa template memakai atribut `onsubmit`
-  dan blok skrip kecil. Semua keluaran template di-escape; perlindungan utama terhadap XSS tetap escaping.
-  Perbaikan lanjutan: pindahkan seluruh skrip inline ke `app.js` lalu hapus `'unsafe-inline'`.
+- **CSP masih mengizinkan gaya (CSS) inline** (atribut `style` di template & Leaflet). Skrip inline sudah tidak diizinkan.
+  Aturan pengembangan: jangan menulis `<script>` inline atau atribut `onclick`/`onsubmit`/`onchange`; pakai atribut
+  `data-…` dan penangan di `resources/js/app.js` (mis. `data-confirm`, `data-autosubmit`, `data-print`).
 - **Syslog UDP bisa dipalsukan.** IP pengirim UDP tidak terautentikasi; log yang tampil "dari perangkat X" bisa dikirim
   pihak lain di jaringan. Perlakukan log sebagai petunjuk, bukan bukti. Batasi port 514 di firewall ke subnet manajemen.
 - **Gambar peta diambil browser dari server tile luar** (bawaan OpenStreetMap/OpenTopoMap): server tersebut melihat IP

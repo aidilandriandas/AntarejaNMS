@@ -4,7 +4,7 @@
 <div class="page-head">
     <div><h1>CCTV</h1><p>Gambar diperbarui tiap 10 detik. Klik kamera untuk live view (sub-stream; pilih <em>Kualitas tinggi</em> untuk main-stream).</p></div>
     <div class="actions">
-        <form method="get"><select class="input" name="site" onchange="this.form.submit()" aria-label="Site" style="height:36px">
+        <form method="get"><select class="input" name="site" data-autosubmit aria-label="Site" style="height:36px">
             <option value="">Semua site</option>@foreach($sites as $s)<option value="{{ $s->id }}" @selected(request('site') == $s->id)>{{ $s->code }}</option>@endforeach</select></form>
         @can('manage-devices')<a class="btn" href="{{ route('cctv.manage') }}"><x-icon name="edit"/>Kelola kamera</a>@endcan
     </div>

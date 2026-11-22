@@ -16,6 +16,31 @@ $$('[data-theme-toggle]').forEach((b) => b.addEventListener('click', () => {
 // Menu di layar kecil
 $$('[data-menu]').forEach((b) => b.addEventListener('click', () => document.body.classList.toggle('nav-open')));
 
+// Kirim form saat pilihan berubah (filter) & tombol cetak — pengganti atribut onchange/onclick (CSP tanpa skrip inline)
+$$('[data-autosubmit]').forEach((el) => el.addEventListener('change', () => el.form?.submit()));
+$$('[data-print]').forEach((el) => el.addEventListener('click', () => window.print()));
+
+// Muat ulang halaman berkala (mis. Ringkasan), ditunda selama panel pengaturan terbuka atau tab tersembunyi
+const autoReload = $('[data-autoreload]');
+if (autoReload) {
+    setTimeout(function again() {
+        if ($('[data-dash-panel]:not([hidden])')) { setTimeout(again, 15000); return; }
+        if (!document.hidden) location.reload();
+        else document.addEventListener('visibilitychange', () => location.reload(), { once: true });
+    }, (+autoReload.dataset.autoreload || 60) * 1000);
+}
+
+// CCTV kelola: pilih perangkat NVR/kamera mengisi host, site, dan nama
+$('[data-cam-device]')?.addEventListener('change', (e) => {
+    const o = e.target.selectedOptions[0];
+    const host = document.getElementById('host');
+    if (o?.dataset.host && !host.value) host.value = o.dataset.host;
+    const site = $('[data-cam-site]');
+    if (site) site.value = o?.dataset.site || '';
+    const name = document.getElementById('name');
+    if (o?.value && !name.value) name.value = o.textContent.replace(/\s*\(.*\)$/, '');
+});
+
 // Konfirmasi sebelum aksi berbahaya
 $$('form[data-confirm]').forEach((f) => f.addEventListener('submit', (e) => {
     if (!confirm(f.dataset.confirm)) e.preventDefault();

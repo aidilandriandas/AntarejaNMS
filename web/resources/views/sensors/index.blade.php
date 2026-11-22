@@ -13,7 +13,7 @@
 <section class="card">
     <form class="filters" method="get">
         <input type="hidden" name="tab" value="{{ $tab }}">
-        <select class="input" name="site" aria-label="Site" onchange="this.form.submit()"><option value="">Semua site</option>
+        <select class="input" name="site" aria-label="Site" data-autosubmit><option value="">Semua site</option>
             @foreach($sites as $s)<option value="{{ $s->id }}" @selected(request('site') == $s->id)>{{ $s->code }} — {{ $s->name }}</option>@endforeach</select>
     </form>
     <div class="bd flush">

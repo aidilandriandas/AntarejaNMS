@@ -67,14 +67,5 @@
         </form>
     </div></section>
 </div>
-@push('scripts')<script>
-document.querySelector('[data-cam-device]')?.addEventListener('change', (e) => {
-    const o = e.target.selectedOptions[0];
-    const host = document.getElementById('host');
-    if (o?.dataset.host && !host.value) host.value = o.dataset.host;
-    document.querySelector('[data-cam-site]').value = o?.dataset.site || '';
-    const name = document.getElementById('name');
-    if (o?.value && !name.value) name.value = o.textContent.replace(/\s*\(.*\)$/, '');
-});
-</script>@endpush
+
 @endsection

@@ -58,7 +58,7 @@
                     <div><button class="btn primary sm">Unggah</button></div>
                 </form>
                 @if($plan)
-                <form method="post" action="{{ route('map.plan.destroy', $plan->id) }}" onsubmit="return confirm('Hapus denah {{ addslashes($plan->name) }} beserta semua posisinya?')">@csrf @method('delete')
+                <form method="post" action="{{ route('map.plan.destroy', $plan->id) }}" data-confirm="Hapus denah {{ $plan->name }} beserta semua posisinya?">@csrf @method('delete')
                     <button class="btn sm danger">Hapus denah "{{ $plan->name }}"</button></form>
                 @endif
             </div>

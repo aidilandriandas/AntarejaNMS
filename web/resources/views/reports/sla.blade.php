@@ -11,15 +11,15 @@
         <p>Ketersediaan = waktu perangkat menjawab ÷ waktu dipantau. Gangguan selama maintenance tidak dihitung. @if($partial)<b>Bulan berjalan — angka sementara.</b>@endif</p></div>
     <div class="actions">
         <a class="btn" href="{{ route('reports.sla.csv', request()->only('bulan', 'site')) }}"><x-icon name="download"/>CSV (Excel)</a>
-        <button class="btn" type="button" onclick="window.print()">Cetak / PDF</button>
+        <button class="btn" type="button" data-print>Cetak / PDF</button>
     </div>
 </div>
 <section class="card" style="margin-bottom:16px">
     <form class="filters" method="get">
-        <select class="input" name="bulan" aria-label="Bulan" onchange="this.form.submit()">
+        <select class="input" name="bulan" aria-label="Bulan" data-autosubmit>
             @foreach($months as $m)<option value="{{ $m->format('Y-m') }}" @selected($m->format('Y-m') === $start->format('Y-m'))>{{ $m->translatedFormat('F Y') }}</option>@endforeach
         </select>
-        <select class="input" name="site" aria-label="Site" onchange="this.form.submit()"><option value="">Semua site</option>
+        <select class="input" name="site" aria-label="Site" data-autosubmit><option value="">Semua site</option>
             @foreach($sitesAll as $s)<option value="{{ $s->id }}" @selected(request('site') == $s->id)>{{ $s->code }} — {{ $s->name }}</option>@endforeach</select>
         <span class="muted" style="margin-left:auto">Target: <b>{{ $fmtPct($target) }}</b></span>
         @can('admin')

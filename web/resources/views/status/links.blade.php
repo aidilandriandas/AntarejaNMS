@@ -29,7 +29,7 @@
                 <td>{{ $l->site_code ?? 'Semua site' }}</td>
                 <td>@if($l->revoked_at)<span class="badge">dicabut</span>@elseif($expired)<span class="badge">kedaluwarsa</span>@else<span class="badge ok">aktif</span><small class="muted" style="display:block">{{ $l->expires_at ? 's.d. ' . \Illuminate\Support\Carbon::parse($l->expires_at)->format('d/m/Y') : 'tanpa batas' }}</small>@endif</td>
                 <td class="muted">{{ $l->use_count }}×@if($l->last_used_at)<small>terakhir {{ \Illuminate\Support\Carbon::parse($l->last_used_at)->diffForHumans() }}</small>@endif</td>
-                <td>@unless($l->revoked_at || $expired)<form method="post" action="{{ route('status.links.revoke', $l->id) }}" onsubmit="return confirm('Cabut tautan ini? Siapa pun yang memegangnya tidak bisa membuka lagi.')">@csrf<button class="btn sm danger">Cabut</button></form>@endunless</td>
+                <td>@unless($l->revoked_at || $expired)<form method="post" action="{{ route('status.links.revoke', $l->id) }}" data-confirm="Cabut tautan ini? Siapa pun yang memegangnya tidak bisa membuka lagi.">@csrf<button class="btn sm danger">Cabut</button></form>@endunless</td>
             </tr>
         @endforeach
         </tbody>

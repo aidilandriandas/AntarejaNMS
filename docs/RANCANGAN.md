@@ -1,6 +1,6 @@
 # Rancangan ANTAREJA NMS (engine mandiri)
 
-Status: **Tahap 6j selesai** (audit keamanan) · menunggu verifikasi perangkat lapangan · Dokumen hidup, perbarui setiap ada keputusan desain.
+Status: **Tahap 6k selesai** (CSP ketat) · menunggu verifikasi perangkat lapangan · Dokumen hidup, perbarui setiap ada keputusan desain.
 
 ## 1. Sasaran
 
@@ -145,4 +145,5 @@ Engine problem berjalan di collector setelah setiap putaran ping (±1 menit):
 | 6h | Ringkasan per pengguna: `users.dashboard` (JSON urutan + lebar), daftar widget di `App\Support\Dashboard` (kunci tak dikenal/duplikat dibuang), data hanya dihitung untuk widget yang tampil; widget baru: sensor di luar ambang, kamera bermasalah, syslog error, perubahan konfigurasi (tautan diff hanya admin/engineer), maintenance, peta lokasi | selesai |
 | 6i | Tautan status: `status_links` (SHA-256 token 40 karakter acak, tautan hanya ditampilkan sekali), cakupan site, kedaluwarsa, cabut, hitung pemakaian; halaman `GET /status/{token}` tanpa login, throttle 60/menit, `noindex`, `no-referrer`, `no-store`, tanpa IP/host; nginx tidak mencatat URL `/status/` (map `$antareja_log`) | selesai |
 | 6j | Audit keamanan: header HTTP (CSP, X-Frame-Options, nosniff, HSTS, Referrer/Permissions-Policy), akun nonaktif langsung keluar, sesi lain keluar saat password diganti (`AuthenticateSession`), ringkasan di `docs/KEAMANAN.md` | selesai |
-| berikutnya | Verifikasi profil `snmpwalk` lapangan; profil Hikvision; hapus `'unsafe-inline'` dari CSP | |
+| 6k | CSP ketat untuk skrip (`script-src 'self'`): skrip inline & atribut `on…` dipindah ke `app.js` (`data-confirm`, `data-autosubmit`, `data-print`, `data-autoreload`), inisialisasi tema dari `/theme-init.js` | selesai |
+| berikutnya | Verifikasi profil `snmpwalk` lapangan; profil Hikvision | |
