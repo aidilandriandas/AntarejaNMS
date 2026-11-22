@@ -5,12 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Layar NOC · ANTAREJA NMS</title>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="/brand/favicon-32.png">
+    <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
     @vite(['resources/css/app.css', 'resources/css/noc.css', 'resources/js/noc.js'])
 </head>
 <body class="noc-body">
 <div class="noc" data-noc data-url="{{ route('noc.data') }}" data-topo-url="{{ route('topology.data') }}" data-live-url="{{ route('topology.live') }}" data-login="{{ route('login') }}">
     <header class="n-head n-panel">
-        <a class="brand" href="{{ route('dashboard') }}" title="Kembali ke aplikasi"><span class="mark">A</span><span><b>ANTAREJA NOC</b><small>NETWORK OPERATIONS CENTER</small></span></a>
+        <a class="brand" href="{{ route('dashboard') }}" title="Kembali ke aplikasi"><img class="mark" src="/brand/logo.png" alt="" width="34" height="34"><span><b>ANTAREJA NOC</b><small>NETWORK OPERATIONS CENTER</small></span></a>
         <div class="n-alarm ok" data-alarm role="status" aria-live="polite"><x-icon name="shield"/><span>Memuat…</span></div>
         <span class="n-spacer"></span>
         <span class="n-live" data-live title="Data diperbarui tiap 15 detik"><i></i><span>LIVE</span></span>

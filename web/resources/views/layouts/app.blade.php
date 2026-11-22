@@ -11,13 +11,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Ringkasan') · ANTAREJA NMS</title>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="/brand/favicon-32.png">
+    <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
     @include('partials.theme-init')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
 <div class="app">
     <aside class="side" aria-label="Navigasi utama">
-        <a class="brand" href="{{ route('dashboard') }}"><span class="mark">A</span><span><b>ANTAREJA</b><small>NETWORK MONITORING</small></span></a>
+        <a class="brand" href="{{ route('dashboard') }}"><img class="mark" src="/brand/logo.png" alt="" width="34" height="34"><span><b>ANTAREJA</b><small>NETWORK MONITORING</small></span></a>
         <nav class="nav">
             <a href="{{ route('dashboard') }}" class="{{ $nav('dashboard') }}"><x-icon name="home"/>Ringkasan</a>
             <a href="{{ route('noc') }}"><x-icon name="monitor"/>Layar NOC</a>

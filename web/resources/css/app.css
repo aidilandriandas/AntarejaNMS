@@ -75,7 +75,7 @@ svg.i { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none;
 .side { background: var(--side); color: var(--side-ink); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,.06); color: #fff; }
 .brand:hover { text-decoration: none; }
-.brand .mark { width: 30px; height: 30px; border-radius: 7px; background: var(--brand); display: grid; place-items: center; font: 700 15px var(--sans); color: #fff; }
+.brand .mark { width: 34px; height: 34px; flex: none; border-radius: 50%; display: block; object-fit: contain; }
 .brand b { font: 700 16px/1 var(--sans); letter-spacing: .06em; }
 .brand small { display: block; font: 500 10px/1 var(--mono); letter-spacing: .18em; color: var(--side-muted); margin-top: 4px; }
 .nav { padding: 10px 10px; flex: 1; overflow-y: auto; }
