@@ -7,6 +7,7 @@ use App\Http\Controllers\ChannelController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\IpamController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NocController;
 use App\Http\Controllers\ProblemController;
@@ -53,6 +54,10 @@ Route::middleware('auth')->group(function () {
         Route::delete('topologi/sambungan/{link}', [TopologyController::class, 'destroyLink'])->name('topology.links.destroy')->whereNumber('link');
         Route::post('topologi/posisi', [TopologyController::class, 'savePositions'])->name('topology.positions');
 
+        Route::post('ipam/subnet', [IpamController::class, 'store'])->name('ipam.store');
+        Route::put('ipam/subnet/{subnet}', [IpamController::class, 'update'])->name('ipam.update')->whereNumber('subnet');
+        Route::delete('ipam/subnet/{subnet}', [IpamController::class, 'destroy'])->name('ipam.destroy')->whereNumber('subnet');
+
         Route::post('site', [SiteController::class, 'store'])->name('sites.store');
         Route::put('site/{site}', [SiteController::class, 'update'])->name('sites.update');
         Route::delete('site/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
@@ -65,6 +70,9 @@ Route::middleware('auth')->group(function () {
     Route::get('problem', [ProblemController::class, 'index'])->name('problems.index');
     Route::get('maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
     Route::get('sensor', [SensorController::class, 'index'])->name('sensors.index');
+    Route::get('ipam', [IpamController::class, 'index'])->name('ipam.index');
+    Route::get('ipam/cari', [IpamController::class, 'search'])->name('ipam.search');
+    Route::get('ipam/subnet/{subnet}', [IpamController::class, 'show'])->name('ipam.show')->whereNumber('subnet');
     Route::get('laporan/sla', [ReportController::class, 'sla'])->name('reports.sla');
     Route::get('laporan/sla.csv', [ReportController::class, 'csv'])->name('reports.sla.csv');
     Route::get('topologi', [TopologyController::class, 'index'])->name('topology.index');

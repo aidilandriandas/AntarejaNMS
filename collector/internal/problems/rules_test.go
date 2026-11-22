@@ -127,3 +127,17 @@ func TestSensors(t *testing.T) {
 		t.Fatal("sensor basi harus unknown")
 	}
 }
+
+func TestIPConflict(t *testing.T) {
+	th2 := th
+	th2.ConflictChanges, th2.ConflictHours = 3, 6
+	devs := []Device{{ID: 1, Name: "Core", Status: "up", Conflicts: []Conflict{
+		{IP: "10.10.5.20", MACs: []string{"aa:aa:aa:aa:aa:01", "bb:bb:bb:bb:bb:02"}, Changes: 4}, // konflik nyata
+		{IP: "10.10.5.21", MACs: []string{"aa:aa:aa:aa:aa:03", "bb:bb:bb:bb:bb:04"}, Changes: 1}, // DHCP ganti sekali
+		{IP: "10.10.5.22", MACs: []string{"a", "b", "c"}, Changes: 5},                            // >2 MAC: pergantian perangkat berurutan, bukan konflik
+	}}}
+	r := Evaluate(devs, th2)
+	if len(r.Conds) != 1 || r.Conds[0].Key() != "1/sensor/ip:10.10.5.20" || r.Conds[0].Kind != "ip_conflict" {
+		t.Fatalf("%+v", r.Conds)
+	}
+}

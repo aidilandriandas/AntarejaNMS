@@ -3,6 +3,8 @@ package store
 
 import (
 	"context"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -27,19 +29,20 @@ type Device struct {
 	LastSNMPAt      *time.Time
 	UptimeSeconds   *int64
 	SysObjectID     *string
+	Category        string
 }
 
 type Store struct{ DB *pgxpool.Pool }
 
 const deviceCols = `id, name, host, ping_enabled, snmp_enabled, snmp_version, snmp_port,
 	snmp_community_enc, snmp_v3_user, snmp_v3_level, snmp_v3_auth_proto, snmp_v3_auth_enc, snmp_v3_priv_proto, snmp_v3_priv_enc,
-	status, status_changed_at, fail_streak, last_rtt_ms, snmp_ok, last_snmp_at, uptime_seconds, sys_object_id`
+	status, status_changed_at, fail_streak, last_rtt_ms, snmp_ok, last_snmp_at, uptime_seconds, sys_object_id, category`
 
 func scanDevice(r pgx.Row) (Device, error) {
 	var d Device
 	err := r.Scan(&d.ID, &d.Name, &d.Host, &d.PingEnabled, &d.SNMPEnabled, &d.SNMPVersion, &d.SNMPPort,
 		&d.CommunityEnc, &d.V3User, &d.V3Level, &d.V3AuthProto, &d.V3AuthEnc, &d.V3PrivProto, &d.V3PrivEnc,
-		&d.Status, &d.StatusChangedAt, &d.FailStreak, &d.LastRTT, &d.SNMPOK, &d.LastSNMPAt, &d.UptimeSeconds, &d.SysObjectID)
+		&d.Status, &d.StatusChangedAt, &d.FailStreak, &d.LastRTT, &d.SNMPOK, &d.LastSNMPAt, &d.UptimeSeconds, &d.SysObjectID, &d.Category)
 	return d, err
 }
 
@@ -328,5 +331,88 @@ func (s Store) Profiles(ctx context.Context, deviceID int64, sysObjectID string,
 
 func (s Store) SetProfiles(ctx context.Context, deviceID int64, ids string) error {
 	_, err := s.DB.Exec(ctx, `UPDATE devices SET profiles = $2, profiles_at = now() WHERE id = $1`, deviceID, ids)
+	return err
+}
+
+// SaveIPs mengganti daftar IP interface perangkat dan menambahkan subnetnya sebagai subnet otomatis.
+func (s Store) SaveIPs(ctx context.Context, deviceID int64, ips []IPRow) error {
+	tx, err := s.DB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+	keep := make([]string, 0, len(ips))
+	for _, ip := range ips {
+		keep = append(keep, ip.IP)
+		if _, err := tx.Exec(ctx, `INSERT INTO device_ips (device_id, ip, if_index, prefix, updated_at) VALUES ($1, $2::inet, $3, NULLIF($4, 0), now())
+			ON CONFLICT (device_id, ip) DO UPDATE SET if_index = EXCLUDED.if_index, prefix = EXCLUDED.prefix, updated_at = now()`,
+			deviceID, ip.IP, ip.IfIndex, ip.Prefix); err != nil {
+			return err
+		}
+		// Subnet otomatis: /8–/30, bukan loopback / link-local
+		if ip.Prefix >= 8 && ip.Prefix <= 30 && !strings.HasPrefix(ip.IP, "127.") && !strings.HasPrefix(ip.IP, "169.254.") {
+			if _, err := tx.Exec(ctx, `INSERT INTO subnets (cidr, source) VALUES (network(($1 || '/' || $2)::inet)::cidr, 'auto') ON CONFLICT (cidr) DO NOTHING`,
+				ip.IP, strconv.Itoa(ip.Prefix)); err != nil {
+				return err
+			}
+		}
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM device_ips WHERE device_id = $1 AND NOT (host(ip) = ANY($2))`, deviceID, keep); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+type IPRow struct {
+	IP      string
+	IfIndex int
+	Prefix  int
+}
+
+type ARPRow struct {
+	IfIndex int
+	IP, MAC string
+}
+
+// SaveARP memperbarui tabel ARP yang dilaporkan router. Pergantian MAC untuk (port, IP) yang sama dicatat
+// di arp_changes sebagai dasar deteksi konflik IP. Mengembalikan jumlah pergantian baru.
+func (s Store) SaveARP(ctx context.Context, reporterID int64, rows []ARPRow) (int, error) {
+	prev := map[string]string{}
+	r, err := s.DB.Query(ctx, `SELECT if_index, host(ip), mac FROM arp_entries WHERE reporter_id = $1`, reporterID)
+	if err != nil {
+		return 0, err
+	}
+	for r.Next() {
+		var ifi int
+		var ip, mac string
+		if err := r.Scan(&ifi, &ip, &mac); err != nil {
+			r.Close()
+			return 0, err
+		}
+		prev[strconv.Itoa(ifi)+"|"+ip] = mac
+	}
+	r.Close()
+	b := &pgx.Batch{}
+	changes := 0
+	for _, a := range rows {
+		k := strconv.Itoa(a.IfIndex) + "|" + a.IP
+		if old, ok := prev[k]; ok && old != a.MAC {
+			b.Queue(`INSERT INTO arp_changes (reporter_id, if_index, ip, old_mac, new_mac) VALUES ($1,$2,$3::inet,$4,$5)`, reporterID, a.IfIndex, a.IP, old, a.MAC)
+			changes++
+		}
+		b.Queue(`INSERT INTO arp_entries (reporter_id, if_index, ip, mac) VALUES ($1,$2,$3::inet,$4)
+			ON CONFLICT (reporter_id, if_index, ip) DO UPDATE SET
+				first_seen = CASE WHEN arp_entries.mac <> EXCLUDED.mac THEN now() ELSE arp_entries.first_seen END,
+				mac = EXCLUDED.mac, last_seen = now()`, reporterID, a.IfIndex, a.IP, a.MAC)
+	}
+	return changes, s.DB.SendBatch(ctx, b).Close()
+}
+
+// PruneIPAM menghapus entri ARP yang tidak terlihat 30 hari dan riwayat pergantian > 30 hari.
+func (s Store) PruneIPAM(ctx context.Context) error {
+	if _, err := s.DB.Exec(ctx, `DELETE FROM arp_entries WHERE last_seen < now() - interval '30 days'`); err != nil {
+		return err
+	}
+	_, err := s.DB.Exec(ctx, `DELETE FROM arp_changes WHERE at < now() - interval '30 days'`)
 	return err
 }

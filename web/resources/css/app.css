@@ -307,3 +307,13 @@ tr.sensor-row.sel td { background: var(--accent-soft) !important; }
     .card, .kpi { box-shadow: none; break-inside: avoid; }
     .g-main { grid-template-columns: 1fr; }
 }
+
+/* Peta IP subnet */
+.ipgrid { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 3px; }
+.ipgrid .ip { font: 500 10.5px var(--mono); text-align: center; padding: 4px 0; border-radius: 3px; border: 1px dashed var(--line-strong); color: var(--muted); cursor: default; }
+.ipgrid .ip.device { background: var(--info); border: 0; color: #fff; }
+.ipgrid .ip.used { background: var(--ok); border: 0; color: #fff; }
+.ipgrid .ip.stale { background: var(--warn-soft); border: 1px solid var(--warn); color: var(--warn); }
+.ipgrid .ip.conflict { background: var(--crit); border: 0; color: #fff; }
+.ipgrid .ip.reserved { border-style: solid; background: var(--off-soft); }
+@media (max-width: 860px) { .ipgrid { grid-template-columns: repeat(8, minmax(0, 1fr)); } }

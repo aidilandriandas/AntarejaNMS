@@ -27,6 +27,7 @@ class Problem extends Model
         'port_down' => 'Port putus',
         'port_util' => 'Port penuh',
         'sensor' => 'Sensor',
+        'ip_conflict' => 'Konflik IP',
     ];
 
     protected function casts(): array

@@ -12,10 +12,12 @@ import (
 var SeverityRank = map[string]int{"info": 0, "warning": 1, "average": 2, "high": 3, "disaster": 4}
 
 type Thresholds struct {
-	LatencyMS      float64
-	LossPct        float64
-	UtilPct        float64
-	SNMPFailCycles int
+	LatencyMS       float64
+	LossPct         float64
+	UtilPct         float64
+	SNMPFailCycles  int
+	ConflictChanges int // pergantian MAC minimal dalam jendela agar dianggap konflik IP
+	ConflictHours   int
 }
 
 // Device adalah data satu perangkat yang dibutuhkan untuk penilaian.
@@ -38,6 +40,14 @@ type Device struct {
 	InMaintenance string // judul maintenance aktif, kosong bila tidak
 	Ports         []Port
 	Sensors       []Sensor
+	Conflicts     []Conflict // dari tabel ARP yang dilaporkan perangkat ini (router)
+}
+
+// Conflict: satu IP yang berganti-ganti MAC pada router & port yang sama dalam jendela waktu.
+type Conflict struct {
+	IP      string
+	MACs    []string
+	Changes int
 }
 
 // Sensor adalah pembacaan sensor tersimpan (lihat profiles). Fresh=false bila tidak diperbarui > 20 menit.
@@ -196,6 +206,22 @@ func Evaluate(devs []Device, th Thresholds) Result {
 			}
 			add(Cond{Kind: "sensor", Sensor: s.Key, Severity: sev, Value: s.Value, Title: fmt.Sprintf("%s: %s %s", d.Name, s.Label, val),
 				Detail: "di luar ambang normal"})
+		}
+
+		// Konflik IP: tepat dua MAC bergantian berulang kali untuk IP yang sama di router yang sama.
+		// Satu kali berganti (DHCP, ganti perangkat) BUKAN konflik.
+		for _, c := range d.Conflicts {
+			k := "ip:" + c.IP
+			if d.Status != "up" {
+				res.Unknown[SensorKey(d.ID, k)] = true
+				continue
+			}
+			if len(c.MACs) == 2 && c.Changes >= th.ConflictChanges {
+				n := float64(c.Changes)
+				add(Cond{Kind: "ip_conflict", Sensor: k, Severity: "average", Value: &n,
+					Title:  fmt.Sprintf("Konflik IP %s: %s ↔ %s", c.IP, c.MACs[0], c.MACs[1]),
+					Detail: fmt.Sprintf("MAC berganti %d kali dalam %d jam di tabel ARP %s", c.Changes, th.ConflictHours, d.Name)})
+			}
 		}
 
 		sup, note := "", ""

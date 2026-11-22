@@ -92,6 +92,9 @@ func (p *Poller) Run(ctx context.Context) {
 	go loop("ping", p.Cfg.PingInterval, p.PingCycle)
 	go loop("snmp", p.Cfg.SNMPInterval, p.SNMPCycle)
 	go loop("perawatan", 24*time.Hour, func(ctx context.Context) error {
+		if err := p.Store.PruneIPAM(ctx); err != nil {
+			p.Log.Warn("pembersihan IPAM gagal", "galat", err)
+		}
 		n, err := p.Store.PruneEvents(ctx, time.Now().Add(-eventKeep))
 		if n > 0 {
 			p.Log.Info("kejadian lama dihapus", "jumlah", n)
@@ -412,6 +415,7 @@ func (p *Poller) pollSNMP(ctx context.Context, d store.Device) bool {
 		}
 	}
 	p.collectSensors(ctx, d, cr, sys.ObjectID, &batch, now)
+	p.collectIPAM(ctx, d, cr, sys.ObjectID)
 	if err := p.Writer.Write(ctx, &batch); err != nil {
 		p.Log.Warn("metrik SNMP tidak terkirim", "perangkat", d.ID, "galat", err)
 	}

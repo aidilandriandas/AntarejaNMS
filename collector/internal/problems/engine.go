@@ -34,7 +34,7 @@ func (e *Engine) Run(ctx context.Context) (Outcome, error) {
 	if err != nil {
 		return out, err
 	}
-	devs, err := e.load(ctx)
+	devs, err := e.load(ctx, th)
 	if err != nil {
 		return out, err
 	}
@@ -107,8 +107,8 @@ func nullable(s string) *string {
 }
 
 func (e *Engine) thresholds(ctx context.Context) (Thresholds, error) {
-	th := Thresholds{LatencyMS: 150, LossPct: 20, UtilPct: 90, SNMPFailCycles: 2}
-	rows, err := e.DB.Query(ctx, `SELECT key, value FROM settings WHERE key LIKE 'threshold.%'`)
+	th := Thresholds{LatencyMS: 150, LossPct: 20, UtilPct: 90, SNMPFailCycles: 2, ConflictChanges: 3, ConflictHours: 6}
+	rows, err := e.DB.Query(ctx, `SELECT key, value FROM settings WHERE key LIKE 'threshold.%' OR key LIKE 'ipam.%'`)
 	if err != nil {
 		return th, err
 	}
@@ -142,12 +142,16 @@ func (e *Engine) thresholds(ctx context.Context) (Thresholds, error) {
 			th.UtilPct = v
 		case "threshold.snmp_fail_cycles":
 			th.SNMPFailCycles = int(math.Max(1, v))
+		case "ipam.conflict_changes":
+			th.ConflictChanges = int(math.Max(2, v))
+		case "ipam.conflict_hours":
+			th.ConflictHours = int(math.Max(1, v))
 		}
 	}
 	return th, rows.Err()
 }
 
-func (e *Engine) load(ctx context.Context) ([]Device, error) {
+func (e *Engine) load(ctx context.Context, th Thresholds) ([]Device, error) {
 	rows, err := e.DB.Query(ctx, `
 		SELECT d.id, d.name, d.category, d.status, COALESCE(d.status_reason, ''), d.fail_streak, COALESCE(d.parent_id, 0), d.ping_enabled, d.snmp_enabled,
 			COALESCE((SELECT m.title FROM maintenances m
@@ -216,5 +220,29 @@ func (e *Engine) load(ctx context.Context) ([]Device, error) {
 			devs[i].Sensors = append(devs[i].Sensors, s)
 		}
 	}
-	return devs, srows.Err()
+	if err := srows.Err(); err != nil {
+		return nil, err
+	}
+
+	crows, err := e.DB.Query(ctx, `
+		WITH c AS (SELECT reporter_id, ip, old_mac, new_mac FROM arp_changes WHERE at > now() - make_interval(hours => $1))
+		SELECT reporter_id, host(ip), count(*),
+			ARRAY(SELECT DISTINCT m FROM (SELECT old_mac AS m FROM c c2 WHERE c2.reporter_id = c.reporter_id AND c2.ip = c.ip
+			                              UNION SELECT new_mac FROM c c3 WHERE c3.reporter_id = c.reporter_id AND c3.ip = c.ip) u ORDER BY m)
+		FROM c GROUP BY reporter_id, ip`, th.ConflictHours)
+	if err != nil {
+		return nil, err
+	}
+	defer crows.Close()
+	for crows.Next() {
+		var dev int64
+		var c Conflict
+		if err := crows.Scan(&dev, &c.IP, &c.Changes, &c.MACs); err != nil {
+			return nil, err
+		}
+		if i, ok := idx[dev]; ok {
+			devs[i].Conflicts = append(devs[i].Conflicts, c)
+		}
+	}
+	return devs, crows.Err()
 }
