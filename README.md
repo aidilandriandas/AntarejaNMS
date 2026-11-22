@@ -40,8 +40,7 @@ berlisensi tertutup milik perusahaan. Lihat [`LICENSE`](LICENSE), [`docs/CLEAN-R
 | 1 | Buat VM Ubuntu 24.04 (4 vCPU, 8 GB RAM, 100 GB disk) di Proxmox, IP tetap di jaringan manajemen | Tim server | VM bisa di-SSH |
 | 2 | Pasang Docker & Git | Tim server | `docker compose version` jalan |
 | 3 | Ambil kode dengan *deploy key* GitHub (hanya baca) | Admin ANTAREJA | Folder `/opt/antareja` berisi kode |
-| 4 | Isi `deploy/.env` (password DB & kunci acak, IP VM) — **simpan cadangan `.env`** | Admin ANTAREJA | `./antareja.sh cek` tidak menyebut "BELUM DIISI" |
-| 5 | `./antareja.sh up` | Admin ANTAREJA | `./antareja.sh cek` → semua OK |
+| 4–5 | `cd /opt/antareja/deploy && ./install.sh` (buat `.env` acak + jalankan) — **simpan cadangan `.env`** | Admin ANTAREJA | Skrip berakhir "Selesai"; `./antareja.sh cek` → semua OK |
 | 6 | Buka web, buat akun admin, buat akun per orang | Admin ANTAREJA | Bisa login |
 | 7 | Pasang sertifikat HTTPS kantor, atur firewall | Tim server / keamanan | Browser tidak memperingatkan sertifikat |
 | 8 | Aktifkan SNMP (read-only) & syslog di perangkat; user SSH baca-saja untuk backup konfigurasi | Engineer jaringan | *Uji sekarang* di form perangkat berhasil |
@@ -176,6 +175,15 @@ cd /opt/antareja && git config core.sshCommand "ssh -i ~/.ssh/antareja_deploy"
 ```
 
 ## 4. Isi konfigurasi `.env`
+
+**Cara cepat (disarankan):** skrip pemasangan menanyakan IP, port (bawaan 80/443), dan folder backup, membuat `.env`
+dengan password & kunci acak, mengecek port bentrok, lalu menjalankan dan memeriksa semuanya (langkah 4 & 5 sekaligus):
+
+```bash
+cd /opt/antareja/deploy && ./install.sh
+```
+
+Lanjut ke [langkah 6](#6-setup-awal-di-browser) bila skrip berakhir dengan "Selesai". Cara manual:
 
 ```bash
 cd /opt/antareja/deploy && cp .env.example .env
