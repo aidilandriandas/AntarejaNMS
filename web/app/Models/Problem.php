@@ -76,4 +76,9 @@ class Problem extends Model
     {
         return \App\Support\Fmt::duration((int) $this->started_at->diffInSeconds($this->resolved_at ?? now(), true));
     }
+
+    public function incidents(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Incident::class, 'incident_problems');
+    }
 }

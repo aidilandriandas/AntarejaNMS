@@ -31,6 +31,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/cctv"
 	"github.com/aidilandriandas/antarejanms/collector/internal/config"
 	"github.com/aidilandriandas/antarejanms/collector/internal/configbak"
+	"github.com/aidilandriandas/antarejanms/collector/internal/incidents"
 	"github.com/aidilandriandas/antarejanms/collector/internal/discovery"
 	"github.com/aidilandriandas/antarejanms/collector/internal/migrate"
 	"github.com/aidilandriandas/antarejanms/collector/internal/notify"
@@ -138,11 +139,15 @@ func run() error {
 		p := poller.New(cfg, store.Store{DB: db}, box, log)
 		engine := &problems.Engine{DB: db, Stats: p.Stats}
 		disp := notify.NewDispatcher(db, box, log, cfg.BaseURL)
+		inc := &incidents.Runner{DB: db, Log: log}
 		p.AfterPing = func(ctx context.Context) {
 			out, err := engine.Run(ctx)
 			if err != nil {
 				log.Error("penilaian problem gagal", "galat", err)
 				return
+			}
+			if err := inc.Run(ctx); err != nil {
+				log.Warn("pengelompokan insiden gagal", "galat", err)
 			}
 			if out.Opened > 0 || out.Resolved > 0 {
 				log.Info("problem", "baru", out.Opened, "selesai", out.Resolved, "terbuka", out.Open, "kondisi", out.Summary)

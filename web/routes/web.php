@@ -14,6 +14,7 @@ use App\Http\Controllers\DiscoveryController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\MapController;
+use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\IpamController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NocController;
@@ -73,6 +74,12 @@ Route::middleware('auth')->group(function () {
 
         Route::post('perangkat/{device}/port/{ifIndex}/pantau', [DeviceController::class, 'toggleMonitor'])->name('devices.monitor')->whereNumber('ifIndex');
 
+        Route::post('insiden', [IncidentController::class, 'store'])->name('incidents.store');
+        Route::post('insiden/{incident}/tangani', [IncidentController::class, 'take'])->name('incidents.take')->whereNumber('incident');
+        Route::post('insiden/{incident}/catatan', [IncidentController::class, 'note'])->name('incidents.note')->whereNumber('incident');
+        Route::post('insiden/{incident}/analisis', [IncidentController::class, 'rca'])->name('incidents.rca')->whereNumber('incident');
+        Route::post('insiden/{incident}/tutup', [IncidentController::class, 'close'])->name('incidents.close')->whereNumber('incident');
+        Route::post('insiden/{incident}/buka', [IncidentController::class, 'reopen'])->name('incidents.reopen')->whereNumber('incident');
         Route::post('problem/{problem}/ack', [ProblemController::class, 'ack'])->name('problems.ack');
         Route::delete('problem/{problem}/ack', [ProblemController::class, 'unack'])->name('problems.unack');
 
@@ -113,6 +120,9 @@ Route::middleware('auth')->group(function () {
     Route::get('peta/data', [MapController::class, 'data'])->name('map.data');
     Route::get('peta/denah/{plan}', [MapController::class, 'planImage'])->name('map.plan.image')->whereNumber('plan');
     Route::get('problem', [ProblemController::class, 'index'])->name('problems.index');
+    Route::get('insiden', [IncidentController::class, 'index'])->name('incidents.index');
+    Route::get('insiden.csv', [IncidentController::class, 'csv'])->name('incidents.csv');
+    Route::get('insiden/{incident}', [IncidentController::class, 'show'])->name('incidents.show')->whereNumber('incident');
     Route::get('maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
     Route::get('sensor', [SensorController::class, 'index'])->name('sensors.index');
     Route::get('kualitas', [QualityController::class, 'index'])->name('quality.index');

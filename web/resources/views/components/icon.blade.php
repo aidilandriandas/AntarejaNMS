@@ -1,6 +1,7 @@
 @props(['name'])
 {{-- Ikon garis sederhana 24×24 (digambar untuk ANTAREJA). --}}
 <svg {{ $attributes->merge(['class' => 'i']) }} viewBox="0 0 24 24" aria-hidden="true">@switch($name)
+@case('flag')<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>@break
 @case('home')<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>@break
 @case('server')<rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="M7 7.5h.01M7 16.5h.01"/>@break
 @case('switch')<rect x="2" y="8" width="20" height="8" rx="1.5"/><path d="M6 12h1M9.5 12h1M13 12h1M16.5 12h1"/>@break

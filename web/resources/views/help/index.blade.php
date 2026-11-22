@@ -13,6 +13,7 @@
     <a href="#problem">Problem & severity</a>
     <a href="#tangani">Saat ada perangkat down</a>
     <a href="#ack">ACK, eskalasi & notifikasi</a>
+    <a href="#insiden">Insiden</a>
     <a href="#maintenance">Maintenance & perangkat induk</a>
     <a href="#noc">Layar NOC</a>
     <a href="#sensor">Ambang sensor bawaan</a>
@@ -70,6 +71,16 @@
         <li><b>Eskalasi</b>: kanal dengan jeda (mis. 30 menit, untuk supervisor) hanya dikirimi problem yang <b>belum di-ACK</b> selama jeda itu. Jadi: ACK cepat = atasan tidak terganggu.</li>
         <li>Problem yang <b>ditekan</b> (maintenance / induk down) tetap tampil tetapi tidak dinotifikasi.</li>
         <li><b>Masalah sistem ANTAREJA</b> (backup gagal, disk hampir penuh, notifikasi gagal) juga dikirim ke kanal notifikasi; lihat <i>Kesehatan sistem</i> (admin).</li>
+    </ul>
+</div></section>
+
+<section class="card" id="insiden"><div class="hd"><h2>Insiden</h2></div><div class="bd">
+    <ul class="help-list">
+        <li><b>Problem</b> = satu kondisi di satu perangkat. <b>Insiden</b> = satu gangguan nyata yang bisa berisi banyak problem (mis. PLN padam di satu pit: core, radio, dan kamera down sekaligus).</li>
+        <li><b>Dibuat otomatis</b> bila ada problem <b>Disaster</b>, atau ≥ 3 problem <b>High</b> di satu site yang muncul dalam 10 menit. Problem baru di site yang sama dalam 60 menit, dan perangkat yang <i>terdampak induk</i>, otomatis digabung ke insiden yang sama.</li>
+        <li><b>Dibuat manual</b> (engineer/admin): di halaman <i>Problem</i>, centang problem yang berasal dari gangguan yang sama → <b>Buat insiden</b>.</li>
+        <li><b>Alur</b>: <span class="badge crit">Terbuka</span> → <span class="badge warn">Ditangani</span> (tekan <i>Saya tangani</i> atau tugaskan engineer) → <span class="badge ok">Pulih</span> (otomatis saat semua problem selesai) → <b>Ditutup</b> setelah <i>penyebab</i> dan <i>tindakan</i> diisi. Bila gangguan muncul lagi ≤ 30 menit setelah pulih, insiden dibuka kembali.</li>
+        <li>Tulis temuan lapangan di <b>catatan</b>: semuanya masuk kronologi beserta nama dan jam, berguna untuk laporan ke manajemen. <b>MTTR</b> = rata-rata lama dari mulai gangguan sampai pulih.</li>
     </ul>
 </div></section>
 

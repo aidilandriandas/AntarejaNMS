@@ -2,6 +2,7 @@
     $u = auth()->user();
     $downCount = \App\Models\Device::where('enabled', true)->where('status', 'down')->count();
     $probCount = \App\Models\Problem::whereNull('resolved_at')->whereNull('acked_at')->whereNull('suppressed')->count();
+    $incCount = \App\Models\Incident::where('status', 'open')->count();
     [$sysStale, $sysAlerts, $sysBeat] = \App\Http\Controllers\SystemController::brief();
     $sysIssue = $sysStale || $sysAlerts > 0;
     $nav = fn (string $pattern) => request()->routeIs($pattern) ? 'on' : '';
@@ -28,6 +29,8 @@
             <a href="{{ route('noc') }}"><x-icon name="monitor"/>Layar NOC</a>
             <a href="{{ route('problems.index') }}" class="{{ $nav('problems.*') }}"><x-icon name="alert"/>Problem
                 @if($probCount)<span class="count" title="{{ $probCount }} problem belum di-ACK">{{ $probCount }}</span>@endif</a>
+            <a href="{{ route('incidents.index') }}" class="{{ $nav('incidents.*') }}"><x-icon name="flag"/>Insiden
+                @if($incCount)<span class="count" title="{{ $incCount }} insiden terbuka belum ditangani">{{ $incCount }}</span>@endif</a>
             <div class="grp">Pemantauan</div>
             <a href="{{ route('devices.index') }}" class="{{ $nav('devices.*') }}"><x-icon name="server"/>Perangkat
                 @if($downCount)<span class="count" title="{{ $downCount }} perangkat down">{{ $downCount }}</span>@endif</a>

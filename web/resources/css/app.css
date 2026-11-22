@@ -443,3 +443,10 @@ table.t.logs td.msg { font: 400 12.5px/1.5 var(--mono); white-space: pre-wrap; w
 table.t.logs td:nth-child(4) { font-size: 12px; white-space: nowrap; }
 .page-head label.check { align-self: center; }
 pre.code.diff .del { background: var(--crit-soft); color: var(--crit); } pre.code.diff .hunk { color: var(--info); }
+/* Insiden */
+.t .chk { width: 34px; padding-right: 0; }
+.bulkbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 16px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+.bulkbar .input { height: 32px; width: 260px; max-width: 100%; }
+.inc-tag { font-weight: 600; color: var(--crit); }
+.feed.timeline li { align-items: start; }
+.kpi .val small { font-size: 14px; color: var(--muted); font-weight: 500; }

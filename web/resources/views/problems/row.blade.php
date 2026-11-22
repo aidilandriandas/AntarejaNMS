@@ -1,11 +1,13 @@
 {{-- Satu baris problem. $p = Problem, $compact = sembunyikan kolom perangkat --}}
 @php($dim = $p->acked_at || $p->suppressed || $p->resolved_at)
 <tr class="{{ $dim ? 'is-off' : ($p->sevTone() === 'crit' ? 'is-down' : '') }}">
+    @if($select ?? false)<td class="chk">@if(! $p->resolved_at && $p->incidents->isEmpty())<input type="checkbox" name="problems[]" value="{{ $p->id }}" form="buat-insiden" aria-label="Pilih problem {{ $p->title }}">@endif</td>@endif
     <td><span class="badge plain {{ $p->sevTone() }}">{{ $p->sevLabel() }}</span></td>
     <td class="name">
         {{ $p->title }}
         <small>
             @if(! ($compact ?? false) && $p->device)<a href="{{ route('devices.show', $p->device) }}">{{ $p->device->name }}</a>@if($p->device->site) · {{ $p->device->site->code }}@endif · @endif
+            @if($p->relationLoaded('incidents') && ($inc = $p->incidents->first()))<a class="inc-tag" href="{{ route('incidents.show', $inc) }}">Insiden #{{ $inc->id }}</a> · @endif
             @if($p->suppressed)<span style="color:var(--info)">{{ $p->suppressed_note }}</span>@else{{ $p->detail }}@endif
         </small>
     </td>

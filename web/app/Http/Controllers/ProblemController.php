@@ -12,7 +12,7 @@ class ProblemController extends Controller
     public function index(Request $request)
     {
         $history = $request->query('tab') === 'riwayat';
-        $q = Problem::with(['device.site', 'acker']);
+        $q = Problem::with(['device.site', 'acker', 'incidents:id,status']);
         $history ? $q->whereNotNull('resolved_at')->orderByDesc('resolved_at') : $q->open()->triage();
         if ($sev = $request->query('severity')) {
             $q->where('severity', $sev);
