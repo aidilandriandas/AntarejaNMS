@@ -417,10 +417,14 @@ if (mapEl) {
                 o.dataset.lat = lat ?? ''; o.dataset.lng = lng ?? '';
                 o.textContent = o.textContent.replace(/ · (belum|✓)$/, '') + (lat === null ? (t.type === 'site' ? ' · belum' : '') : (t.type === 'device' ? ' · ✓' : ''));
                 clearBtn.disabled = lat === null;
-                say(lat === null ? 'Posisi dihapus.' : `Tersimpan: ${lat}, ${lng}`);
+                say(lat === null ? 'Posisi dihapus.' : (m.plan ? `Tersimpan di denah (x ${Math.round(lng)}, y ${Math.round(m.plan.h - lat)})` : `Tersimpan: ${lat}, ${lng}`));
             } catch (e) { say(`Gagal menyimpan: ${e.message}`, true); }
         };
         m.onClick((lat, lng) => put(lat, lng));
+        if (panel && !panel.hidden) { // dibuka otomatis bila ada galat validasi (mis. unggah denah)
+            $('[data-map-edit]')?.classList.add('primary');
+            m.setEditing(true);
+        }
         $('[data-map-edit]')?.addEventListener('click', (e) => {
             const on = panel.hidden;
             panel.hidden = !on;

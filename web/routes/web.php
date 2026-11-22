@@ -103,6 +103,7 @@ Route::middleware('auth')->group(function () {
     Route::get('log', [LogController::class, 'index'])->name('logs.index');
     Route::get('peta', [MapController::class, 'index'])->name('map.index');
     Route::get('peta/data', [MapController::class, 'data'])->name('map.data');
+    Route::get('peta/denah/{plan}', [MapController::class, 'planImage'])->name('map.plan.image')->whereNumber('plan');
     Route::get('problem', [ProblemController::class, 'index'])->name('problems.index');
     Route::get('maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
     Route::get('sensor', [SensorController::class, 'index'])->name('sensors.index');
@@ -127,6 +128,8 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:admin')->group(function () {
         Route::post('log/pengaturan', [LogController::class, 'settings'])->name('logs.settings');
         Route::post('peta/pengaturan', [MapController::class, 'settings'])->name('map.settings');
+        Route::post('peta/denah', [MapController::class, 'planStore'])->name('map.plan.store')->middleware('throttle:10,1');
+        Route::delete('peta/denah/{plan}', [MapController::class, 'planDestroy'])->name('map.plan.destroy')->whereNumber('plan');
         Route::get('pengguna', [UserController::class, 'index'])->name('users.index');
         Route::get('pengguna/tambah', [UserController::class, 'create'])->name('users.create');
         Route::post('pengguna', [UserController::class, 'store'])->name('users.store');

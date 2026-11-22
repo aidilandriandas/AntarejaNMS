@@ -12,7 +12,9 @@ ENV WEB_DOCUMENT_ROOT=/app/public \
     PHP_DISMOD=ioncube \
     php.opcache.validate_timestamps=0 \
     php.expose_php=0 \
-    php.memory_limit=256M
+    php.memory_limit=256M \
+    php.upload_max_filesize=16M \
+    php.post_max_size=20M
 WORKDIR /app
 COPY web/composer.json web/composer.lock ./
 RUN composer install --no-dev --no-scripts --no-autoloader --no-interaction --prefer-dist

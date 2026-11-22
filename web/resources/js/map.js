@@ -6,14 +6,27 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const STATE = { up: 'Normal', problem: 'Ada problem', down: 'Down', maintenance: 'Maintenance', idle: 'Tanpa perangkat', unknown: 'Belum diketahui' };
 
 export function createMap(el, { csrf, onSelect }) {
-    const map = L.map(el, { zoomControl: true, attributionControl: true, worldCopyJump: true });
-    if (el.dataset.tiles) {
-        L.tileLayer(el.dataset.tiles, { maxZoom: 19, attribution: esc(el.dataset.attr) }).addTo(map);
+    // Mode denah: CRS sederhana, 1 unit = 1 piksel gambar; lat = tinggi − y, lng = x
+    const plan = el.dataset.plan ? { id: +el.dataset.plan, w: +el.dataset.planW, h: +el.dataset.planH } : null;
+    const map = plan
+        ? L.map(el, { crs: L.CRS.Simple, minZoom: -5, maxZoom: 3, zoomSnap: 0.25, attributionControl: false })
+        : L.map(el, { zoomControl: true, attributionControl: true, worldCopyJump: true });
+    if (plan) {
+        const bounds = [[0, 0], [plan.h, plan.w]];
+        L.imageOverlay(el.dataset.planImg, bounds).addTo(map);
+        map.fitBounds(bounds);
+        map.setMaxBounds(L.latLngBounds(bounds).pad(0.25));
+        el.classList.add('plan');
     } else {
-        el.classList.add('no-tiles');
+        if (el.dataset.tiles) {
+            L.tileLayer(el.dataset.tiles, { maxZoom: 19, attribution: esc(el.dataset.attr) }).addTo(map);
+        } else {
+            el.classList.add('no-tiles');
+        }
+        map.attributionControl.setPrefix('');
+        map.setView([-2.5, 117], 5); // Indonesia sampai ada penanda
     }
-    map.attributionControl.setPrefix('');
-    map.setView([-2.5, 117], 5); // Indonesia sampai ada penanda
+    const round = (v) => (plan ? +v.toFixed(1) : +v.toFixed(6));
 
     const linkLayer = L.layerGroup().addTo(map);
     const siteMarkers = new Map();
@@ -22,10 +35,13 @@ export function createMap(el, { csrf, onSelect }) {
     let fitted = false;
 
     const save = async (type, id, lat, lng) => {
+        const body = plan
+            ? { type, id, plan_id: plan.id, x: lat === null ? null : Math.max(0, lng), y: lat === null ? null : Math.max(0, plan.h - lat) }
+            : { type, id, lat, lng };
         const r = await fetch(el.dataset.posUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrf() },
-            body: JSON.stringify({ type, id, lat, lng }),
+            body: JSON.stringify(body),
         });
         if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message || `gagal (${r.status})`);
         await load();
@@ -52,7 +68,7 @@ export function createMap(el, { csrf, onSelect }) {
             m = L.marker([item.lat, item.lng], { icon, draggable: editing, riseOnHover: true, zIndexOffset: type === 'site' ? 0 : 500 });
             m.on('dragend', () => {
                 const p = m.getLatLng();
-                save(type, item.id, +p.lat.toFixed(6), +p.lng.toFixed(6)).catch((e) => alert(`Posisi tidak tersimpan: ${e.message}`));
+                save(type, item.id, round(p.lat), round(p.lng)).catch((e) => alert(`Posisi tidak tersimpan: ${e.message}`));
             });
             m.on('click', () => { if (editing) onSelect?.(`${type}:${item.id}`); });
             m.addTo(map);
@@ -82,7 +98,7 @@ export function createMap(el, { csrf, onSelect }) {
             const color = l.down ? 'var(--crit)' : (l.util >= 90 ? 'var(--warn)' : 'var(--accent)');
             L.polyline([l.a, l.b], { color, weight: l.down ? 4 : 3, opacity: 0.85, dashArray: l.logical ? '6 6' : null, className: l.down ? 'lk-down' : '' }).addTo(linkLayer);
         });
-        if (!fitted && pts.length) {
+        if (!fitted && pts.length && !plan) {
             fitted = true;
             pts.length === 1 ? map.setView(pts[0], 14) : map.fitBounds(pts, { padding: [40, 40], maxZoom: 15 });
         }
@@ -99,7 +115,8 @@ export function createMap(el, { csrf, onSelect }) {
             for (const m of [...siteMarkers.values(), ...devMarkers.values()]) if (m.dragging) on ? m.dragging.enable() : m.dragging.disable();
             setTimeout(() => map.invalidateSize(), 50);
         },
-        onClick(fn) { map.on('click', (e) => { if (editing) fn(+e.latlng.lat.toFixed(6), +e.latlng.lng.toFixed(6)); }); },
-        focus(lat, lng) { map.setView([lat, lng], Math.max(map.getZoom(), 14)); },
+        onClick(fn) { map.on('click', (e) => { if (editing) fn(round(e.latlng.lat), round(e.latlng.lng)); }); },
+        focus(lat, lng) { map.setView([lat, lng], plan ? map.getZoom() : Math.max(map.getZoom(), 14)); },
+        plan,
     };
 }
