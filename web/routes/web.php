@@ -138,6 +138,8 @@ Route::middleware('auth')->group(function () {
         Route::post('peta/pengaturan', [MapController::class, 'settings'])->name('map.settings');
         Route::get('tautan-status', [StatusLinkController::class, 'index'])->name('status.links');
         Route::get('sistem', [SystemController::class, 'index'])->name('system.index');
+        Route::post('langkah-awal/sembunyikan', [SystemController::class, 'hideOnboarding'])->name('onboarding.hide');
+        Route::post('langkah-awal/tampilkan', [SystemController::class, 'showOnboarding'])->name('onboarding.show');
         Route::get('ekspor-impor', [ConfigTransferController::class, 'index'])->name('transfer.index');
         Route::post('ekspor-impor/ekspor', [ConfigTransferController::class, 'export'])->name('transfer.export')->middleware('throttle:10,1');
         Route::post('ekspor-impor/pratinjau', [ConfigTransferController::class, 'preview'])->name('transfer.preview')->middleware('throttle:10,1');

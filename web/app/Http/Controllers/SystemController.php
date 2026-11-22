@@ -44,4 +44,18 @@ class SystemController extends Controller
                 (SELECT count(*) FROM syslog WHERE received_at > now() - interval '1 hour') AS logs_1h, (SELECT count(*) FROM problems WHERE resolved_at IS NULL) AS problems"),
         ]);
     }
+
+    public function hideOnboarding()
+    {
+        \App\Models\Setting::put('onboarding.hidden', true);
+
+        return back()->with('ok', 'Daftar langkah awal disembunyikan. Tampilkan lagi dari halaman Panduan.');
+    }
+
+    public function showOnboarding()
+    {
+        \App\Models\Setting::put('onboarding.hidden', false);
+
+        return redirect()->route('dashboard');
+    }
 }

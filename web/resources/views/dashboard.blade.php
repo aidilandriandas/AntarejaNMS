@@ -36,6 +36,10 @@
     </form>
 </section>
 
+@if(auth()->user()->isAdmin() && ! \App\Support\Onboarding::hidden())
+    @include('dashboard.onboarding')
+@endif
+
 @if($counts->total === 0)
     <div class="card" style="margin-bottom:16px"><div class="empty"><x-icon name="server"/>Belum ada perangkat.
         @can('manage-devices')<div style="margin-top:12px"><a class="btn primary" href="{{ route('devices.create') }}"><x-icon name="plus"/>Tambah perangkat pertama</a></div>@endcan

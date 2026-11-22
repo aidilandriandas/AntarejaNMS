@@ -2,6 +2,7 @@
 @section('title', 'Panduan')
 @section('content')
 <div class="page-head">
+    @can('admin')<div class="actions" style="order:2"><form method="post" action="{{ route('onboarding.show') }}">@csrf<button class="btn sm">Tampilkan langkah awal di Ringkasan</button></form></div>@endcan
     <div><h1>Panduan operator</h1><p>Arti status & warna, cara menangani problem, dan istilah yang dipakai di ANTAREJA. Angka di halaman ini adalah nilai bawaan; admin bisa mengubah ambang problem di <i>Administrasi → Notifikasi → Ambang problem</i>, dan ambang khusus per perangkat di form perangkat.</p></div>
 </div>
 

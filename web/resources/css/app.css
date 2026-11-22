@@ -130,6 +130,12 @@ svg.i { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none;
 .help-terms dd { line-height: 1.5; }
 kbd { font: 600 12px var(--mono); border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 4px; padding: 1px 6px; background: var(--surface-2); }
 @media (max-width: 900px) { .help { grid-template-columns: 1fr; } .help-toc { position: static; } }
+.onboard-list { list-style: none; margin: 0; padding: 6px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.onboard-list li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 16px; }
+.onboard-list li small { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.4; margin-top: 2px; }
+.onboard-list li.done b { color: var(--muted); text-decoration: line-through; }
+.ob-mark { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font: 700 12px var(--sans); background: var(--surface-2); border: 1px solid var(--line-strong); color: var(--ink-2); }
+.onboard-list li.done .ob-mark { background: var(--ok); border-color: var(--ok); color: #fff; }
 .dash { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
 .dash-w { min-width: 0; }
 .dash-w.w-full { grid-column: 1 / -1; }
