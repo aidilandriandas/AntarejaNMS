@@ -44,7 +44,7 @@ class DiscoveryController extends Controller
             throw ValidationException::withMessages(['cidr' => 'Alamat IP pada subnet tidak valid.']);
         }
         if ((int) $bits < 22) {
-            throw ValidationException::withMessages(['cidr' => 'Subnet terlalu besar — maksimal /22 (1.022 alamat) per pemindaian agar jaringan tidak terbebani.']);
+            throw ValidationException::withMessages(['cidr' => 'Subnet terlalu besar, maksimal /22 (1.022 alamat) per pemindaian agar jaringan tidak terbebani.']);
         }
         $comms = collect(preg_split('/[\r\n,]+/', $d['communities'] ?? ''))->map(fn ($c) => trim($c))->filter()->unique()->values();
         if ($comms->count() > 5 || $comms->contains(fn ($c) => mb_strlen($c) > 64)) {
@@ -63,7 +63,7 @@ class DiscoveryController extends Controller
         ]);
         Audit::log('created', "Discovery subnet {$d['cidr']} diminta (" . $comms->count() . ' community, nilai tidak dicatat)');
 
-        return redirect()->route('discovery.show', $id)->with('ok', 'Pemindaian masuk antrean — biasanya mulai dalam 5 detik.');
+        return redirect()->route('discovery.show', $id)->with('ok', 'Pemindaian masuk antrean, biasanya mulai dalam 5 detik.');
     }
 
     public function show(int $scan)

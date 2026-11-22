@@ -4,7 +4,7 @@
 @section('title', $editing ? 'Ubah kanal' : 'Tambah kanal')
 @section('content')
 <div class="crumbs"><a href="{{ route('channels.index') }}">Notifikasi</a> / {{ $editing ? $channel->name : 'Tambah' }}</div>
-<div class="page-head"><div><h1>{{ $editing ? 'Ubah kanal' : 'Tambah kanal' }} · {{ \App\Models\NotifyChannel::TYPES[$t] }}</h1></div></div>
+<div class="page-head"><div><h1>{{ $editing ? 'Ubah kanal' : 'Tambah kanal' }}, {{ \App\Models\NotifyChannel::TYPES[$t] }}</h1></div></div>
 <div class="grid g-main">
 <section class="card"><div class="bd">
 <form method="post" action="{{ $editing ? route('channels.update', $channel) : route('channels.store') }}" class="form" id="channel-form">
@@ -14,7 +14,7 @@
 
     @if($t === 'telegram')
         <div class="field"><label for="bot_token">Token bot</label>
-            <input class="input mono @error('cfg.bot_token') is-err @enderror" id="bot_token" name="cfg[bot_token]" type="password" autocomplete="off" placeholder="{{ ($config['bot_token'] ?? '') ? '•••••• (tersimpan — kosongkan bila tetap)' : '123456789:AAF…' }}">
+            <input class="input mono @error('cfg.bot_token') is-err @enderror" id="bot_token" name="cfg[bot_token]" type="password" autocomplete="off" placeholder="{{ ($config['bot_token'] ?? '') ? '•••••• (tersimpan, kosongkan bila tetap)' : '123456789:AAF…' }}">
             <x-field-error name="cfg.bot_token"/></div>
         <div class="field"><label for="chat_id">Chat ID</label>
             <input class="input mono @error('cfg.chat_id') is-err @enderror" id="chat_id" name="cfg[chat_id]" value="{{ old('cfg.chat_id', $config['chat_id'] ?? '') }}" placeholder="-1001234567890">

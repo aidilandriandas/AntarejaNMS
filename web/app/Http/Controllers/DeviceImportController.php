@@ -96,7 +96,7 @@ class DeviceImportController extends Controller
     public function store(Request $request, Collector $collector)
     {
         $rows = $request->session()->pull('device_import', []);
-        abort_if(! $rows, 422, 'Pratinjau kedaluwarsa — unggah ulang berkasnya.');
+        abort_if(! $rows, 422, 'Pratinjau kedaluwarsa, unggah ulang berkasnya.');
         $created = DB::transaction(function () use ($rows) {
             $ids = [];
             $byName = Device::pluck('id', 'name')->mapWithKeys(fn ($v, $k) => [mb_strtolower($k) => $v])->all();

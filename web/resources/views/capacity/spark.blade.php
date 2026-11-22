@@ -17,4 +17,4 @@
         <line class="trend" x1="0" y1="{{ $Y(max(0, $r['intercept'])) }}" x2="{{ $W }}" y2="{{ $Y(max(0, $r['intercept'] + $r['slope'] * $days)) }}"/>
     @endif
 </svg>
-@else<span class="muted">–</span>@endif
+@else<span class="muted"><span class="nil">tidak ada</span></span>@endif

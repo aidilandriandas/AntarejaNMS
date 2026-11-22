@@ -21,9 +21,9 @@
                 @php($at = \Illuminate\Support\Carbon::parse($b->requested_at))
                 <tr class="{{ $b->status === 'deleted' ? 'is-off' : '' }}">
                     <td class="nowrap mono">{{ $at->format('d/m/Y H:i') }}</td>
-                    <td>{{ $b->kind === 'manual' ? 'manual' . ($b->username ? ' · ' . $b->username : '') : 'terjadwal' }}</td>
-                    <td class="mono" style="font-size:12.5px">{{ $b->file ?? '–' }}</td>
-                    <td class="num">{{ $b->size_bytes ? number_format($b->size_bytes / 1048576, 1, ',', '.') . ' MB' : '–' }}</td>
+                    <td>{{ $b->kind === 'manual' ? 'manual' . ($b->username ? ', ' . $b->username : '') : 'terjadwal' }}</td>
+                    <td class="mono" style="font-size:12.5px">{{ $b->file ?? 'tidak ada' }}</td>
+                    <td class="num">{{ $b->size_bytes ? number_format($b->size_bytes / 1048576, 1, ',', '.') . ' MB' : 'tidak ada' }}</td>
                     <td>@switch($b->status)
                         @case('ok')<span class="badge ok">berhasil</span>@break
                         @case('failed')<span class="badge crit" title="{{ $b->error }}">gagal</span><div class="muted" style="font-size:12px;max-width:260px">{{ $b->error }}</div>@break

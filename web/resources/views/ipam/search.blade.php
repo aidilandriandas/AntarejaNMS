@@ -14,9 +14,9 @@
             <tr>
                 <td class="mono">{{ $r->ip }}</td>
                 <td class="mono"><a href="{{ route('ipam.search', ['q' => $r->mac]) }}">{{ $r->mac }}</a></td>
-                <td>{{ $r->device ?? '–' }}</td>
-                <td class="mono">{{ $r->subnet ?? '–' }}</td>
-                <td><a href="{{ route('devices.show', $r->reporter_id) }}">{{ $r->reporter }}</a>{{ $r->port ? ' · ' . $r->port : '' }}</td>
+                <td>{{ $r->device ?? 'tidak ada' }}</td>
+                <td class="mono">{{ $r->subnet ?? 'tidak ada' }}</td>
+                <td><a href="{{ route('devices.show', $r->reporter_id) }}">{{ $r->reporter }}</a>{{ $r->port ? ', ' . $r->port : '' }}</td>
                 <td class="nowrap">{{ \Illuminate\Support\Carbon::parse($r->first_seen)->format('d/m H:i') }}</td>
                 <td class="nowrap">{{ \Illuminate\Support\Carbon::parse($r->last_seen)->diffForHumans() }}</td>
             </tr>

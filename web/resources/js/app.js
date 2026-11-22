@@ -1,5 +1,9 @@
 // ANTAREJA NMS — perilaku halaman (tanpa framework).
+import '@fontsource/ibm-plex-sans/400.css';
+import '@fontsource/ibm-plex-sans/600.css';
+import '@fontsource/ibm-plex-mono/400.css';
 import uPlot from 'uplot';
+import { tokenKeys } from './chartkeys.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -118,13 +122,13 @@ if (form) {
             if (j.ping) {
                 const p = j.ping;
                 if (p.error) line(false, 'Ping gagal', p.error);
-                else if (p.ok) line(true, `Ping ${p.recv}/${p.sent} balasan`, `rata-rata ${p.avg_ms.toFixed(2).replace('.', ',')} ms · loss ${Math.round(p.loss_pct)}%`);
+                else if (p.ok) line(true, `Ping ${p.recv}/${p.sent} balasan`, `rata-rata ${p.avg_ms.toFixed(2).replace('.', ',')} ms, loss ${Math.round(p.loss_pct)}%`);
                 else line(false, 'Ping tidak dibalas', 'Perangkat mati, rute salah, atau ICMP diblok firewall. Bila ICMP memang diblok, matikan ping dan andalkan SNMP.');
             }
             if (j.snmp) {
                 const s = j.snmp;
                 if (s.ok) {
-                    line(true, `SNMP terbaca: ${s.sys_name || '(tanpa sysName)'}`, `uptime ${s.uptime || '–'} · ${s.interfaces} port (${s.interfaces_up} up)`);
+                    line(true, `SNMP terbaca: ${s.sys_name || '(tanpa sysName)'}`, `uptime ${s.uptime || 'tidak diketahui'}, ${s.interfaces} port (${s.interfaces_up} up)`);
                     if (s.sys_descr) line(true, 'Deskripsi', s.sys_descr.split(/\r?\n/)[0].slice(0, 160));
                     const name = $('#name', form);
                     if (name && !name.value && s.sys_name) name.value = s.sys_name;
@@ -154,7 +158,7 @@ if (card) {
 
     const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
     const bps = (v) => {
-        if (v == null) return '–';
+        if (v == null) return '';
         const u = [['Gbps', 1e9], ['Mbps', 1e6], ['Kbps', 1e3]].find(([, d]) => v >= d);
         return u ? `${(v / u[1]).toFixed(v / u[1] >= 100 ? 0 : 1)} ${u[0]}` : `${Math.round(v)} bps`;
     };
@@ -167,7 +171,7 @@ if (card) {
         const d = new Date(ts * 1000);
         return incr >= 86400 || (d.getHours() === 0 && d.getMinutes() === 0) ? dm(d) : hm(d);
     });
-    const xLegend = (u, ts) => (ts == null ? '–' : `${dm(new Date(ts * 1000))} ${hm(new Date(ts * 1000))}`);
+    const xLegend = (u, ts) => (ts == null ? '' : `${dm(new Date(ts * 1000))} ${hm(new Date(ts * 1000))}`);
 
     const draw = (data) => {
         last = data;
@@ -181,9 +185,11 @@ if (card) {
             plot = new uPlot({
                 width: el.clientWidth, height: 240, scales: { x: { time: true } },
                 axes: [{ ...axis, values: xValues }, { ...axis, values: (u, vals) => vals.map((v) => `${v}${unit}`), size: 70 }],
-                series: [{ label: 'Waktu', value: xLegend }, { label: sensor.label, stroke: css('--accent'), width: 1.6, spanGaps: true, points: { show: true, size: 4, fill: css('--accent') }, value: (u, v) => (v == null ? '–' : `${String(v).replace('.', ',')}${unit}`) }],
+                series: [{ label: 'Waktu', value: xLegend }, { label: sensor.label, stroke: css('--accent'), width: 1.6, spanGaps: true, points: { show: true, size: 4, fill: css('--accent') }, value: (u, v) => (v == null ? '' : `${String(v).replace('.', ',')}${unit}`) }],
                 legend: { live: true }, cursor: { drag: { x: false, y: false } },
             }, [data.t, s.value], el);
+            plot.root.querySelectorAll('canvas').forEach((c) => c.setAttribute('aria-hidden', 'true')); // nilai terbaca dari legenda
+            tokenKeys(plot);
             if (s.value.every((v) => v == null)) { const n = document.createElement('div'); n.className = 'empty'; n.textContent = 'Belum ada data untuk rentang ini.'; el.prepend(n); }
             return;
         }
@@ -196,10 +202,10 @@ if (card) {
             series: isPort
                 ? [{ label: 'Waktu', value: xLegend }, { label: 'Masuk', stroke: css('--accent'), fill: `${css('--accent')}22`, width: 1.5, value: (u, v) => bps(v) },
                     { label: 'Keluar', stroke: css('--info'), width: 1.5, value: (u, v) => bps(v) }]
-                : [{ label: 'Waktu', value: xLegend }, { label: 'RTT', stroke: css('--accent'), width: 1.5, value: (u, v) => (v == null ? '–' : `${v.toFixed(2)} ms`) },
-                    { label: 'Loss', scale: 'y2', stroke: css('--crit'), fill: `${css('--crit')}33`, width: 1, paths: uPlot.paths.stepped({ align: 1 }), value: (u, v) => (v == null ? '–' : `${Math.round(v)}%`) },
-                    { label: 'Min', stroke: `${css('--accent')}55`, width: 1, value: (u, v) => (v == null ? '–' : `${v.toFixed(2)} ms`) },
-                    { label: 'Maks', stroke: `${css('--accent')}55`, width: 1, value: (u, v) => (v == null ? '–' : `${v.toFixed(2)} ms`) }],
+                : [{ label: 'Waktu', value: xLegend }, { label: 'RTT', stroke: css('--accent'), width: 1.5, value: (u, v) => (v == null ? '' : `${v.toFixed(2)} ms`) },
+                    { label: 'Loss', scale: 'y2', stroke: css('--crit'), fill: `${css('--crit')}33`, width: 1, paths: uPlot.paths.stepped({ align: 1 }), value: (u, v) => (v == null ? '' : `${Math.round(v)}%`) },
+                    { label: 'Min', stroke: `${css('--accent')}55`, width: 1, value: (u, v) => (v == null ? '' : `${v.toFixed(2)} ms`) },
+                    { label: 'Maks', stroke: `${css('--accent')}55`, width: 1, value: (u, v) => (v == null ? '' : `${v.toFixed(2)} ms`) }],
             // pita min–maks (sebaran latensi, gaya SmokePing)
             bands: isPort ? [] : [{ series: [4, 3], fill: `${css('--accent')}22` }],
             legend: { live: true },
@@ -207,6 +213,8 @@ if (card) {
         };
         const cols = isPort ? [data.t, s.in, s.out] : [data.t, s.rtt, s.loss, s.min || s.rtt.map(() => null), s.max || s.rtt.map(() => null)];
         plot = new uPlot(opts, cols, el);
+        plot.root.querySelectorAll('canvas').forEach((c) => c.setAttribute('aria-hidden', 'true')); // nilai terbaca dari legenda
+        tokenKeys(plot);
         if (cols.slice(1).every((c) => c.every((v) => v == null))) {
             const n = document.createElement('div');
             n.className = 'empty';
@@ -288,7 +296,7 @@ if (topoRoot) {
             liveUrl: topoRoot.dataset.liveUrl,
             positionsUrl: topoRoot.dataset.positionsUrl,
             live: true,
-            onStats: (s) => { $('[data-topo-stats]', topoRoot).textContent = `${s.devices} perangkat · ${s.links} sambungan · ${s.down} down${s.unknown_neighbors ? ` · ${s.unknown_neighbors} tetangga belum terdaftar` : ''}`; },
+            onStats: (s) => { $('[data-topo-stats]', topoRoot).textContent = `${s.devices} perangkat, ${s.links} sambungan, ${s.down} down${s.unknown_neighbors ? `, ${s.unknown_neighbors} tetangga belum terdaftar` : ''}`; },
             onSelect: (n) => {
                 if (!n) return;
                 const rows = [['Alamat', n.host], ['Site', n.site], ['Status', { up: 'Online', problem: 'Ada problem', down: 'DOWN', unknown: 'Menunggu', maintenance: 'Maintenance', external: 'Belum terdaftar' }[n.state]],
@@ -401,7 +409,7 @@ if (disc) {
         if (!['queued', 'running'].includes(s.status)) { location.reload(); return; }
         const pct = s.total ? Math.round((s.progress / s.total) * 100) : 2;
         $('[data-disc-bar]').style.width = `${Math.max(pct, 2)}%`;
-        $('[data-disc-text]').textContent = `${s.progress} / ${s.total || '…'} alamat · ${s.found} menjawab`;
+        $('[data-disc-text]').textContent = `${s.progress} / ${s.total || '…'} alamat, ${s.found} menjawab`;
         $('[data-disc-status]').textContent = s.status === 'running' ? 'Berjalan' : 'Antre';
     };
     setInterval(() => { if (!document.hidden) tick(); }, 2000);
@@ -459,7 +467,7 @@ if (mapEl) {
                 await m.save(t.type, t.id, lat, lng);
                 const o = sel.selectedOptions[0];
                 o.dataset.lat = lat ?? ''; o.dataset.lng = lng ?? '';
-                o.textContent = o.textContent.replace(/ · (belum|✓)$/, '') + (lat === null ? (t.type === 'site' ? ' · belum' : '') : (t.type === 'device' ? ' · ✓' : ''));
+                o.textContent = o.textContent.replace(/, (belum|✓)$/, '') + (lat === null ? (t.type === 'site' ? ', belum' : '') : (t.type === 'device' ? ', ✓' : ''));
                 clearBtn.disabled = lat === null;
                 say(lat === null ? 'Posisi dihapus.' : (m.plan ? `Tersimpan di denah (x ${Math.round(lng)}, y ${Math.round(m.plan.h - lat)})` : `Tersimpan: ${lat}, ${lng}`));
             } catch (e) { say(`Gagal menyimpan: ${e.message}`, true); }

@@ -37,7 +37,7 @@ class DeviceSensor extends Model
             return $this->text;
         }
         if ($this->value === null) {
-            return '–';
+            return 'tidak ada';
         }
         $v = abs($this->value) >= 100 || floor($this->value) == $this->value
             ? number_format($this->value, 0, ',', '.')

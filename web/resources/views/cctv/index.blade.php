@@ -17,9 +17,9 @@
         <button type="button" class="cam" data-cam="{{ $c->id }}" data-cam-name="{{ $c->name }}" title="Klik untuk live view">
             <img data-snap="{{ $c->streamName('sub') }}" alt="{{ $c->name }}" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=">
             <span class="cam-nosig">Tidak ada gambar</span>
-            <span class="cam-label"><b>{{ $c->name }}</b><small>{{ $c->site?->code ?? '' }}{{ $c->device ? ' · ' . $c->device->name : '' }}</small></span>
+            <span class="cam-label"><b>{{ $c->name }}</b><small>{{ $c->site?->code ?? '' }}{{ $c->device ? ', ' . $c->device->name : '' }}</small></span>
             @if($c->device && $c->device->status === 'down')<span class="badge crit cam-badge">perangkat down</span>
-            @elseif(($h = $c->healthMeta()) && $c->health !== 'ok')<span class="badge {{ $h[1] }} cam-badge" title="{{ $c->health_detail }} · sejak {{ $c->health_since?->format('d/m H:i') }}">{{ $h[0] }}</span>@endif
+            @elseif(($h = $c->healthMeta()) && $c->health !== 'ok')<span class="badge {{ $h[1] }} cam-badge" title="{{ $c->health_detail }}, sejak {{ $c->health_since?->format('d/m H:i') }}">{{ $h[0] }}</span>@endif
         </button>
     @endforeach
 </div>

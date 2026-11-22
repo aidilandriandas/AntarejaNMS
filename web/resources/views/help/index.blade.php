@@ -32,7 +32,7 @@
         <tr><td><span class="badge info">Maintenance</span></td><td>Sedang dalam jadwal maintenance: problem tetap dicatat, tetapi tidak dinotifikasi.</td></tr>
         <tr><td><span class="badge">Menunggu</span></td><td>Baru ditambahkan / belum ada hasil pemeriksaan, atau perangkat nonaktif.</td></tr>
     </tbody></table>
-    <p class="muted">Di peta topologi, perangkat <b>terdampak induk</b> (warna lebih gelap) berarti perangkat induknya (uplink) sedang down — kemungkinan besar ikut terputus, bukan rusak sendiri.</p>
+    <p class="muted">Di peta topologi, perangkat <b>terdampak induk</b> (warna lebih gelap) berarti perangkat induknya (uplink) sedang down, kemungkinan besar ikut terputus, bukan rusak sendiri.</p>
     <p class="muted" style="margin-bottom:0"><b>Reboot</b> dideteksi dari uptime SNMP yang turun. <b>Flapping</b> = down ≥ 3 kali dalam 15 menit (link tidak stabil, mis. radio terganggu cuaca / power naik-turun).</p>
 </div></section>
 
@@ -41,14 +41,14 @@
     <table class="t help-t">
         <thead><tr><th>Problem</th><th>Kapan muncul (bawaan)</th><th>Severity</th></tr></thead>
         <tbody>
-        <tr><td>Down</td><td>Ping gagal 2 putaran</td><td><span class="badge crit plain">Disaster</span> untuk kategori Core, Distribution, Firewall · <span class="badge crit plain">High</span> lainnya</td></tr>
-        <tr><td>Packet loss</td><td>Rata-rata loss 5 menit &gt; 20%</td><td><span class="badge warn plain">Average</span> · <span class="badge crit plain">High</span> bila ≥ 50%</td></tr>
+        <tr><td>Down</td><td>Ping gagal 2 putaran</td><td><span class="badge crit plain">Disaster</span> untuk kategori Core, Distribution, Firewall; <span class="badge crit plain">High</span> lainnya</td></tr>
+        <tr><td>Packet loss</td><td>Rata-rata loss 5 menit &gt; 20%</td><td><span class="badge warn plain">Average</span>; <span class="badge crit plain">High</span> bila ≥ 50%</td></tr>
         <tr><td>Latensi tinggi</td><td>Rata-rata RTT 5 menit &gt; 150 ms</td><td><span class="badge warn plain">Warning</span></td></tr>
         <tr><td>SNMP tidak terbaca</td><td>SNMP gagal ≥ 2 putaran sementara ping normal</td><td><span class="badge warn plain">Warning</span></td></tr>
         <tr><td>Port putus</td><td>Port yang ditandai <i>Pantau</i> aktif tetapi link down</td><td><span class="badge crit plain">High</span></td></tr>
         <tr><td>Port penuh</td><td>Port <i>Pantau</i> terpakai ≥ 90%</td><td><span class="badge warn plain">Average</span></td></tr>
-        <tr><td>Sensor</td><td>Di luar ambang (lihat <a href="#sensor">tabel</a>)</td><td><span class="badge warn plain">Warning</span> · <span class="badge crit plain">High</span> bila kritis</td></tr>
-        <tr><td>Kamera CCTV</td><td>Gambar gelap / tertutup / beku / tanpa sinyal</td><td><span class="badge warn plain">Warning</span> · <span class="badge warn plain">Average</span> untuk tanpa sinyal</td></tr>
+        <tr><td>Sensor</td><td>Di luar ambang (lihat <a href="#sensor">tabel</a>)</td><td><span class="badge warn plain">Warning</span>; <span class="badge crit plain">High</span> bila kritis</td></tr>
+        <tr><td>Kamera CCTV</td><td>Gambar gelap / tertutup / beku / tanpa sinyal</td><td><span class="badge warn plain">Warning</span>; <span class="badge warn plain">Average</span> untuk tanpa sinyal</td></tr>
         <tr><td>Konflik IP</td><td>Satu IP bergantian di 2 MAC ≥ 3× dalam 6 jam</td><td><span class="badge warn plain">Average</span></td></tr>
         </tbody>
     </table>
@@ -57,7 +57,7 @@
 
 <section class="card" id="tangani"><div class="hd"><h2>Saat ada perangkat down</h2></div><div class="bd">
     <ol class="help-steps">
-        <li><b>Cek induknya dulu.</b> Bila problem bertanda <i>terdampak: induk … down</i>, tangani perangkat induk (uplink/radio/switch di atasnya) — perangkat di bawahnya biasanya ikut pulih.</li>
+        <li><b>Cek induknya dulu.</b> Bila problem bertanda <i>terdampak: induk … down</i>, tangani perangkat induk (uplink/radio/switch di atasnya), perangkat di bawahnya biasanya ikut pulih.</li>
         <li><b>Lihat detail perangkat:</b> kejadian terakhir (reboot? flapping?), grafik latensi/loss sebelum down, log syslog terbaru, sensor (daya UPS, suhu, sinyal radio).</li>
         <li><b>Cek apakah satu site sekaligus</b> (dinding status / peta lokasi): bila semua perangkat satu site down, kemungkinan listrik site atau link backhaul.</li>
         <li><b>ACK problem</b> dengan catatan singkat (siapa menangani, dugaan penyebab) agar eskalasi tidak terkirim dan rekan tahu sudah ada yang menangani.</li>
@@ -89,8 +89,8 @@
 <section class="card" id="layanan"><div class="hd"><h2>SLA layanan</h2></div><div class="bd">
     <ul class="help-list">
         <li><b>Layanan</b> = sesuatu yang dipakai orang, mis. <i>CCTV Pit A</i> atau <i>Internet kantor</i>. Disusun dari <b>komponen</b>; tiap komponen berisi perangkat dan syarat <b>minimal hidup</b>.</li>
-        <li>Jalur seri (Core → Radio PTP → Switch): semua wajib hidup — isi minimal = jumlah perangkat, atau satu komponen per perangkat. Perangkat cadangan (ISP 1 &amp; ISP 2): isi minimal 1.</li>
-        <li>Status: <span class="badge ok">Normal</span> semua hidup · <span class="badge warn">Tanpa cadangan</span> layanan jalan tetapi ada perangkat down (segera perbaiki sebelum cadangannya ikut mati) · <span class="badge crit">Terganggu</span> layanan tidak jalan.</li>
+        <li>Jalur seri (Core → Radio PTP → Switch): semua wajib hidup, isi minimal = jumlah perangkat, atau satu komponen per perangkat. Perangkat cadangan (ISP 1 &amp; ISP 2): isi minimal 1.</li>
+        <li>Status: <span class="badge ok">Normal</span> semua hidup; <span class="badge warn">Tanpa cadangan</span> layanan jalan tetapi ada perangkat down (segera perbaiki sebelum cadangannya ikut mati); <span class="badge crit">Terganggu</span> layanan tidak jalan.</li>
         <li>Ketersediaan dihitung dari riwayat down perangkat (gangguan saat maintenance tidak dihitung), mulai sejak perangkat ditambahkan. <b>Sisa jatah downtime</b> = berapa lama lagi layanan boleh mati bulan ini agar tetap memenuhi target.</li>
     </ul>
 </div></section>
@@ -106,7 +106,7 @@
 
 <section class="card" id="maintenance"><div class="hd"><h2>Maintenance & perangkat induk</h2></div><div class="bd">
     <ul class="help-list">
-        <li><b>Maintenance</b> bisa untuk semua perangkat, satu site, atau perangkat terpilih, dengan jam mulai–selesai. Selama itu problem tidak dinotifikasi dan downtime tidak dihitung di SLA. Akhiri lebih cepat dengan tombol <i>Akhiri</i>.</li>
+        <li><b>Maintenance</b> bisa untuk semua perangkat, satu site, atau perangkat terpilih, dengan jam mulai dan selesai. Selama itu problem tidak dinotifikasi dan downtime tidak dihitung di SLA. Akhiri lebih cepat dengan tombol <i>Akhiri</i>.</li>
         <li><b>Perangkat induk</b> (di form perangkat) = perangkat di atasnya pada jalur jaringan (mis. kamera → NVR → switch → radio PTP → core). Isi dengan benar agar korelasi bekerja: saat induk down, ratusan perangkat di bawahnya tidak masing-masing mengirim alarm.</li>
     </ul>
 </div></section>
@@ -116,7 +116,7 @@
         <li>Login dengan akun viewer + centang <i>Ingat saya</i>, buka <i>Layar NOC</i>, tekan <kbd>F</kbd> untuk layar penuh.</li>
         <li>Klik tombol <b>SUARA</b> sekali setelah membuka (browser mewajibkan satu klik sebelum boleh berbunyi).</li>
         <li>Pilih <b>OTOMATIS</b> agar tampilan bergantian: dinding status → topologi → peta lokasi (tiap 30 detik).</li>
-        <li>Indikator <b>LIVE</b> menguning bila layar gagal mengambil data. Alarm <b>"COLLECTOR TIDAK MELAPOR — DATA USANG"</b> berarti mesin pemantau ANTAREJA berhenti: status di layar sudah tidak bisa dipercaya — hubungi admin.</li>
+        <li>Indikator <b>LIVE</b> menguning bila layar gagal mengambil data. Alarm <b>"COLLECTOR TIDAK MELAPOR, DATA USANG"</b> berarti mesin pemantau ANTAREJA berhenti: status di layar sudah tidak bisa dipercaya, hubungi admin.</li>
     </ul>
 </div></section>
 
@@ -151,7 +151,7 @@
         <dt>Uptime</dt><dd>Lama perangkat menyala sejak boot terakhir; turun tiba-tiba = reboot.</dd>
         <dt>Syslog</dt><dd>Pesan log yang dikirim perangkat ke ANTAREJA (halaman Log).</dd>
         <dt>SLA / ketersediaan</dt><dd>Persentase waktu perangkat up dalam periode; jam maintenance tidak dihitung down.</dd>
-        <dt>ACK</dt><dd>Acknowledge — menandai problem sudah ditangani.</dd>
+        <dt>ACK</dt><dd>Acknowledge, menandai problem sudah ditangani.</dd>
     </dl>
 </div></section>
 

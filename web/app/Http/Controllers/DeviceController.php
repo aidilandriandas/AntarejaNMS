@@ -314,7 +314,7 @@ class DeviceController extends Controller
             $d[$b] = $request->boolean($b);
         }
         if (! $d['ping_enabled'] && ! $d['snmp_enabled']) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['ping_enabled' => 'Aktifkan ping, SNMP, atau keduanya — perangkat harus bisa dipantau.']);
+            throw \Illuminate\Validation\ValidationException::withMessages(['ping_enabled' => 'Aktifkan ping, SNMP, atau keduanya, perangkat harus bisa dipantau.']);
         }
         $d['ssh_port'] = (int) ($d['ssh_port'] ?? 22) ?: 22;
         $device->fill(collect($d)->except(['snmp_community', 'snmp_v3_auth_pass', 'snmp_v3_priv_pass', 'ssh_password'])->all());

@@ -15,7 +15,7 @@ func TestLastFull(t *testing.T) {
 		sendAt           string
 	}{
 		{"daily", "2026-11-21", "Sabtu, 21/11/2026", "2026-11-21", "2026-11-22", "2026-11-22 07:00"},
-		{"weekly", "2026-11-09", "09/11 – 15/11/2026", "2026-11-09", "2026-11-16", "2026-11-16 07:00"},
+		{"weekly", "2026-11-09", "09/11 sampai 15/11/2026", "2026-11-09", "2026-11-16", "2026-11-16 07:00"},
 		{"monthly", "2026-10", "Oktober 2026", "2026-10-01", "2026-11-01", "2026-11-01 07:00"},
 	}
 	for _, c := range cases {
@@ -66,7 +66,7 @@ func TestRender(t *testing.T) {
 	if tg := Telegram("daily", d); !strings.Contains(tg, "Radio &lt;PTP&gt;") {
 		t.Errorf("telegram tidak di-escape: %s", tg)
 	}
-	if pct(100) != "100,00%" || pct(99.999) != "99,99%" || pct(-1) != "–" {
+	if pct(100) != "100,00%" || pct(99.999) != "99,99%" || pct(-1) != "tidak ada" {
 		t.Errorf("pct: %s %s %s", pct(100), pct(99.999), pct(-1))
 	}
 }

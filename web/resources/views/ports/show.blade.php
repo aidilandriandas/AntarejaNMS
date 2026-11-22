@@ -1,17 +1,21 @@
 @extends('layouts.app')
-@section('title', $port->label() . ' · ' . $device->name)
+@section('title', $port->label() . ', ' . $device->name)
 @php($R = \App\Http\Controllers\PortController::RANGES)
 @section('content')
 <div class="page-head">
     <div><div class="crumbs"><a href="{{ route('devices.index') }}">Perangkat</a> / <a href="{{ route('devices.show', $device) }}">{{ $device->name }}</a> / Port</div>
         <h1>{{ $port->label() }} @if(! $port->admin_up)<span class="badge" style="vertical-align:middle">dimatikan</span>@elseif($port->oper_up)<span class="badge ok" style="vertical-align:middle">up</span>@else<span class="badge crit" style="vertical-align:middle">down</span>@endif
             @if($monitored)<span class="badge info plain" style="vertical-align:middle">dipantau</span>@endif</h1>
-        <p>{{ $port->alias ?: ($port->descr !== $port->name ? $port->descr : '') }}{{ $port->alias || $port->descr !== $port->name ? ' · ' : '' }}{{ $port->speed_bps ? \App\Support\Fmt::bps((float) $port->speed_bps) : 'kecepatan tak diketahui' }}
-            @if($port->mac) · <span class="mono">{{ $port->mac }}</span>@endif · ifIndex {{ $port->if_index }}
-            @if($port->last_change_at) · status berubah {{ $port->last_change_at->diffForHumans() }}@endif</p></div>
+        <div class="meta" style="margin-top:6px">
+            @if($port->alias || $port->descr !== $port->name)<span style="color:var(--color-ink-2)">{{ $port->alias ?: $port->descr }}</span>@endif
+            <span>{{ $port->speed_bps ? \App\Support\Fmt::bps((float) $port->speed_bps) : 'Kecepatan tak diketahui' }}</span>
+            @if($port->mac)<span class="mono">{{ $port->mac }}</span>@endif
+            <span>ifIndex {{ $port->if_index }}</span>
+            @if($port->last_change_at)<span>Status berubah {{ $port->last_change_at->diffForHumans() }}</span>@endif
+        </div></div>
     <div class="actions">
         <select class="input" aria-label="Pindah port" data-port-jump>
-            @foreach($ports as $p)<option value="{{ route('ports.show', [$device, $p->if_index]) }}" @selected($p->if_index === $port->if_index)>{{ $p->name ?: ($p->descr ?: 'if' . $p->if_index) }}{{ $p->alias ? ' — ' . \Illuminate\Support\Str::limit($p->alias, 30) : '' }}</option>@endforeach
+            @foreach($ports as $p)<option value="{{ route('ports.show', [$device, $p->if_index]) }}" @selected($p->if_index === $port->if_index)>{{ $p->name ?: ($p->descr ?: 'if' . $p->if_index) }}{{ $p->alias ? ' (' . \Illuminate\Support\Str::limit($p->alias, 30) . ')' : '' }}</option>@endforeach
         </select>
         @if($device->snmp_enabled)<button type="button" class="btn" data-live-port="{{ $port->if_index }}"><span class="live-dot on" style="display:inline-block;margin-right:6px"></span>Live</button>@endif
         @can('manage-devices')
@@ -32,9 +36,9 @@
         </div></div>
     <div class="bd">
         <div class="live-stats">
-            <div><span class="lbl in">Masuk</span><b data-live-v="in">–</b><small>rata-rata <span data-live-v="in-avg">–</span> · puncak <span data-live-v="in-max">–</span></small></div>
-            <div><span class="lbl out">Keluar</span><b data-live-v="out">–</b><small>rata-rata <span data-live-v="out-avg">–</span> · puncak <span data-live-v="out-max">–</span></small></div>
-            <div><span class="lbl">Pemakaian</span><b data-live-v="util">–</b><small data-live-v="info">–</small></div>
+            <div><span class="lbl in">Masuk</span><b data-live-v="in"><span class="nil">tidak ada</span></b><small>rata-rata <span data-live-v="in-avg"><span class="nil">tidak ada</span></span>, puncak <span data-live-v="in-max"><span class="nil">tidak ada</span></span></small></div>
+            <div><span class="lbl out">Keluar</span><b data-live-v="out"><span class="nil">tidak ada</span></b><small>rata-rata <span data-live-v="out-avg"><span class="nil">tidak ada</span></span>, puncak <span data-live-v="out-max"><span class="nil">tidak ada</span></span></small></div>
+            <div><span class="lbl">Pemakaian</span><b data-live-v="util"><span class="nil">tidak ada</span></b><small data-live-v="info"><span class="nil">tidak ada</span></small></div>
         </div>
         <div class="chart" data-live-chart></div>
         <p class="muted live-note" data-live-note></p>
@@ -47,20 +51,20 @@
     <div class="hd"><h2>Statistik <span class="sub" data-pg-range-label>24 jam</span></h2>
         <div class="seg" role="group" aria-label="Rentang waktu">@foreach($R as $k => [, $lbl])<button type="button" data-pg-range="{{ $k }}" class="{{ $k === '24h' ? 'on' : '' }}">{{ $lbl }}</button>@endforeach</div></div>
     <div class="bd flush"><div class="table-wrap"><table class="t pg-stats">
-        <thead><tr><th></th><th class="num">Sekarang</th><th class="num">Rata-rata</th><th class="num">Maks (5 mnt)</th><th class="num" title="95% waktu trafik berada di bawah angka ini — dasar tagihan bandwidth">Persentil 95</th><th class="num">Total volume</th><th class="num">Error</th><th class="num">Discard</th></tr></thead>
+        <thead><tr><th></th><th class="num">Sekarang</th><th class="num">Rata-rata</th><th class="num">Maks (5 mnt)</th><th class="num" title="95% waktu trafik berada di bawah angka ini, dasar tagihan bandwidth">Persentil 95</th><th class="num">Total volume</th><th class="num">Error</th><th class="num">Discard</th></tr></thead>
         <tbody>
             @foreach(['in' => 'Masuk', 'out' => 'Keluar'] as $k => $lbl)
             <tr><td class="name"><span class="pg-sw {{ $k }}"></span>{{ $lbl }}</td>
-                @foreach(['now', 'avg', 'max', 'p95', 'bytes', 'errors', 'discards'] as $c)<td class="num" data-pg-stat="{{ $k }}.{{ $c }}">–</td>@endforeach</tr>
+                @foreach(['now', 'avg', 'max', 'p95', 'bytes', 'errors', 'discards'] as $c)<td class="num" data-pg-stat="{{ $k }}.{{ $c }}"><span class="nil">tidak ada</span></td>@endforeach</tr>
             @endforeach
         </tbody>
     </table></div></div>
 </section>
 
 <div class="pg-grid">
-    <section class="card"><div class="hd"><h2>Trafik</h2><span class="sub">bit/s · masuk ke atas, keluar ke bawah · garis putus = persentil 95</span></div><div class="bd"><div class="chart" data-pg-chart="bits"></div></div></section>
+    <section class="card"><div class="hd"><h2>Trafik</h2><span class="sub">bit/s, masuk ke atas, keluar ke bawah, garis putus = persentil 95</span></div><div class="bd"><div class="chart" data-pg-chart="bits"></div></div></section>
     <section class="card"><div class="hd"><h2>Pemakaian</h2><span class="sub">% dari kecepatan port</span></div><div class="bd"><div class="chart" data-pg-chart="util"></div></div></section>
-    <section class="card"><div class="hd"><h2>Paket</h2><span class="sub">paket/s · unicast & non-unicast (multicast + broadcast)</span></div><div class="bd"><div class="chart" data-pg-chart="pkts"></div></div></section>
+    <section class="card"><div class="hd"><h2>Paket</h2><span class="sub">paket/s, unicast & non-unicast (multicast + broadcast)</span></div><div class="bd"><div class="chart" data-pg-chart="pkts"></div></div></section>
     <section class="card"><div class="hd"><h2>Error & discard</h2><span class="sub">per detik</span></div><div class="bd"><div class="chart" data-pg-chart="errs"></div></div></section>
 </div>
 </div>
@@ -71,10 +75,10 @@
         <ul class="feed">
             @foreach($neighbors as $n)
             <li><span class="ic info"><x-icon name="share"/></span><div class="msg">@if($n->remote_device_id)<a href="{{ route('devices.show', $n->remote_device_id) }}">{{ $n->dev_name }}</a>@else{{ $n->remote_name ?: $n->remote_ip }}@endif
-                {{ $n->remote_port ? '· ' . $n->remote_port : '' }}<small>{{ strtoupper($n->protocol) }}{{ $n->remote_ip ? ' · ' . $n->remote_ip : '' }}{{ $n->remote_platform ? ' · ' . \Illuminate\Support\Str::limit($n->remote_platform, 60) : '' }}{{ $n->remote_device_id ? '' : ' · belum terdaftar' }}</small></div></li>
+                {{ $n->remote_port ? ', ' . $n->remote_port : '' }}<small>{{ strtoupper($n->protocol) }}{{ $n->remote_ip ? ', ' . $n->remote_ip : '' }}{{ $n->remote_platform ? ', ' . \Illuminate\Support\Str::limit($n->remote_platform, 60) : '' }}{{ $n->remote_device_id ? '' : ', belum terdaftar' }}</small></div></li>
             @endforeach
             @foreach($links as $l)
-            <li><span class="ic muted"><x-icon name="share"/></span><div class="msg"><a href="{{ route('devices.show', $l->id) }}">{{ $l->name }}</a><small>sambungan manual{{ $l->note ? ' · ' . $l->note : '' }}</small></div></li>
+            <li><span class="ic muted"><x-icon name="share"/></span><div class="msg"><a href="{{ route('devices.show', $l->id) }}">{{ $l->name }}</a><small>sambungan manual{{ $l->note ? ', ' . $l->note : '' }}</small></div></li>
             @endforeach
         </ul>@endif
     </div></section>

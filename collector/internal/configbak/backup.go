@@ -76,7 +76,7 @@ func Normalize(kind, s string) string {
 func Fingerprint(k ssh.PublicKey) string { return ssh.FingerprintSHA256(k) }
 
 // ErrHostKeyChanged: host key berbeda dari yang tercatat.
-var ErrHostKeyChanged = errors.New("host key SSH berubah sejak backup sebelumnya — perangkat diganti/di-reset, atau koneksi disadap. Periksa lalu reset host key dari web")
+var ErrHostKeyChanged = errors.New("host key SSH berubah sejak backup sebelumnya: perangkat diganti/di-reset, atau koneksi disadap. Periksa lalu reset host key dari web")
 
 // Fetch terhubung lewat SSH lalu menjalankan perintah baca. knownKey kosong = catat key baru (dikembalikan).
 func Fetch(ctx context.Context, kind, host string, port int, user, pass, knownKey string, timeout time.Duration) (cfg, hostKey string, err error) {
@@ -138,7 +138,7 @@ func Fetch(ctx context.Context, kind, host string, port int, user, pass, knownKe
 				return "", hostKey, fmt.Errorf("perintah %q gagal: %v %s", c, err, strings.TrimSpace(errb.String()))
 			}
 			if out.Len() < 20 {
-				return "", hostKey, fmt.Errorf("keluaran %q kosong — periksa hak akses user SSH", c)
+				return "", hostKey, fmt.Errorf("keluaran %q kosong, periksa hak akses user SSH", c)
 			}
 			return out.String(), hostKey, nil
 		}

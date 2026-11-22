@@ -20,9 +20,9 @@
                 <tbody>
                 @foreach($channels as $c)
                     <tr class="{{ $c->enabled ? '' : 'is-off' }}">
-                        <td class="name">{{ $c->name }}<small>{{ \App\Models\NotifyChannel::TYPES[$c->type] }} · {{ $c->target() }}{{ $c->enabled ? '' : ' · nonaktif' }}</small></td>
+                        <td class="name">{{ $c->name }}<small>{{ \App\Models\NotifyChannel::TYPES[$c->type] }}, {{ $c->target() }}{{ $c->enabled ? '' : ', nonaktif' }}</small></td>
                         <td>≥ {{ \App\Models\Problem::SEVERITIES[$c->min_severity][0] }}</td>
-                        <td>{!! $c->delay_minutes ? '<span class="badge warn plain">eskalasi ' . $c->delay_minutes . ' mnt</span>' : 'segera' !!}{{ $c->notify_resolve ? ' · + pulih' : '' }}</td>
+                        <td>{!! $c->delay_minutes ? '<span class="badge warn plain">eskalasi ' . $c->delay_minutes . ' mnt</span>' : 'segera' !!}{{ $c->notify_resolve ? ', + pulih' : '' }}</td>
                         <td>{{ $c->site?->code ?? 'semua' }}</td>
                         <td class="right nowrap">
                             <form method="post" action="{{ route('channels.test', $c) }}" style="display:inline">@csrf<button class="btn sm"><x-icon name="pulse"/>Kirim uji</button></form>

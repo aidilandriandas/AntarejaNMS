@@ -11,9 +11,9 @@
                 <tbody>
                 @foreach($active as $m)
                     <tr>
-                        <td class="name">{{ $m->title }}<small>{{ $m->note }}{{ $m->creator ? ' · oleh ' . $m->creator->username : '' }}</small></td>
+                        <td class="name">{{ $m->title }}<small>{{ $m->note }}{{ $m->creator ? ', oleh ' . $m->creator->username : '' }}</small></td>
                         <td>{{ $m->scopeLabel() }}</td>
-                        <td class="nowrap">{{ $m->starts_at->format('d/m H:i') }} – {{ $m->ends_at->format('d/m H:i') }}</td>
+                        <td class="nowrap">{{ $m->starts_at->format('d/m H:i') }} sampai {{ $m->ends_at->format('d/m H:i') }}</td>
                         <td>@if($m->state() === 'berjalan')<span class="badge info">berjalan</span>@else<span class="badge plain">terjadwal</span>@endif</td>
                         @can('manage-devices')
                         <td class="right nowrap">
@@ -29,7 +29,7 @@
         <section class="card"><div class="hd"><h2>Riwayat</h2><span class="sub">30 terakhir</span></div><div class="bd flush">
             @if($past->isEmpty())<div class="empty">Belum ada.</div>@else
             <div class="table-wrap"><table class="t"><tbody>
-                @foreach($past as $m)<tr class="is-off"><td class="name">{{ $m->title }}<small>{{ $m->scopeLabel() }}</small></td><td class="nowrap right">{{ $m->starts_at->format('d/m/Y H:i') }} – {{ $m->ends_at->format('d/m H:i') }}</td></tr>@endforeach
+                @foreach($past as $m)<tr class="is-off"><td class="name">{{ $m->title }}<small>{{ $m->scopeLabel() }}</small></td><td class="nowrap right">{{ $m->starts_at->format('d/m/Y H:i') }} sampai {{ $m->ends_at->format('d/m H:i') }}</td></tr>@endforeach
             </tbody></table></div>@endif
         </div></section>
     </div>
@@ -50,7 +50,7 @@
                 </select></div>
             <div class="field" data-scope-show="site"><label for="site_id">Site</label>
                 <select class="input @error('site_id') is-err @enderror" id="site_id" name="site_id"><option value="">— pilih —</option>
-                    @foreach($sites as $s)<option value="{{ $s->id }}" @selected(old('site_id') == $s->id)>{{ $s->code }} — {{ $s->name }}</option>@endforeach</select><x-field-error name="site_id"/></div>
+                    @foreach($sites as $s)<option value="{{ $s->id }}" @selected(old('site_id') == $s->id)>{{ $s->code }} ({{ $s->name }})</option>@endforeach</select><x-field-error name="site_id"/></div>
             <div class="field" data-scope-show="devices"><label for="device_ids">Perangkat</label>
                 <select class="input @error('device_ids') is-err @enderror" id="device_ids" name="device_ids[]" multiple size="8" style="height:auto">
                     @foreach($devices as $d)<option value="{{ $d->id }}" @selected(in_array($d->id, old('device_ids', [])))>{{ $d->name }} ({{ $d->host }})</option>@endforeach</select>

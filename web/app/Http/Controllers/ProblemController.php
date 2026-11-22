@@ -40,7 +40,7 @@ class ProblemController extends Controller
         $data = $request->validate(['note' => ['nullable', 'string', 'max:500']]);
         abort_if($problem->resolved_at !== null, 422, 'Problem sudah selesai.');
         $problem->forceFill(['acked_at' => now(), 'acked_by' => $request->user()->id, 'ack_note' => $data['note'] ?? null])->save();
-        Audit::log('ack', "ACK problem #{$problem->id}: {$problem->title}" . (! empty($data['note']) ? " — {$data['note']}" : ''), $problem);
+        Audit::log('ack', "ACK problem #{$problem->id}: {$problem->title}" . (! empty($data['note']) ? ", {$data['note']}" : ''), $problem);
 
         return back()->with('ok', 'Problem di-ACK. Eskalasi untuk problem ini dihentikan.');
     }

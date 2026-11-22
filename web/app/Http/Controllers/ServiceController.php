@@ -174,6 +174,6 @@ class ServiceController extends Controller
     /** Untuk tampilan: "3 jam 2 menit". */
     public static function dur(float $s): string
     {
-        return $s > 0 ? Fmt::duration((int) round($s)) : '–';
+        return $s > 0 ? Fmt::duration((int) round($s)) : 'tidak ada';
     }
 }

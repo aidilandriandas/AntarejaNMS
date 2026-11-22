@@ -11,7 +11,7 @@
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                 <select class="input" data-topo-site style="width:auto;height:32px" aria-label="Site">
                     <option value="">Semua site</option>
-                    @foreach($sites as $s)<option value="{{ $s->id }}">{{ $s->code }} — {{ $s->name }}</option>@endforeach
+                    @foreach($sites as $s)<option value="{{ $s->id }}">{{ $s->code }} ({{ $s->name }})</option>@endforeach
                 </select>
                 <label class="check" style="align-items:center"><input type="checkbox" data-topo-live checked><span>Trafik live (5 dtk)</span></label>
             </div>
@@ -55,7 +55,7 @@
         @if($links->isNotEmpty())
         <section class="card"><div class="hd"><h2>Sambungan manual</h2></div><div class="bd flush"><table class="t"><tbody>
             @foreach($links as $l)
-                <tr><td>{{ $l->a_name }}<span class="muted">{{ $l->a_port ? ' · ' . $l->a_port : '' }}</span> ↔ {{ $l->b_name }}<span class="muted">{{ $l->b_port ? ' · ' . $l->b_port : '' }}</span>
+                <tr><td>{{ $l->a_name }}<span class="muted">{{ $l->a_port ? ', ' . $l->a_port : '' }}</span> ↔ {{ $l->b_name }}<span class="muted">{{ $l->b_port ? ', ' . $l->b_port : '' }}</span>
                     @if($l->note)<div class="muted" style="font-size:12px">{{ $l->note }}</div>@endif</td>
                     @can('manage-devices')<td class="right"><form method="post" action="{{ route('topology.links.destroy', $l->id) }}" data-confirm="Hapus sambungan ini?">@csrf @method('DELETE')<button class="btn sm danger" aria-label="Hapus"><x-icon name="trash"/></button></form></td>@endcan</tr>
             @endforeach

@@ -4,14 +4,14 @@
 @php($keep = array_filter($f, fn ($v, $k) => $k !== 'before' && $v !== null && $v !== '', ARRAY_FILTER_USE_BOTH))
 @section('content')
 <div class="page-head">
-    <div><h1>Log{{ $device ? ' · ' . $device->name : '' }}</h1><p>Syslog dari perangkat (UDP/TCP port {{ $port }}), dicocokkan ke perangkat lewat IP pengirim. Disimpan {{ $settings['keep'] }} hari.</p></div>
+    <div><h1>Log{{ $device ? ': ' . $device->name : '' }}</h1><p>Syslog dari perangkat (UDP/TCP port {{ $port }}), dicocokkan ke perangkat lewat IP pengirim. Disimpan {{ $settings['keep'] }} hari.</p></div>
     <label class="check" title="Muat ulang tiap 10 detik"><input type="checkbox" data-log-live> Live</label>
 </div>
 
 <div class="kpis">
     <div class="kpi"><div class="lbl">Log 1 jam</div><div class="val">{{ $nf($stats->total) }}</div></div>
-    <a class="kpi {{ $stats->errors ? 'warn' : '' }}" href="{{ route('logs.index', ['sev' => 3, 'period' => '1h']) }}"><div class="lbl">Error ke atas · 1 jam</div><div class="val">{{ $nf($stats->errors) }}</div><div class="note">Emergency, Alert, Critical, Error</div></a>
-    <div class="kpi"><div class="lbl">Pengirim · 1 jam</div><div class="val">{{ $nf($stats->sources) }}</div></div>
+    <a class="kpi {{ $stats->errors ? 'warn' : '' }}" href="{{ route('logs.index', ['sev' => 3, 'period' => '1h']) }}"><div class="lbl">Error ke atas, 1 jam</div><div class="val">{{ $nf($stats->errors) }}</div><div class="note">Emergency, Alert, Critical, Error</div></a>
+    <div class="kpi"><div class="lbl">Pengirim, 1 jam</div><div class="val">{{ $nf($stats->sources) }}</div></div>
     <a class="kpi" href="{{ route('logs.index', ['unknown' => 1]) }}"><div class="lbl">Belum terdaftar</div><div class="val">{{ $nf($stats->unknown) }}</div><div class="note">IP pengirim tidak cocok dengan perangkat</div></a>
 </div>
 
@@ -26,7 +26,7 @@
         </select>
         <select class="input" name="site" aria-label="Site">
             <option value="">Semua site</option>
-            @foreach($sites as $s)<option value="{{ $s->id }}" @selected(($f['site'] ?? null) == $s->id)>{{ $s->code }} — {{ $s->name }}</option>@endforeach
+            @foreach($sites as $s)<option value="{{ $s->id }}" @selected(($f['site'] ?? null) == $s->id)>{{ $s->code }} ({{ $s->name }})</option>@endforeach
         </select>
         <input class="input" name="app" value="{{ $f['app'] ?? '' }}" placeholder="Program / topik" style="min-width:120px">
         <input class="input mono" name="src" value="{{ $f['src'] ?? '' }}" placeholder="IP pengirim" style="min-width:120px">
@@ -37,7 +37,7 @@
     </form>
     <div class="bd flush">
     @if($rows->isEmpty())
-        <div class="empty">Belum ada log untuk filter ini.@if($stats->total == 0 && count($keep) <= 1) Arahkan syslog perangkat ke IP server ini port {{ $port }} — lihat petunjuk di samping.@endif</div>
+        <div class="empty">Belum ada log untuk filter ini.@if($stats->total == 0 && count($keep) <= 1) Arahkan syslog perangkat ke IP server ini port {{ $port }}, lihat petunjuk di samping.@endif</div>
     @else
     <div class="table-wrap"><table class="t logs">
         <thead><tr><th>Waktu</th><th>Tingkat</th><th>Perangkat</th><th>Program</th><th>Pesan</th></tr></thead>
@@ -63,7 +63,7 @@
 </section>
 
 <div class="stack">
-    <section class="card"><div class="hd"><h2>Paling banyak error · 24 jam</h2></div>
+    <section class="card"><div class="hd"><h2>Paling banyak error, 24 jam</h2></div>
         <div class="bd flush">
         @if(empty($top))<div class="empty">Belum ada log dari perangkat terdaftar.</div>@else
         <table class="t"><tbody>

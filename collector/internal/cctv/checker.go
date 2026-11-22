@@ -196,7 +196,7 @@ func friendly(err error) string {
 	}
 	if strings.HasPrefix(m, "HTTP ") && len(strings.TrimSpace(m)) <= 8 {
 		// go2rtc tidak menyertakan alasan
-		return "tidak ada gambar dari kamera — cek user/password RTSP, IP, dan nomor kanal"
+		return "tidak ada gambar dari kamera, cek user/password RTSP, IP, dan nomor kanal"
 	}
 	if len(m) > 150 {
 		m = m[:150]

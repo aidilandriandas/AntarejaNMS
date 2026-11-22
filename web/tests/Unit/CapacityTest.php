@@ -45,6 +45,6 @@ class CapacityTest extends TestCase
         $this->assertSame('1,5 Mbps', Capacity::bps(1.5e6));
         $this->assertSame('120 Mbps', Capacity::bps(120e6));
         $this->assertSame('−2,0 Mbps', Capacity::bps(-2e6));
-        $this->assertSame('–', Capacity::bps(null));
+        $this->assertSame('tidak ada', Capacity::bps(null));
     }
 }

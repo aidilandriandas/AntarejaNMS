@@ -2,7 +2,7 @@
 <html lang="id" data-theme="light">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow"><meta name="referrer" content="no-referrer">
-    <title>Tautan tidak berlaku · ANTAREJA</title>
+    <title>Tautan tidak berlaku | ANTAREJA</title>
     <link rel="icon" href="/favicon.ico" sizes="any">
     @vite(['resources/css/app.css'])
 </head>

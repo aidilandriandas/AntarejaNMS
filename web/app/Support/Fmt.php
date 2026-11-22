@@ -18,7 +18,7 @@ class Fmt
     public static function bps(?float $v): string
     {
         if ($v === null) {
-            return '–';
+            return 'tidak ada';
         }
         foreach (['Gbps' => 1e9, 'Mbps' => 1e6, 'Kbps' => 1e3] as $unit => $div) {
             if ($v >= $div) {
@@ -32,7 +32,7 @@ class Fmt
     public static function ms(?float $v): string
     {
         if ($v === null) {
-            return '–';
+            return 'tidak ada';
         }
 
         return number_format($v, $v >= 100 ? 0 : ($v >= 10 ? 1 : 2), ',', '.') . ' ms';

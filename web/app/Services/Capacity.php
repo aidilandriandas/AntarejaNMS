@@ -154,7 +154,7 @@ class Capacity
     public static function bps(?float $v): string
     {
         if ($v === null) {
-            return '–';
+            return 'tidak ada';
         }
         $u = ['bps', 'Kbps', 'Mbps', 'Gbps', 'Tbps'];
         $i = 0;

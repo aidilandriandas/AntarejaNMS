@@ -18,8 +18,8 @@
         };
     @endphp
     <svg class="pspark" viewBox="0 0 {{ $W }} {{ $H }}" width="{{ $W }}" height="{{ $H }}" role="img" aria-label="Trafik 24 jam, puncak {{ \App\Support\Fmt::bps($max) }}">
-        <title>24 jam · puncak {{ \App\Support\Fmt::bps($max) }}</title>
+        <title>24 jam, puncak {{ \App\Support\Fmt::bps($max) }}</title>
         <polygon class="i" points="{{ $poly($in, 1) }}"/><polygon class="o" points="{{ $poly($out, -1) }}"/>
         <line class="z" x1="0" x2="{{ $W }}" y1="{{ $mid }}" y2="{{ $mid }}"/>
     </svg>
-@else<span class="muted">–</span>@endif
+@else<span class="muted"><span class="nil">tidak ada</span></span>@endif

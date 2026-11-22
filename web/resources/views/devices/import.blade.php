@@ -28,8 +28,8 @@
         <tbody>
         @foreach($rows as $r)
             <tr class="{{ $r['errors'] ? 'is-down' : '' }}">
-                <td class="num muted">{{ $r['line'] }}</td><td>{{ $r['nama'] }}</td><td class="mono">{{ $r['host'] }}</td><td>{{ strtoupper($r['site']) ?: '–' }}</td>
-                <td>{{ $r['kategori'] }}</td><td>{{ $r['snmp'] ? 'v' . $r['snmp'] . ($r['community'] !== '' ? ' · ••••' : '') : 'ping saja' }}</td><td>{{ $r['induk'] ?: '–' }}</td>
+                <td class="num muted">{{ $r['line'] }}</td><td>{{ $r['nama'] }}</td><td class="mono">{{ $r['host'] }}</td><td>{{ strtoupper($r['site']) ?: 'tidak ada' }}</td>
+                <td>{{ $r['kategori'] }}</td><td>{{ $r['snmp'] ? 'v' . $r['snmp'] . ($r['community'] !== '' ? ', ••••' : '') : 'ping saja' }}</td><td>{{ $r['induk'] ?: 'tidak ada' }}</td>
                 <td>@if($r['errors'])<span style="color:var(--crit)">{{ implode('; ', $r['errors']) }}</span>@else<span class="badge ok plain">siap</span>@endif</td>
             </tr>
         @endforeach

@@ -13,7 +13,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Ringkasan') · ANTAREJA NMS</title>
+    <title>@yield('title', 'Ringkasan') | ANTAREJA NMS</title>
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" href="/brand/favicon-32.png">
     <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
@@ -83,9 +83,9 @@
         <main class="content">
             @if($sysStale)
                 <div class="alert error sys-banner" role="alert"><x-icon name="alert"/><div><b>Data tidak diperbarui:</b> collector ANTAREJA tidak melapor {{ $sysBeat ? 'sejak ' . $sysBeat->diffForHumans() : '' }}. Status perangkat di layar ini mungkin sudah usang.
-                    @can('admin')<a href="{{ route('system.index') }}">Kesehatan sistem →</a> · jalankan <code>./antareja.sh cek</code> di server.@else Hubungi admin NOC.@endcan</div></div>
+                    @can('admin')<a href="{{ route('system.index') }}">Buka kesehatan sistem</a>, atau jalankan <code>./antareja.sh cek</code> di server.@else Hubungi admin NOC.@endcan</div></div>
             @elseif($sysAlerts && $u->isAdmin() && ! request()->routeIs('system.*'))
-                <div class="alert warn sys-banner"><x-icon name="alert"/><div>Ada {{ $sysAlerts }} masalah sistem ANTAREJA (mis. backup/disk/notifikasi). <a href="{{ route('system.index') }}">Lihat Kesehatan sistem →</a></div></div>
+                <div class="alert warn sys-banner"><x-icon name="alert"/><div>Ada {{ $sysAlerts }} masalah sistem ANTAREJA (mis. backup/disk/notifikasi). <a href="{{ route('system.index') }}">Lihat kesehatan sistem</a></div></div>
             @endif
             @include('partials.flash')
             @yield('content')

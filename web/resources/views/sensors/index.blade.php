@@ -14,7 +14,7 @@
     <form class="filters" method="get">
         <input type="hidden" name="tab" value="{{ $tab }}">
         <select class="input" name="site" aria-label="Site" data-autosubmit><option value="">Semua site</option>
-            @foreach($sites as $s)<option value="{{ $s->id }}" @selected(request('site') == $s->id)>{{ $s->code }} — {{ $s->name }}</option>@endforeach</select>
+            @foreach($sites as $s)<option value="{{ $s->id }}" @selected(request('site') == $s->id)>{{ $s->code }} ({{ $s->name }})</option>@endforeach</select>
     </form>
     <div class="bd flush">
     @if($rows->isEmpty())
@@ -25,10 +25,10 @@
             <tbody>
             @foreach($rows as $r)
                 <tr class="{{ $r['worst'] === 'crit' ? 'is-down' : '' }}">
-                    <td class="name"><a href="{{ route('devices.show', $r['device']) }}">{{ $r['device']->name }}</a><small>{{ $r['device']->site?->code ?? '–' }} · {{ $r['device']->host }}</small></td>
+                    <td class="name"><a href="{{ route('devices.show', $r['device']) }}">{{ $r['device']->name }}</a><small>{{ $r['device']->site?->code ?? 'tidak ada' }}, {{ $r['device']->host }}</small></td>
                     @foreach($r['cells'] as $c)
-                        <td class="c" title="{{ $c['label'] ?? '' }}{{ ($c['n'] ?? 1) > 1 ? ' · ' . $c['n'] . ' sensor (ditampilkan yang terburuk)' : '' }}">
-                            @if(! $c)<span class="muted">–</span>
+                        <td class="c" title="{{ $c['label'] ?? '' }}{{ ($c['n'] ?? 1) > 1 ? ', ' . $c['n'] . ' sensor (ditampilkan yang terburuk)' : '' }}">
+                            @if(! $c)<span class="muted"><span class="nil">tidak ada</span></span>
                             @elseif($c['status'] === 'ok'){{ $c['text'] }}
                             @else<span class="badge plain {{ $c['status'] }}">{{ $c['text'] }}</span>@endif
                         </td>
@@ -40,5 +40,5 @@
     @endif
     </div>
 </section>
-<p class="muted" style="font-size:12.5px">Ambang bawaan: sinyal ≤ −70 dBm peringatan, ≤ −78 dBm kritis · CCQ/kualitas ≤ 70% / 50% · baterai ≤ 50% / 20% · cadangan ≤ 15 / 5 menit · beban UPS ≥ 80% / 95% · CPU ≥ 80% / 95% · memori & disk ≥ 85% / 95% · suhu ≥ 60 °C / 75 °C (CPU 75 / 90).</p>
+<p class="muted" style="font-size:12.5px">Ambang bawaan: sinyal ≤ −70 dBm peringatan, ≤ −78 dBm kritis, CCQ/kualitas ≤ 70% / 50%, baterai ≤ 50% / 20%, cadangan ≤ 15 / 5 menit, beban UPS ≥ 80% / 95%, CPU ≥ 80% / 95%, memori & disk ≥ 85% / 95%, suhu ≥ 60 °C / 75 °C (CPU 75 / 90).</p>
 @endsection

@@ -1,5 +1,5 @@
 <section class="card">
-    <div class="hd"><h2>Sensor di luar ambang</h2><a class="sub" href="{{ route('sensors.index') }}">Semua sensor →</a></div>
+    <div class="hd"><h2>Sensor di luar ambang</h2><a class="sub" href="{{ route('sensors.index') }}">Semua sensor</a></div>
     <div class="bd flush">
     @if($sensors->isEmpty())<div class="empty">Semua sensor dalam batas normal.</div>@else
     <div class="table-wrap"><table class="t"><tbody>

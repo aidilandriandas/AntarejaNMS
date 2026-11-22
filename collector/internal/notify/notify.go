@@ -260,7 +260,7 @@ func (d *Dispatcher) Test(ctx context.Context, channelID int64) error {
 	c := chs[0]
 	now := time.Now().Format("02/01/2006 15.04")
 	m := Message{Event: "test", Subject: "[ANTAREJA] Uji notifikasi",
-		Text: "ANTAREJA NMS — uji notifikasi kanal \"" + c.Name + "\" berhasil (" + now + ").",
+		Text: "ANTAREJA NMS: uji notifikasi kanal \"" + c.Name + "\" berhasil (" + now + ").",
 		HTML: "✅ <b>ANTAREJA NMS</b>\nUji notifikasi kanal <b>" + esc(c.Name) + "</b> berhasil.\n<i>" + now + "</i>"}
 	err = d.send(ctx, c, m)
 	status, errText := "sent", (*string)(nil)

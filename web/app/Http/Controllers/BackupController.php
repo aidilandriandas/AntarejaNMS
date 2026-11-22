@@ -31,7 +31,7 @@ class BackupController extends Controller
         $id = DB::table('backups')->insertGetId(['kind' => 'manual', 'requested_by' => $request->user()->id, 'requested_at' => now()]);
         Audit::log('created', "Backup manual #{$id} diminta");
 
-        return back()->with('ok', 'Backup diminta. Biasanya selesai dalam kurang dari 1 menit — muat ulang halaman.');
+        return back()->with('ok', 'Backup diminta. Biasanya selesai dalam kurang dari 1 menit, muat ulang halaman.');
     }
 
     public function settings(Request $request)

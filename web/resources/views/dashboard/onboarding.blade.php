@@ -2,7 +2,7 @@
 @php($done = collect($steps)->where('done', true)->count())
 @if($done < count($steps))
 <section class="card onboard" style="margin-bottom:16px">
-    <div class="hd"><h2>Langkah awal · {{ $done }}/{{ count($steps) }} selesai</h2>
+    <div class="hd"><h2>Langkah awal: {{ $done }}/{{ count($steps) }} selesai</h2>
         <form method="post" action="{{ route('onboarding.hide') }}" data-confirm="Sembunyikan daftar langkah awal? Bisa ditampilkan lagi dari halaman Panduan.">@csrf<button class="btn sm">Sembunyikan</button></form></div>
     <div class="bar" style="height:6px;border-radius:0"><span style="width:{{ round($done / count($steps) * 100) }}%"></span></div>
     <ol class="onboard-list">

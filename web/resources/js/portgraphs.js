@@ -1,6 +1,7 @@
 // Grafik detail port: trafik (masuk ke atas / keluar ke bawah + persentil 95), pemakaian %, paket, error & discard.
 // Kursor keempat grafik disinkronkan.
 import uPlot from 'uplot';
+import { tokenKeys } from './chartkeys.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -9,7 +10,7 @@ const two = (n) => String(n).padStart(2, '0');
 const num = (v, d = 1) => v.toFixed(d).replace('.', ',');
 
 const si = (v, units) => {
-    if (v == null || Number.isNaN(v)) return '–';
+    if (v == null || Number.isNaN(v)) return '';
     const a = Math.abs(v);
     const u = units.find(([, d]) => a >= d);
     return u ? `${num(v / u[1], a / u[1] >= 100 ? 0 : 1)} ${u[0]}` : `${num(v, a >= 10 || a === 0 ? 0 : 2)}${units.base}`;
@@ -19,8 +20,8 @@ const PPS = Object.assign([['Mpps', 1e6], ['Kpps', 1e3]], { base: ' pps' });
 const BYTES = Object.assign([['TB', 1e12], ['GB', 1e9], ['MB', 1e6], ['KB', 1e3]], { base: ' B' });
 export const fmtBps = (v) => si(v == null ? v : Math.abs(v), BPS);
 const fmtPps = (v) => si(v == null ? v : Math.abs(v), PPS);
-const fmtRate = (v) => (v == null ? '–' : `${num(Math.abs(v), Math.abs(v) >= 10 ? 0 : 2)}/s`);
-const fmtCount = (v) => (v == null ? '–' : Math.round(v).toLocaleString('id-ID'));
+const fmtRate = (v) => (v == null ? '' : `${num(Math.abs(v), Math.abs(v) >= 10 ? 0 : 2)}/s`);
+const fmtCount = (v) => (v == null ? '' : Math.round(v).toLocaleString('id-ID'));
 
 const neg = (a) => a.map((v) => (v == null ? null : -v));
 const add = (a, b) => a.map((v, i) => (v == null && b[i] == null ? null : (v ?? 0) + (b[i] ?? 0)));
@@ -39,7 +40,7 @@ export function initPortGraphs() {
         return incr >= 86400 || (d.getHours() === 0 && d.getMinutes() === 0) ? `${two(d.getDate())}/${two(d.getMonth() + 1)}` : `${two(d.getHours())}.${two(d.getMinutes())}`;
     });
     const xLegend = (u, ts) => {
-        if (ts == null) return '–';
+        if (ts == null) return '';
         const d = new Date(ts * 1000);
         return `${two(d.getDate())}/${two(d.getMonth() + 1)} ${two(d.getHours())}.${two(d.getMinutes())}`;
     };
@@ -58,6 +59,8 @@ export function initPortGraphs() {
             cursor: { sync: { key: sync.key }, drag: { x: false, y: false } },
             hooks: extra.hooks || {},
         }, cols, el);
+        plots[key].root.querySelectorAll('canvas').forEach((c) => c.setAttribute('aria-hidden', 'true')); // nilai terbaca dari legenda
+        tokenKeys(plots[key]);
         sync.sub(plots[key]);
         if (cols.slice(1).every((c) => c.every((v) => v == null))) {
             const n = document.createElement('div');
@@ -101,8 +104,8 @@ export function initPortGraphs() {
 
         const pct = (a) => a.map((v) => (v == null || !d.speed ? null : (v / d.speed) * 100));
         make('util', [
-            { label: 'Masuk', stroke: acc, width: 1.4, value: (u, v) => (v == null ? '–' : `${num(v)}%`) },
-            { label: 'Keluar', stroke: inf, width: 1.4, value: (u, v) => (v == null ? '–' : `${num(v)}%`) },
+            { label: 'Masuk', stroke: acc, width: 1.4, value: (u, v) => (v == null ? '' : `${num(v)}%`) },
+            { label: 'Keluar', stroke: inf, width: 1.4, value: (u, v) => (v == null ? '' : `${num(v)}%`) },
         ], [d.t, pct(s.in), pct(s.out)], (v) => `${num(v, 0)}%`, { scales: { y: { range: (u, min, max) => [0, Math.max(10, Math.ceil(max / 10) * 10)] } } });
 
         make('pkts', [

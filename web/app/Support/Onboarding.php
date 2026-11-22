@@ -24,7 +24,7 @@ class Onboarding
                 'done' => $q('SELECT 1 FROM devices WHERE parent_id IS NOT NULL')],
             ['key' => 'notify', 'title' => 'Kanal notifikasi terkirim', 'hint' => 'Telegram/email/webhook, lalu tekan "Kirim uji" sampai berhasil.', 'route' => 'channels.index',
                 'done' => $q("SELECT 1 FROM notifications WHERE status = 'sent'")],
-            ['key' => 'users', 'title' => 'Buat akun per orang', 'hint' => 'Engineer & viewer (layar NOC) — hindari akun bersama.', 'route' => 'users.index',
+            ['key' => 'users', 'title' => 'Buat akun per orang', 'hint' => 'Engineer & viewer (layar NOC), hindari akun bersama.', 'route' => 'users.index',
                 'done' => (int) DB::table('users')->where('active', true)->count() > 1],
             ['key' => 'backup', 'title' => 'Backup database berhasil', 'hint' => 'Tekan "Backup sekarang"; arahkan folder backup ke NAS.', 'route' => 'backups.index',
                 'done' => $q("SELECT 1 FROM backups WHERE status = 'ok'")],

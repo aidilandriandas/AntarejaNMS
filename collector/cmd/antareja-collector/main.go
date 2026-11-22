@@ -490,7 +490,7 @@ func testHost(args []string) error {
 		fmt.Printf("PING  ✗ tidak ada balasan dari %d paket (perangkat mati, rute salah, atau ICMP diblok firewall)\n", r.Sent)
 	}
 	if !sf.stdin {
-		fmt.Println("SNMP  – dilewati (tambahkan --snmp-stdin untuk menguji SNMP)")
+		fmt.Println("SNMP  dilewati (tambahkan --snmp-stdin untuk menguji SNMP)")
 		return nil
 	}
 	cl := snmp.Client{Timeout: 3 * time.Second, Retries: 1}

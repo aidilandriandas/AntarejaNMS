@@ -5,9 +5,12 @@
 <div class="page-head">
     <div><div class="crumbs"><a href="{{ route('incidents.index') }}">Insiden</a> / #{{ $i->id }}</div>
         <h1>{{ $i->title }}</h1>
-        <p><span class="badge {{ $i->statusTone() }}">{{ $i->statusLabel() }}</span> <span class="badge plain {{ $i->sevTone() }}">{{ $i->sevLabel() }}</span>
-            · {{ $i->site ? $i->site->code . ' — ' . $i->site->name : 'tanpa site' }} · dibuka {{ $i->opened_at->format('d/m/Y H:i') }}{{ $i->auto ? ' (otomatis)' : '' }}
-            · lama gangguan {{ \App\Support\Fmt::duration($i->downtimeSeconds()) }}</p></div>
+        <div class="meta" style="margin-top:8px;align-items:center">
+            <span><span class="badge {{ $i->statusTone() }}">{{ $i->statusLabel() }}</span> <span class="badge plain {{ $i->sevTone() }}">{{ $i->sevLabel() }}</span></span>
+            <span>{{ $i->site ? $i->site->code . ' (' . $i->site->name . ')' : 'Tanpa site' }}</span>
+            <span>Dibuka {{ $i->opened_at->format('d/m/Y H:i') }}{{ $i->auto ? ' otomatis' : '' }}</span>
+            <span>Lama gangguan {{ \App\Support\Fmt::duration($i->downtimeSeconds()) }}</span>
+        </div></div>
     @can('manage-devices')
     <div class="actions">
         @if($i->status === 'closed')
@@ -22,7 +25,7 @@
 <div class="kpis">
     <div class="kpi {{ $active ? 'crit' : 'ok' }}"><div class="lbl">Problem aktif</div><div class="val">{{ $active }}<small> / {{ $i->problems->count() }}</small></div><div class="note">{{ $devices }} perangkat terdampak</div></div>
     <div class="kpi"><div class="lbl">Penanggung jawab</div><div class="val" style="font-size:20px">{{ $i->owner?->name ?? 'Belum ada' }}</div><div class="note">{{ $i->handled_at ? 'ditangani ' . $i->handled_at->format('d/m H:i') . ' (' . \App\Support\Fmt::duration($i->opened_at->diffInSeconds($i->handled_at)) . ' setelah dibuka)' : 'belum ditangani' }}</div></div>
-    <div class="kpi {{ $i->recovered_at ? 'ok' : '' }}"><div class="lbl">Pulih</div><div class="val" style="font-size:20px">{{ $i->recovered_at?->format('d/m H:i') ?? '–' }}</div><div class="note">{{ $i->closed_at ? 'ditutup ' . $i->closed_at->format('d/m H:i') : 'belum ditutup' }}</div></div>
+    <div class="kpi {{ $i->recovered_at ? 'ok' : '' }}"><div class="lbl">Pulih</div><div class="val" style="font-size:20px">{{ $i->recovered_at?->format('d/m H:i') ?? 'Belum' }}</div><div class="note">{{ $i->closed_at ? 'ditutup ' . $i->closed_at->format('d/m H:i') : 'belum ditutup' }}</div></div>
 </div>
 
 <div class="grid g-main">
@@ -32,7 +35,7 @@
         @foreach($i->problems as $p)
             <tr class="{{ $p->resolved_at ? 'is-off' : ($p->sevTone() === 'crit' ? 'is-down' : '') }}">
                 <td><span class="badge plain {{ $p->sevTone() }}">{{ $p->sevLabel() }}</span></td>
-                <td class="name">{{ $p->title }}<small>@if($p->device)<a href="{{ route('devices.show', $p->device) }}">{{ $p->device->name }}</a>@endif{{ $p->suppressed ? ' · ' . $p->suppressed_note : '' }}</small></td>
+                <td class="name">{{ $p->title }}<small>@if($p->device)<a href="{{ route('devices.show', $p->device) }}">{{ $p->device->name }}</a>@endif{{ $p->suppressed ? ', ' . $p->suppressed_note : '' }}</small></td>
                 <td class="nowrap">{{ $p->durationHuman() }}</td>
                 <td>@if($p->resolved_at)<span class="badge ok plain">pulih {{ $p->resolved_at->format('H:i') }}</span>@elseif($p->acked_at)<span class="badge ok plain">ACK</span>@else<span class="badge warn plain">aktif</span>@endif</td>
             </tr>
@@ -55,7 +58,7 @@
         </form>
         @endif
         @else
-        <dl class="facts"><dt>Penyebab</dt><dd style="white-space:pre-line">{{ $i->cause ?: '–' }}</dd><dt>Tindakan</dt><dd style="white-space:pre-line">{{ $i->action_taken ?: '–' }}</dd></dl>
+        <dl class="facts"><dt>Penyebab</dt><dd style="white-space:pre-line">{{ $i->cause ?: 'tidak ada' }}</dd><dt>Tindakan</dt><dd style="white-space:pre-line">{{ $i->action_taken ?: 'tidak ada' }}</dd></dl>
         @endcan
     </div></section>
 </div>

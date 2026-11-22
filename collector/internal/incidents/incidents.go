@@ -298,7 +298,7 @@ func (r *Runner) attach(ctx context.Context, id int64, status string, cands []Ca
 		array_position(ARRAY['info','warning','average','high','disaster'], severity) THEN $2 ELSE severity END, updated_at = now() WHERE id = $1`, id, maxSev(cands))
 	if status == "recovered" {
 		_, _ = r.DB.Exec(ctx, `UPDATE incidents SET status = CASE WHEN owner_id IS NULL THEN 'open' ELSE 'handling' END, recovered_at = NULL, updated_at = now() WHERE id = $1`, id)
-		_, _ = r.DB.Exec(ctx, `INSERT INTO incident_notes (incident_id, kind, body) VALUES ($1, 'status', 'Gangguan muncul lagi — insiden dibuka kembali.')`, id)
+		_, _ = r.DB.Exec(ctx, `INSERT INTO incident_notes (incident_id, kind, body) VALUES ($1, 'status', 'Gangguan muncul lagi, insiden dibuka kembali.')`, id)
 	}
 }
 
@@ -334,7 +334,7 @@ func (r *Runner) recover(ctx context.Context) error {
 	}
 	rows.Close()
 	for _, id := range ids {
-		_, _ = r.DB.Exec(ctx, `INSERT INTO incident_notes (incident_id, kind, body) VALUES ($1, 'status', 'Semua problem sudah pulih — status Pulih. Isi penyebab & tindakan lalu tutup insiden.')`, id)
+		_, _ = r.DB.Exec(ctx, `INSERT INTO incident_notes (incident_id, kind, body) VALUES ($1, 'status', 'Semua problem sudah pulih, status Pulih. Isi penyebab & tindakan lalu tutup insiden.')`, id)
 		r.Log.Info("insiden pulih", "id", id)
 	}
 	return nil

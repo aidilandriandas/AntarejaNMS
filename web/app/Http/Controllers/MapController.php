@@ -185,7 +185,7 @@ class MapController extends Controller
             'attribution' => ['nullable', 'string', 'max:200'],
             'satellite_url' => $tile,
             'satellite_attribution' => ['nullable', 'string', 'max:200', 'required_with:satellite_url'],
-        ], ['tile_url.regex' => 'URL tile harus http(s) dan memuat {z}, {x}, {y} — mis. https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        ], ['tile_url.regex' => 'URL tile harus http(s) dan memuat {z}, {x}, {y}, mis. https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             'satellite_url.regex' => 'URL tile satelit harus http(s) dan memuat {z}, {x}, {y}.',
             'satellite_attribution.required_with' => 'Isi atribusi sesuai syarat penyedia citra satelit.']);
         Setting::put('map.tile_url', $d['tile_url'] ?? '');

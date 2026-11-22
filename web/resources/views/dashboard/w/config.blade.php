@@ -1,5 +1,5 @@
 <section class="card">
-    <div class="hd"><h2>Perubahan konfigurasi</h2><span class="sub">7 hari · backup SSH</span></div>
+    <div class="hd"><h2>Perubahan konfigurasi</h2><span class="sub">7 hari, backup SSH</span></div>
     <div class="bd flush">
     @if($configs->isEmpty())<div class="empty">Tidak ada perubahan konfigurasi terdeteksi.</div>@else
     <ul class="feed">

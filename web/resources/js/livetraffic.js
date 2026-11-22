@@ -1,6 +1,7 @@
 // Trafik live port (gaya grafik "realtime"): counter oktet dibaca langsung dari perangkat lewat collector,
 // laju = selisih dua pembacaan ÷ selisih waktu. Berhenti saat tab disembunyikan dan setelah 15 menit.
 import uPlot from 'uplot';
+import { tokenKeys } from './chartkeys.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -10,7 +11,7 @@ const MAX_POINTS = 150;
 const MAX_RUN_MS = 15 * 60 * 1000;
 
 export const bps = (v) => {
-    if (v == null || Number.isNaN(v)) return '–';
+    if (v == null || Number.isNaN(v)) return '';
     const u = [['Gbps', 1e9], ['Mbps', 1e6], ['Kbps', 1e3]].find(([, d]) => v >= d);
     return (u ? `${(v / u[1]).toFixed(v / u[1] >= 100 ? 0 : 1)} ${u[0]}` : `${Math.round(v)} bps`).replace('.', ',');
 };
@@ -78,11 +79,13 @@ export function initLive() {
             width: el.clientWidth, height: 240,
             scales: { x: { time: true }, y: { range: (u, min, max) => [0, Math.max(max * 1.15, 1000)] } },
             axes: [{ ...axis, values: (u, splits) => splits.map(hms) }, { ...axis, values: (u, vals) => vals.map(bps), size: 78 }],
-            series: [{ label: 'Waktu', value: (u, ts) => (ts == null ? '–' : hms(ts)) },
+            series: [{ label: 'Waktu', value: (u, ts) => (ts == null ? '' : hms(ts)) },
                 { label: 'Masuk', stroke: css('--accent'), fill: `${css('--accent')}26`, width: 1.6, value: (u, x) => bps(x) },
                 { label: 'Keluar', stroke: css('--info'), width: 1.6, value: (u, x) => bps(x) }],
             legend: { live: true }, cursor: { drag: { x: false, y: false } },
         }, data, el);
+        plot.root.querySelectorAll('canvas').forEach((c) => c.setAttribute('aria-hidden', 'true')); // nilai terbaca dari legenda
+        tokenKeys(plot);
     };
 
     const stats = () => {
@@ -97,8 +100,8 @@ export function initLive() {
         v('in-max').textContent = bps(max(ins));
         v('out-max').textContent = bps(max(outs));
         const cur = Math.max(last(ins) ?? 0, last(outs) ?? 0);
-        v('util').textContent = port.speed > 0 && ins.length ? `${((cur / port.speed) * 100).toFixed(1).replace('.', ',')}%` : '–';
-        v('info').textContent = `${port.speed > 0 ? `dari ${bps(port.speed)} · ` : ''}${ins.length} titik · tiap ${interval} dtk`;
+        v('util').textContent = port.speed > 0 && ins.length ? `${((cur / port.speed) * 100).toFixed(1).replace('.', ',')}%` : 'tidak ada';
+        v('info').textContent = `${port.speed > 0 ? `dari ${bps(port.speed)}, ` : ''}${ins.length} titik, tiap ${interval} dtk`;
     };
 
     const setState = (s, msg) => {
@@ -153,12 +156,12 @@ export function initLive() {
 
     const open = (row) => {
         port = { if: Number(row.dataset.port), name: row.dataset.portName, speed: Number(row.dataset.speed) || 0 };
-        $('[data-live-title]', card).textContent = `Trafik live · ${port.name}`;
+        $('[data-live-title]', card).textContent = `Trafik live: ${port.name}`;
         data = [[], [], []];
         prev = null;
         card.hidden = false;
         draw();
-        ['in', 'out', 'in-avg', 'out-avg', 'in-max', 'out-max', 'util'].forEach((k) => { v(k).textContent = '–'; });
+        ['in', 'out', 'in-avg', 'out-avg', 'in-max', 'out-max', 'util'].forEach((k) => { v(k).textContent = 'tidak ada'; });
         v('info').textContent = 'mengambil sampel pertama…';
         $$('[data-live-port]').forEach((b) => b.classList.toggle('primary', Number(b.dataset.livePort) === port.if));
         card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

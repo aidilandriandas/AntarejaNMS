@@ -47,7 +47,7 @@ class ConfigTransferController extends Controller
     {
         $raw = $request->session()->get('cfg_import');
         if (! $raw) {
-            return redirect()->route('transfer.index')->withErrors(['file' => 'Pratinjau kedaluwarsa — unggah ulang berkasnya.']);
+            return redirect()->route('transfer.index')->withErrors(['file' => 'Pratinjau kedaluwarsa, unggah ulang berkasnya.']);
         }
         try {
             $data = $t->parse($raw);
@@ -65,6 +65,6 @@ class ConfigTransferController extends Controller
         $sum = collect($res)->except('skipped')->filter()->map(fn ($n, $k) => "$k $n")->implode(', ');
         Audit::log('created', "Konfigurasi diimpor: {$sum}" . ($res['skipped'] ? ", {$res['skipped']} dilewati" : ''));
 
-        return redirect()->route('transfer.index')->with('ok', "Impor selesai: {$sum}" . ($res['skipped'] ? " · {$res['skipped']} baris dilewati (tidak valid)" : '') . '.');
+        return redirect()->route('transfer.index')->with('ok', "Impor selesai: {$sum}" . ($res['skipped'] ? ", {$res['skipped']} baris dilewati (tidak valid)" : '') . '.');
     }
 }

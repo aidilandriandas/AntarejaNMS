@@ -91,6 +91,6 @@ class DashboardController extends Controller
         $layout = Dashboard::normalize($layout);
         $user->forceFill(['dashboard' => $layout])->save();
 
-        return redirect()->route('dashboard')->with('ok', $layout ? 'Susunan Ringkasan disimpan.' : 'Semua widget disembunyikan — tekan "Atur tampilan" untuk menampilkannya lagi.');
+        return redirect()->route('dashboard')->with('ok', $layout ? 'Susunan Ringkasan disimpan.' : 'Semua widget disembunyikan, tekan "Atur tampilan" untuk menampilkannya lagi.');
     }
 }

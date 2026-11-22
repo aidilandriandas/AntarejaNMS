@@ -3,15 +3,15 @@
 @php($labels = ['sites' => 'Site', 'devices' => 'Perangkat', 'links' => 'Sambungan manual', 'subnets' => 'Subnet (manual)', 'cameras' => 'Kamera', 'channels' => 'Kanal notifikasi', 'report_schedules' => 'Laporan terjadwal', 'settings' => 'Pengaturan'])
 @section('content')
 <div class="page-head">
-    <div><h1>Ekspor & impor konfigurasi</h1><p>Satu berkas JSON berisi site, perangkat (termasuk ambang, induk, koordinat), sambungan manual, subnet, kamera, kanal notifikasi, laporan terjadwal, dan pengaturan — untuk pindah VM, membuat VM uji, atau cadangan yang bisa dibaca. Riwayat, metrik, log, dan akun pengguna tidak ikut (pakai <a href="{{ route('backups.index') }}">Backup</a> untuk itu).</p></div>
+    <div><h1>Ekspor & impor konfigurasi</h1><p>Satu berkas JSON berisi site, perangkat (termasuk ambang, induk, koordinat), sambungan manual, subnet, kamera, kanal notifikasi, laporan terjadwal, dan pengaturan, untuk pindah VM, membuat VM uji, atau cadangan yang bisa dibaca. Riwayat, metrik, log, dan akun pengguna tidak ikut (pakai <a href="{{ route('backups.index') }}">Backup</a> untuk itu).</p></div>
 </div>
 <div class="grid g-2">
 <section class="card"><div class="hd"><h2>Ekspor</h2></div><div class="bd">
     <form method="post" action="{{ route('transfer.export') }}" class="stack">@csrf
-        <label class="check"><input type="checkbox" name="with_secrets" value="1" data-toggle-target="#pass-fields" @checked(old('with_secrets'))><span>Sertakan rahasia<small>Community/USM SNMP, password SSH & kamera, token/password kanal — dienkripsi dengan frasa sandi di bawah (AES-256-GCM). Tanpa ini, rahasia harus diisi ulang setelah impor.</small></span></label>
+        <label class="check"><input type="checkbox" name="with_secrets" value="1" data-toggle-target="#pass-fields" @checked(old('with_secrets'))><span>Sertakan rahasia<small>Community/USM SNMP, password SSH & kamera, token/password kanal, dienkripsi dengan frasa sandi di bawah (AES-256-GCM). Tanpa ini, rahasia harus diisi ulang setelah impor.</small></span></label>
         <div id="pass-fields" class="stack" @unless(old('with_secrets')) hidden @endunless>
             <div class="field"><label for="passphrase">Frasa sandi ekspor</label><input class="input @error('passphrase') is-err @enderror" type="password" id="passphrase" name="passphrase" minlength="12" autocomplete="new-password"><x-field-error name="passphrase"/>
-                <div class="hint">Min. 12 karakter. Simpan terpisah dari berkasnya — tanpa frasa sandi, rahasia tidak bisa dibuka (juga oleh kami).</div></div>
+                <div class="hint">Min. 12 karakter. Simpan terpisah dari berkasnya, tanpa frasa sandi, rahasia tidak bisa dibuka (juga oleh kami).</div></div>
             <div class="field"><label for="passphrase_confirmation">Ulangi frasa sandi</label><input class="input" type="password" id="passphrase_confirmation" name="passphrase_confirmation" autocomplete="new-password"></div>
         </div>
         <div><button class="btn primary"><x-icon name="download"/>Unduh berkas konfigurasi</button></div>
@@ -31,7 +31,7 @@
         <table class="t" style="margin:8px 0"><thead><tr><th>Bagian</th><th class="num">Baru</th><th class="num">Diperbarui</th></tr></thead><tbody>
         @foreach($labels as $k => $label)
             @php($r = $plan[$k] ?? null)
-            @if($r && $r['total'])<tr><td>{{ $label }}</td><td class="num">{{ $r['new'] ?? '–' }}</td><td class="num">{{ $r['update'] ?? ($k === 'links' ? 'yang belum ada saja' : $r['total']) }}</td></tr>@endif
+            @if($r && $r['total'])<tr><td>{{ $label }}</td><td class="num">{{ $r['new'] ?? 'tidak ada' }}</td><td class="num">{{ $r['update'] ?? ($k === 'links' ? 'yang belum ada saja' : $r['total']) }}</td></tr>@endif
         @endforeach
         </tbody></table>
         @foreach($plan['warnings'] as $w)<div class="alert warn" style="margin:6px 0">{{ $w }}</div>@endforeach

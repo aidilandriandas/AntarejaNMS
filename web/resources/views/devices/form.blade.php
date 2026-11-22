@@ -4,7 +4,7 @@
 @section('content')
 <div class="crumbs"><a href="{{ route('devices.index') }}">Perangkat</a> / {{ $editing ? $device->name : 'Tambah' }}</div>
 <div class="page-head"><div><h1>{{ $editing ? 'Ubah perangkat' : 'Tambah perangkat' }}</h1>
-    <p>Uji koneksi dulu sebelum menyimpan. Pemantauan hanya membaca perangkat — tidak ada konfigurasi yang diubah.</p></div></div>
+    <p>Uji koneksi dulu sebelum menyimpan. Pemantauan hanya membaca perangkat, tidak ada konfigurasi yang diubah.</p></div></div>
 
 <form method="post" action="{{ $editing ? route('devices.update', $device) : route('devices.store') }}" class="grid g-main" data-device-form>
     @csrf @if($editing) @method('PUT') <input type="hidden" name="device_id" value="{{ $device->id }}"> @endif
@@ -21,7 +21,7 @@
             <div class="field"><label for="site_id">Site</label>
                 <select class="input" id="site_id" name="site_id">
                     <option value="">— Tanpa site —</option>
-                    @foreach($sites as $s)<option value="{{ $s->id }}" @selected(old('site_id', $device->site_id) == $s->id)>{{ $s->code }} — {{ $s->name }}</option>@endforeach
+                    @foreach($sites as $s)<option value="{{ $s->id }}" @selected(old('site_id', $device->site_id) == $s->id)>{{ $s->code }} ({{ $s->name }})</option>@endforeach
                 </select>
                 <div class="hint">Belum ada? <a href="{{ route('sites.index') }}">Kelola site</a></div></div>
             <div class="field"><label for="category">Kategori</label>
@@ -41,7 +41,7 @@
 
         <div class="section-title">Pemantauan</div>
         <label class="check"><input type="checkbox" name="ping_enabled" value="1" @checked(old('ping_enabled', $device->ping_enabled))>
-            <span>Ping tiap menit<small>Matikan hanya bila perangkat memblokir ICMP — status lalu dinilai dari SNMP.</small></span></label>
+            <span>Ping tiap menit<small>Matikan hanya bila perangkat memblokir ICMP, status lalu dinilai dari SNMP.</small></span></label>
         <x-field-error name="ping_enabled"/>
         <label class="check"><input type="checkbox" name="snmp_enabled" value="1" data-toggle="snmp" @checked(old('snmp_enabled', $device->snmp_enabled))>
             <span>Baca SNMP tiap 5 menit<small>Uptime, reboot, port & trafik.</small></span></label>
@@ -56,7 +56,7 @@
                     <input class="input" id="snmp_port" name="snmp_port" type="number" min="1" max="65535" value="{{ old('snmp_port', $device->snmp_port) }}"></div>
                 <div class="field" data-section="v2"><label for="snmp_community">Community</label>
                     <input class="input @error('snmp_community') is-err @enderror" id="snmp_community" name="snmp_community" type="password" autocomplete="off"
-                        placeholder="{{ $device->hasSecret('snmp_community_enc') ? '•••••• (tersimpan — kosongkan bila tetap)' : '' }}">
+                        placeholder="{{ $device->hasSecret('snmp_community_enc') ? '•••••• (tersimpan, kosongkan bila tetap)' : '' }}">
                     <x-field-error name="snmp_community"/></div>
             </div>
             <div data-section="v3" class="form">
@@ -65,7 +65,7 @@
                         <input class="input @error('snmp_v3_user') is-err @enderror" id="snmp_v3_user" name="snmp_v3_user" value="{{ old('snmp_v3_user', $device->snmp_v3_user) }}" autocomplete="off"><x-field-error name="snmp_v3_user"/></div>
                     <div class="field"><label for="snmp_v3_level">Tingkat keamanan</label>
                         <select class="input" id="snmp_v3_level" name="snmp_v3_level">
-                            @foreach(['authPriv' => 'authPriv (auth + enkripsi) — disarankan', 'authNoPriv' => 'authNoPriv (auth saja)', 'noAuthNoPriv' => 'noAuthNoPriv'] as $k => $v)
+                            @foreach(['authPriv' => 'authPriv (auth + enkripsi), disarankan', 'authNoPriv' => 'authNoPriv (auth saja)', 'noAuthNoPriv' => 'noAuthNoPriv'] as $k => $v)
                                 <option value="{{ $k }}" @selected(old('snmp_v3_level', $device->snmp_v3_level ?? 'authPriv') === $k)>{{ $v }}</option>@endforeach
                         </select></div>
                 </div>
@@ -92,8 +92,8 @@
         </div>
 
         <details class="thr" @if($errors->has('ssh_*') || $errors->has('cfg_type') || $device->cfg_type) open @endif>
-            <summary class="section-title" style="cursor:pointer;list-style:none">Backup konfigurasi (SSH, hanya baca) {{ $device->cfg_type ? '· aktif' : '' }}</summary>
-            <p class="hint muted" style="margin:10px 0">Konfigurasi diambil harian dan saat diminta; perubahan dicatat sebagai versi dengan diff. Hanya perintah tampil/ekspor yang dijalankan — tidak ada yang mengubah perangkat. Disarankan user khusus dengan hak <em>read</em>.</p>
+            <summary class="section-title" style="cursor:pointer;list-style:none">Backup konfigurasi (SSH, hanya baca) {{ $device->cfg_type ? '(aktif)' : '' }}</summary>
+            <p class="hint muted" style="margin:10px 0">Konfigurasi diambil harian dan saat diminta; perubahan dicatat sebagai versi dengan diff. Hanya perintah tampil/ekspor yang dijalankan, tidak ada yang mengubah perangkat. Disarankan user khusus dengan hak <em>read</em>.</p>
             <div class="row r3">
                 <div class="field"><label for="cfg_type">Jenis</label><select class="input @error('cfg_type') is-err @enderror" id="cfg_type" name="cfg_type">
                     <option value="">— tidak di-backup —</option>
@@ -102,7 +102,7 @@
                 <div class="field"><label for="ssh_port">Port</label><input class="input" type="number" id="ssh_port" name="ssh_port" value="{{ old('ssh_port', $device->ssh_port ?? 22) }}"></div>
             </div>
             <div class="field"><label for="ssh_password">Password SSH</label><input class="input @error('ssh_password') is-err @enderror" type="password" id="ssh_password" name="ssh_password" autocomplete="new-password"
-                placeholder="{{ $device->hasSecret('ssh_password_enc') ? '•••••• (tersimpan — kosongkan bila tetap)' : '' }}"><x-field-error name="ssh_password"/></div>
+                placeholder="{{ $device->hasSecret('ssh_password_enc') ? '•••••• (tersimpan, kosongkan bila tetap)' : '' }}"><x-field-error name="ssh_password"/></div>
         </details>
 
         <details class="thr" @if($errors->has('thr.*') || ! empty($device->thresholds)) open @endif>

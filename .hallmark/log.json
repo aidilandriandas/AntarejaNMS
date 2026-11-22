@@ -1,0 +1,29 @@
+[
+ {
+  "mode": "redesign",
+  "depth": "full",
+  "scope": "app",
+  "shape": "app screen",
+  "theme": "brand",
+  "axes": "light/grotesk-sans/chromatic-teal",
+  "nav": "sidebar (kept)",
+  "footer": "none",
+  "hero": "none (app)",
+  "signature": "antrean problem",
+  "sections": [
+   "panel datar",
+   "baris angka",
+   "tabel bergaris"
+  ],
+  "waived": [
+   "dismissed 67",
+   "dismissed F4"
+  ],
+  "prompt": "NMS tambang: pantau perangkat, problem, insiden, SLA",
+  "imagery": "none",
+  "photos": [],
+  "entry": "Ringkasan dibuka antrean problem",
+  "fingerprint": "app/sidebar/flat-panels/stat-row/rule-tables",
+  "date": "2026-11-22"
+ }
+]

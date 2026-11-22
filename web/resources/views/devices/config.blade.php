@@ -3,8 +3,8 @@
 @section('content')
 <div class="crumbs"><a href="{{ route('devices.index') }}">Perangkat</a> / <a href="{{ route('devices.show', $device) }}">{{ $device->name }}</a> / Konfigurasi</div>
 <div class="page-head">
-    <div><h1>Konfigurasi · {{ \Illuminate\Support\Carbon::parse($v->taken_at)->format('d/m/Y H:i') }}</h1>
-        <p>{{ $v->lines }} baris · {{ number_format($v->size_bytes / 1024, 1, ',', '.') }} KB @if($diff)· <span style="color:var(--ok)">+{{ $v->added }}</span> / <span style="color:var(--crit)">−{{ $v->removed }}</span> baris dibanding versi sebelumnya @endif</p></div>
+    <div><h1>Konfigurasi, {{ \Illuminate\Support\Carbon::parse($v->taken_at)->format('d/m/Y H:i') }}</h1>
+        <p>{{ $v->lines }} baris, {{ number_format($v->size_bytes / 1024, 1, ',', '.') }} KB @if($diff), <span style="color:var(--ok)">+{{ $v->added }}</span> / <span style="color:var(--crit)">−{{ $v->removed }}</span> baris dibanding versi sebelumnya @endif</p></div>
     <div class="actions"><a class="btn" href="{{ route('devices.config.download', [$device, $v->id]) }}"><x-icon name="download"/>Unduh</a></div>
 </div>
 <div class="grid g-main">

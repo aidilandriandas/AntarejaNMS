@@ -361,7 +361,7 @@ func (p *Poller) pollSNMP(ctx context.Context, d store.Device) bool {
 		msg := snmp.Friendly(err)
 		u.Error = &msg
 		if d.SNMPOK == nil || *d.SNMPOK {
-			p.event(ctx, d.ID, "snmp_fail", d.Name+": SNMP tidak terbaca — "+msg, nil, now)
+			p.event(ctx, d.ID, "snmp_fail", d.Name+": SNMP tidak terbaca: "+msg, nil, now)
 		}
 		if !d.PingEnabled { // status hanya dari SNMP
 			streak := d.FailStreak + 1

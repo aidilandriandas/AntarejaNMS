@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'SLA layanan')
 @php
-    $fmtPct = fn ($v) => $v === null ? '–' : number_format($v, $v >= 99.995 ? 2 : 3, ',', '.') . '%';
+    $fmtPct = fn ($v) => $v === null ? 'tidak ada' : number_format($v, $v >= 99.995 ? 2 : 3, ',', '.') . '%';
     $tone = fn ($v, $t) => $v === null ? '' : ($v >= $t ? 'ok' : ($v >= $t - 1 ? 'warn' : 'crit'));
     $States = \App\Services\ServiceSla::STATES;
     $live = $services->mapWithKeys(fn ($s) => [$s->id => \App\Services\ServiceSla::liveStatus($s)[0]]);
@@ -9,14 +9,14 @@
 @endphp
 @section('content')
 <div class="page-head">
-    <div><h1>SLA layanan · {{ $start->translatedFormat('F Y') }}</h1>
-        <p>Ketersediaan per layanan yang dipakai pengguna (mis. CCTV Pit A, internet kantor site), dihitung dari perangkat penyusunnya. Perangkat cadangan diperhitungkan; gangguan selama maintenance tidak dihitung. @if($partial)<b>Bulan berjalan — angka sementara.</b>@endif</p></div>
+    <div><h1>SLA layanan, {{ $start->translatedFormat('F Y') }}</h1>
+        <p>Ketersediaan per layanan yang dipakai pengguna (mis. CCTV Pit A, internet kantor site), dihitung dari perangkat penyusunnya. Perangkat cadangan diperhitungkan; gangguan selama maintenance tidak dihitung. @if($partial)<b>Bulan berjalan, angka sementara.</b>@endif</p></div>
     <div class="actions">
         <a class="btn" href="{{ route('services.csv', request()->only('bulan')) }}"><x-icon name="download"/>CSV (Excel)</a>
         <button class="btn" type="button" data-print>Cetak / PDF</button>
         @can('manage-devices')
         <details class="ack"><summary class="btn primary"><x-icon name="plus"/>Tambah layanan</summary>
-            <form method="post" action="{{ route('services.store') }}" class="card ack-pop stack" style="width:340px">@csrf
+            <form method="post" action="{{ route('services.store') }}" class="ack-pop stack" style="width:340px">@csrf
                 @include('services.fields', ['s' => null])
                 <button class="btn primary sm">Buat layanan</button>
             </form></details>
@@ -35,7 +35,7 @@
 
 @if($services->isEmpty())
     <div class="card"><div class="empty"><x-icon name="layers"/>Belum ada layanan.
-        <div class="muted" style="margin-top:8px;max-width:560px;margin-inline:auto">Contoh: layanan <b>CCTV Pit A</b> = komponen <i>Jalur</i> (Core, Radio PTP — semua wajib hidup) + komponen <i>Rekam</i> (NVR). Layanan <b>Internet kantor</b> = komponen <i>Uplink</i> (ISP 1, ISP 2 — cukup 1 hidup).</div>
+        <div class="muted" style="margin-top:8px;max-width:560px;margin-inline:auto">Contoh: layanan <b>CCTV Pit A</b> = komponen <i>Jalur</i> (Core, Radio PTP, semua wajib hidup) + komponen <i>Rekam</i> (NVR). Layanan <b>Internet kantor</b> = komponen <i>Uplink</i> (ISP 1, ISP 2, cukup 1 hidup).</div>
     </div></div>
 @else
 <div class="kpis">
@@ -49,7 +49,7 @@
     @foreach($services->sortBy(fn ($s) => [['down' => 0, 'degraded' => 1, 'up' => 2, 'empty' => 3][$live[$s->id]], $sla[$s->id]['availability'] ?? 101]) as $s)
         @php($r = $sla[$s->id]) @php([$lbl, $lt] = $States[$live[$s->id]])
         <tr class="{{ $live[$s->id] === 'down' ? 'is-down' : '' }}">
-            <td class="name"><a href="{{ route('services.show', ['service' => $s] + request()->only('bulan')) }}">{{ $s->name }}</a><small>{{ $s->site?->code ?? 'lintas site' }} · {{ $s->components->count() }} komponen · {{ $s->components->flatMap->devices->unique('id')->count() }} perangkat</small></td>
+            <td class="name"><a href="{{ route('services.show', ['service' => $s] + request()->only('bulan')) }}">{{ $s->name }}</a><small>{{ $s->site?->code ?? 'lintas site' }}, {{ $s->components->count() }} komponen, {{ $s->components->flatMap->devices->unique('id')->count() }} perangkat</small></td>
             <td><span class="badge {{ $lt }}">{{ $lbl }}</span></td>
             @if($s->components->isEmpty())<td class="num muted" colspan="6">tambahkan komponen</td>@else
             <td class="num"><span class="badge plain {{ $tone($r['availability'], $s->target()) }}">{{ $fmtPct($r['availability']) }}</span></td>

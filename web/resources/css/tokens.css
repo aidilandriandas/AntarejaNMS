@@ -1,0 +1,102 @@
+/* ANTAREJA NMS — token warna, huruf, ukuran, dan gerak. Semua warna & huruf di app.css lewat token ini. */
+:root {
+  /* skala bersama */
+  --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px;
+  --text-xs: 0.75rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.2rem; --text-xl: 1.44rem; --text-2xl: 1.728rem;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms; --dur-short: 220ms;
+  --container: 1440px; --gutter: 32px; --gap-columns: 32px;
+  --z-raised: 10; --z-dropdown: 100; --z-sticky: 200; --z-sticky-nav: 300; --z-modal: 400; --z-toast: 500;
+  --radius-card: 6px; --radius-ctl: 6px; --radius-pill: 999px; --rule-hair: 1px;
+  --tracking-display: -0.01em;
+
+  /* huruf (merek proyek: IBM Plex) */
+  --font-display: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-outlier: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --display-weight: 600;
+
+  /* kertas & tinta: abu netral sedikit dingin */
+  --color-paper: #f7f8f9;      /* latar halaman */
+  --color-paper-2: #eef1f3;    /* baris disorot, sumur */
+  --color-paper-3: #e3e8ec;    /* tombol saat ditekan */
+  --color-surface: #ffffff;    /* lapisan mengambang: popover, modal, menu */
+  --color-ink: #121c25;
+  --color-ink-2: #3f4c58;
+  --color-muted: #5d6a76;      /* 5,3:1 di atas kertas */
+  --color-rule: #dde3e8;
+  --color-rule-strong: #b9c3cc;
+  --color-field: #7d8995;      /* tepi field 3,5:1 di atas putih */
+
+  /* merek & aksen */
+  --color-brand: #c8102e;      /* merah ANTAREJA: logo & penanda menu aktif saja */
+  --color-accent: #0b6b63;     /* teal: tindakan utama & pilihan (5,9:1) */
+  --color-accent-ink: #ffffff;
+  --color-accent-soft: #e2f1ef;
+  --color-focus: #0b6b63;
+  --color-on-fill: #ffffff;    /* teks di atas isian berwarna */
+
+  /* status */
+  --color-ok: #0c7a52;   --color-ok-soft: #e1f3ea;
+  --color-warn: #8a5a00; --color-warn-soft: #fbf0d9;
+  --color-crit: #c4232f; --color-crit-soft: #fbe5e6; --color-crit-fill: #c4232f;
+  --color-info: #1f5aa6; --color-info-soft: #e3ecf8;
+  --color-off: #5c6874;  --color-off-soft: #edf0f2;
+
+  /* pita sidebar (selalu gelap) */
+  --color-side: #0f1720;
+  --color-side-2: #1b2631;
+  --color-side-ink: #d3dbe3;
+  --color-side-muted: #93a1ae;  /* 6,4:1 di atas sidebar */
+  --color-side-rule: #22303c;
+  --color-side-focus: #7fd6cc;
+
+  /* bayangan hanya untuk lapisan mengambang */
+  --shadow-pop: 0 4px 12px rgb(16 24 32 / 0.14);
+  --shadow-marker: 0 1px 4px rgb(0 0 0 / 0.4);
+  --color-scrim: rgb(8 12 16 / 0.6);
+  --color-video: #05080b;
+  --color-video-ink: #c9d2db;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --color-paper: #0c1217;
+  --color-paper-2: #141d25;
+  --color-paper-3: #1c2832;
+  --color-surface: #131c24;
+  --color-ink: #e6ecf1;
+  --color-ink-2: #bcc7d1;
+  --color-muted: #93a2b0;
+  --color-rule: #1f2b35;
+  --color-rule-strong: #34434f;
+  --color-field: #66757f;
+  --color-accent: #4fc7b9;
+  --color-accent-ink: #062320;
+  --color-accent-soft: #10302c;
+  --color-focus: #7fd6cc;
+  --color-on-fill: #08110f;
+  --color-ok: #45c991;   --color-ok-soft: #0f2a1f;
+  --color-warn: #e7b24c; --color-warn-soft: #2c2210;
+  --color-crit: #ff7a83; --color-crit-soft: #351519; --color-crit-fill: #ff7a83;
+  --color-info: #79acf2; --color-info-soft: #13253b;
+  --color-off: #8593a0;  --color-off-soft: #18222b;
+  --color-side: #070b0f;
+  --color-side-2: #131c25;
+  --color-side-rule: #18232d;
+  --shadow-pop: 0 4px 14px rgb(0 0 0 / 0.5);
+  color-scheme: dark;
+}
+
+/* Nama lama tetap dipakai sebagian view, JavaScript (grafik), dan peta: diarahkan ke token baru. */
+:root, :root[data-theme="dark"] {
+  --bg: var(--color-paper); --surface: var(--color-surface); --surface-2: var(--color-paper-2);
+  --line: var(--color-rule); --line-strong: var(--color-rule-strong);
+  --ink: var(--color-ink); --ink-2: var(--color-ink-2); --muted: var(--color-muted);
+  --brand: var(--color-brand); --accent: var(--color-accent); --accent-soft: var(--color-accent-soft);
+  --ok: var(--color-ok); --ok-soft: var(--color-ok-soft); --warn: var(--color-warn); --warn-soft: var(--color-warn-soft);
+  --crit: var(--color-crit); --crit-soft: var(--color-crit-soft); --info: var(--color-info); --info-soft: var(--color-info-soft);
+  --off: var(--color-off); --off-soft: var(--color-off-soft);
+  --side: var(--color-side); --side-ink: var(--color-side-ink); --side-muted: var(--color-side-muted); --side-active: var(--color-side-2);
+  --radius: var(--radius-card); --sans: var(--font-body); --mono: var(--font-outlier);
+}

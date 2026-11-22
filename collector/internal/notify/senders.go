@@ -54,7 +54,7 @@ func (t Telegram) Send(ctx context.Context, cfg map[string]string, m Message) er
 		case http.StatusUnauthorized:
 			return errors.New("token bot ditolak Telegram (401)")
 		case http.StatusBadRequest, http.StatusForbidden:
-			return fmt.Errorf("Telegram menolak: %s — pastikan bot sudah dimasukkan ke grup dan chat ID benar", r.Description)
+			return fmt.Errorf("Telegram menolak: %s. Pastikan bot sudah dimasukkan ke grup dan chat ID benar", r.Description)
 		}
 		return fmt.Errorf("Telegram menjawab %d: %s", resp.StatusCode, r.Description)
 	}

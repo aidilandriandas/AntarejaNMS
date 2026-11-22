@@ -5,7 +5,7 @@ import { DataSet } from 'vis-data/standalone';
 const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content;
 
 export const bps = (v) => {
-    if (v == null || Number.isNaN(v)) return '–';
+    if (v == null || Number.isNaN(v)) return '';
     const u = [['G', 1e9], ['M', 1e6], ['K', 1e3]].find(([, d]) => v >= d);
     return u ? `${(v / u[1]).toFixed(v / u[1] >= 100 ? 0 : 1).replace('.', ',')}${u[0]}` : `${Math.round(v)}`;
 };
@@ -85,7 +85,7 @@ export function createTopology(el, opt) {
             title: [ports || (e.logical ? 'Hubungan induk (tanpa data port)' : 'Port tidak diketahui'),
                 `Sumber: ${e.sources.join(', ').replace('induk', 'perangkat induk').replace('manual', 'manual')}`,
                 util != null ? `Pemakaian ${util.toFixed(1)}% dari ${bps(t.speed)}bps` : null,
-                inB != null ? `Masuk ${bps(inB)}bps · Keluar ${bps(outB)}bps` : null, e.note, e.down ? 'PUTUS / salah satu ujung down' : null]
+                inB != null ? `Masuk ${bps(inB)}bps, keluar ${bps(outB)}bps` : null, e.note, e.down ? 'PUTUS / salah satu ujung down' : null]
                 .filter(Boolean).join('\n'),
         };
     };

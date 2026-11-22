@@ -5,7 +5,7 @@
 @php($editList = array_merge($layout, collect($W)->keys()->reject(fn ($k) => $shown->has($k))->map(fn ($k) => ['k' => $k, 'w' => $W[$k][1], 'off' => true])->values()->all()))
 @section('content')
 <div class="page-head" data-autoreload="60">
-    <div><h1>Ringkasan</h1><p>Kondisi seluruh perangkat saat ini · diperbarui otomatis tiap 60 detik</p></div>
+    <div><h1>Ringkasan</h1><p>Kondisi seluruh perangkat saat ini, diperbarui otomatis tiap 60 detik</p></div>
     <div class="actions">
         <button type="button" class="btn" data-dash-edit aria-expanded="false"><x-icon name="grid"/>Atur tampilan</button>
         @can('manage-devices')<a class="btn primary" href="{{ route('devices.create') }}"><x-icon name="plus"/>Tambah perangkat</a>@endcan

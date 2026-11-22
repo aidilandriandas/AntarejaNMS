@@ -3,7 +3,7 @@
 @section('content')
 <div class="page-head">
     <div><div class="crumbs"><a href="{{ route('devices.index') }}">Perangkat</a> / Discovery</div><h1>Discovery jaringan</h1>
-        <p>Pindai subnet untuk menemukan perangkat yang belum terdaftar: ping, lalu SNMP GET grup <i>system</i> (sysName, sysDescr, sysObjectID). Hanya membaca — tidak ada perubahan pada perangkat. Hasilnya berupa usulan; Anda yang memilih mana yang ditambahkan.</p></div>
+        <p>Pindai subnet untuk menemukan perangkat yang belum terdaftar: ping, lalu SNMP GET grup <i>system</i> (sysName, sysDescr, sysObjectID). Hanya membaca, tidak ada perubahan pada perangkat. Hasilnya berupa usulan; Anda yang memilih mana yang ditambahkan.</p></div>
 </div>
 <div class="grid g-main">
 <section class="card"><div class="hd"><h2>Riwayat pemindaian</h2></div>
@@ -15,7 +15,7 @@
         @foreach($scans as $s)
             @php([$label, $tone] = \App\Http\Controllers\DiscoveryController::STATUS[$s->status])
             <tr>
-                <td class="name"><a class="mono" href="{{ route('discovery.show', $s->id) }}">{{ $s->cidr }}</a><small>{{ $s->site_code ? 'site ' . $s->site_code : 'tanpa site' }}{{ $s->communities_enc ? '' : ' · tanpa SNMP' }}</small></td>
+                <td class="name"><a class="mono" href="{{ route('discovery.show', $s->id) }}">{{ $s->cidr }}</a><small>{{ $s->site_code ? 'site ' . $s->site_code : 'tanpa site' }}{{ $s->communities_enc ? '' : ', tanpa SNMP' }}</small></td>
                 <td><span class="badge {{ $tone }}">{{ $label }}</span>@if($s->status === 'running')<small class="muted"> {{ $s->total ? round($s->progress / $s->total * 100) : 0 }}%</small>@endif</td>
                 <td class="num">{{ $s->found }}</td>
                 <td class="num">@if($s->new_count)<b style="color:var(--accent)">{{ $s->new_count }}</b>@else<span class="muted">0</span>@endif</td>
@@ -36,7 +36,7 @@
             <x-field-error name="cidr"/><div class="hint">Maksimal /22 (1.022 alamat). /24 selesai ± 1 menit.</div></div>
         <div class="field"><label for="site_id">Site untuk hasil</label>
             <select class="input" id="site_id" name="site_id"><option value="">— pilih nanti —</option>
-                @foreach($sites as $st)<option value="{{ $st->id }}" @selected(old('site_id') == $st->id)>{{ $st->code }} — {{ $st->name }}</option>@endforeach</select></div>
+                @foreach($sites as $st)<option value="{{ $st->id }}" @selected(old('site_id') == $st->id)>{{ $st->code }} ({{ $st->name }})</option>@endforeach</select></div>
         <div class="field"><label for="communities">Community SNMP v2c</label>
             <textarea class="input mono @error('communities') is-err @enderror" id="communities" name="communities" rows="3" placeholder="satu per baris (maks. 5)" autocomplete="off" spellcheck="false">{{ old('communities') }}</textarea>
             <x-field-error name="communities"/><div class="hint">Dicoba berurutan; disimpan terenkripsi dan dihapus otomatis 7 hari setelah pemindaian selesai. Kosongkan untuk ping saja.</div></div>

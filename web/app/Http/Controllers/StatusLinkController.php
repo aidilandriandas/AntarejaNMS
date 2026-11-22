@@ -44,7 +44,7 @@ class StatusLinkController extends Controller
 
         // Tautan lengkap hanya ditampilkan sekali (lewat sesi), tidak disimpan
         return redirect()->route('status.links')->with('status_url', route('status.public', $token))
-            ->with('ok', 'Tautan dibuat. Salin sekarang — tautan tidak bisa ditampilkan lagi.');
+            ->with('ok', 'Tautan dibuat. Salin sekarang, tautan tidak bisa ditampilkan lagi.');
     }
 
     public function revoke(int $link)
@@ -54,7 +54,7 @@ class StatusLinkController extends Controller
         DB::table('status_links')->where('id', $link)->whereNull('revoked_at')->update(['revoked_at' => now()]);
         Audit::log('updated', "Tautan status \"{$name}\" dicabut");
 
-        return back()->with('ok', 'Tautan dicabut — langsung tidak bisa dibuka lagi.');
+        return back()->with('ok', 'Tautan dicabut, langsung tidak bisa dibuka lagi.');
     }
 
     // ---------- Halaman publik ----------

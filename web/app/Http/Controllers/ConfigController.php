@@ -41,7 +41,7 @@ class ConfigController extends Controller
         $device->forceFill(['cfg_requested' => true])->save();
         Audit::log('requested', "Backup konfigurasi {$device->name} diminta", $device);
 
-        return back()->with('ok', 'Backup konfigurasi diminta — biasanya selesai dalam 1 menit.');
+        return back()->with('ok', 'Backup konfigurasi diminta, biasanya selesai dalam 1 menit.');
     }
 
     public function resetHostKey(Device $device)
@@ -50,6 +50,6 @@ class ConfigController extends Controller
         $device->forceFill(['ssh_hostkey' => null, 'cfg_requested' => true])->save();
         Audit::log('updated', "Host key SSH {$device->name} direset (sebelumnya {$old})", $device);
 
-        return back()->with('ok', 'Host key direset. Key baru dicatat pada backup berikutnya — pastikan perangkat memang diganti/di-reset.');
+        return back()->with('ok', 'Host key direset. Key baru dicatat pada backup berikutnya, pastikan perangkat memang diganti/di-reset.');
     }
 }

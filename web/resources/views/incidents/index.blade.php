@@ -12,7 +12,7 @@
     <div class="kpi {{ $stats->active ? 'crit' : 'ok' }}"><div class="lbl">Sedang berlangsung</div><div class="val">{{ $stats->active }}</div><div class="note">terbuka + ditangani</div></div>
     <div class="kpi {{ $stats->to_close ? 'warn' : '' }}"><div class="lbl">Pulih, belum ditutup</div><div class="val">{{ $stats->to_close }}</div><div class="note">isi penyebab & tindakan</div></div>
     <div class="kpi"><div class="lbl">Insiden 30 hari</div><div class="val">{{ $stats->d30 }}</div></div>
-    <div class="kpi"><div class="lbl">MTTR 30 hari</div><div class="val" style="font-size:24px">{{ $stats->mttr ? \App\Support\Fmt::duration((int) $stats->mttr) : '–' }}</div><div class="note">rata-rata lama sampai pulih</div></div>
+    <div class="kpi"><div class="lbl">MTTR 30 hari</div><div class="val" style="font-size:24px">{{ $stats->mttr ? \App\Support\Fmt::duration((int) $stats->mttr) : 'Belum ada' }}</div><div class="note">rata-rata lama sampai pulih</div></div>
 </div>
 <section class="card">
     <form class="filters" method="get">@if($tab !== 'aktif')<input type="hidden" name="tab" value="{{ $tab }}">@endif
@@ -27,9 +27,9 @@
         @foreach($incidents as $i)
             <tr class="{{ in_array($i->status, ['open']) && $i->sevTone() === 'crit' ? 'is-down' : ($i->status === 'closed' ? 'is-off' : '') }}">
                 <td><span class="badge plain {{ $i->sevTone() }}">{{ $i->sevLabel() }}</span></td>
-                <td class="name"><a href="{{ route('incidents.show', $i) }}">#{{ $i->id }} {{ $i->title }}</a><small>{{ $i->site?->code ?? 'tanpa site' }} · dibuka {{ $i->opened_at->format('d/m H:i') }}{{ $i->auto ? ' · otomatis' : '' }}</small></td>
+                <td class="name"><a href="{{ route('incidents.show', $i) }}">#{{ $i->id }} {{ $i->title }}</a><small>{{ $i->site?->code ?? 'tanpa site' }}, dibuka {{ $i->opened_at->format('d/m H:i') }}{{ $i->auto ? ', otomatis' : '' }}</small></td>
                 <td><span class="badge {{ $i->statusTone() }}">{{ $i->statusLabel() }}</span></td>
-                <td>{{ $i->owner?->name ?? '–' }}</td>
+                <td>{{ $i->owner?->name ?? 'tidak ada' }}</td>
                 <td class="num">{{ $i->problems_count }}</td>
                 <td class="nowrap">{{ \App\Support\Fmt::duration($i->downtimeSeconds()) }}</td>
             </tr>

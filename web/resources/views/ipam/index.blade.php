@@ -29,9 +29,9 @@
             @foreach($subnets as $s)
                 @php($pct = $s->size > 0 ? min(100, $s->used / $s->size * 100) : 0)
                 <tr>
-                    <td class="name"><a class="mono" href="{{ route('ipam.show', $s->id) }}">{{ $s->cidr }}</a><small>{{ $s->name ?: ($s->source === 'auto' ? 'otomatis dari interface perangkat' : '–') }}</small></td>
-                    <td>{{ $s->site ?? '–' }}</td>
-                    <td class="num">{{ $s->vlan ?? '–' }}</td>
+                    <td class="name"><a class="mono" href="{{ route('ipam.show', $s->id) }}">{{ $s->cidr }}</a><small>{{ $s->name ?: ($s->source === 'auto' ? 'otomatis dari interface perangkat' : 'tidak ada') }}</small></td>
+                    <td>{{ $s->site ?? 'tidak ada' }}</td>
+                    <td class="num">{{ $s->vlan ?? 'tidak ada' }}</td>
                     <td style="min-width:140px"><div class="bar {{ $pct >= 90 ? 'crit' : ($pct >= 75 ? 'warn' : '') }}"><span style="width:{{ max(1, $pct) }}%"></span></div></td>
                     <td class="num">{{ $s->used }} / {{ number_format($s->size, 0, ',', '.') }}</td>
                 </tr>
@@ -48,7 +48,7 @@
                 <div class="field"><label for="cidr">Subnet (CIDR)</label><input class="input mono @error('cidr') is-err @enderror" id="cidr" name="cidr" value="{{ old('cidr') }}" placeholder="10.10.5.0/24" required><x-field-error name="cidr"/></div>
                 <div class="field"><label for="name">Nama</label><input class="input" id="name" name="name" value="{{ old('name') }}" placeholder="CCTV Pit A"></div>
                 <div class="row">
-                    <div class="field"><label for="site_id">Site</label><select class="input" id="site_id" name="site_id"><option value="">–</option>@foreach($sites as $st)<option value="{{ $st->id }}">{{ $st->code }}</option>@endforeach</select></div>
+                    <div class="field"><label for="site_id">Site</label><select class="input" id="site_id" name="site_id"><option value=""><span class="nil">tidak ada</span></option>@foreach($sites as $st)<option value="{{ $st->id }}">{{ $st->code }}</option>@endforeach</select></div>
                     <div class="field"><label for="vlan">VLAN</label><input class="input" type="number" min="1" max="4094" id="vlan" name="vlan" value="{{ old('vlan') }}"></div>
                 </div>
                 <div class="form-foot"><button class="btn primary"><x-icon name="plus"/>Tambah</button></div>

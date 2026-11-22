@@ -89,7 +89,7 @@ func Build(ctx context.Context, db *pgxpool.Pool, p Period, siteID int64) (Data,
 	d := Data{Period: p, Generated: time.Now(), Target: 99.5, Problems: map[string]int{}}
 	_ = db.QueryRow(ctx, `SELECT value::text::float8 FROM settings WHERE key = 'sla.target_pct'`).Scan(&d.Target)
 	if siteID > 0 {
-		_ = db.QueryRow(ctx, `SELECT code || ' — ' || name FROM sites WHERE id = $1`, siteID).Scan(&d.SiteName)
+		_ = db.QueryRow(ctx, `SELECT code || ' (' || name || ')' FROM sites WHERE id = $1`, siteID).Scan(&d.SiteName)
 	}
 
 	rows, err := db.Query(ctx, availSQL, p.Start, p.End, siteID)

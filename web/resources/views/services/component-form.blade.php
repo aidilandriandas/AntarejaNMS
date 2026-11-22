@@ -6,7 +6,7 @@
     <div class="field"><label for="{{ $key }}-dev">Perangkat <span class="muted">(Ctrl/⌘ + klik untuk memilih beberapa)</span></label>
         <input class="input" type="search" placeholder="Saring nama / IP…" data-filter-select="{{ $key }}-dev" aria-label="Saring perangkat">
         <select class="input" id="{{ $key }}-dev" name="devices[]" multiple size="9" style="height:auto" required>
-            @foreach($devices as $d)<option value="{{ $d->id }}" @selected(in_array($d->id, $sel, true))>{{ $d->name }} · {{ $d->host }}{{ $d->site ? ' · ' . $d->site->code : '' }}</option>@endforeach
+            @foreach($devices as $d)<option value="{{ $d->id }}" @selected(in_array($d->id, $sel, true))>{{ $d->name }}, {{ $d->host }}{{ $d->site ? ', ' . $d->site->code : '' }}</option>@endforeach
         </select></div>
     <div class="field"><label for="{{ $key }}-min">Minimal perangkat yang harus hidup</label>
         <input class="input" id="{{ $key }}-min" type="number" min="1" name="min_up" value="{{ old('min_up', $c?->min_up ?? 1) }}" required style="width:110px">

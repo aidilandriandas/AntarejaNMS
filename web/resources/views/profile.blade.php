@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Profil')
 @section('content')
-<div class="page-head"><div><h1>Profil</h1><p>{{ auth()->user()->name }} · {{ auth()->user()->username }} · {{ auth()->user()->roleLabel() }}</p></div></div>
+<div class="page-head"><div><h1>Profil</h1><p>{{ auth()->user()->name }}, {{ auth()->user()->username }}, {{ auth()->user()->roleLabel() }}</p></div></div>
 <section class="card" style="max-width:560px"><div class="hd"><h2>Ganti password</h2></div><div class="bd">
 <form method="post" action="{{ route('profile.password') }}" class="form">
     @csrf @method('PUT')

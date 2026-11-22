@@ -51,7 +51,7 @@ class TopologyController extends Controller
     public function ports(Device $device): JsonResponse
     {
         return response()->json($device->ports()->get(['if_index', 'name', 'alias', 'oper_up'])->map(fn ($p) => [
-            'if_index' => $p->if_index, 'label' => $p->name . ($p->alias ? " ({$p->alias})" : '') . ($p->oper_up ? '' : ' — down'),
+            'if_index' => $p->if_index, 'label' => $p->name . ($p->alias ? " ({$p->alias})" : '') . ($p->oper_up ? '' : ', down'),
         ]));
     }
 

@@ -21,9 +21,9 @@ class Dashboard
         'services' => ['Layanan', 'half', 'Status & ketersediaan bulan ini per layanan (SLA layanan)', true],
     ];
 
-    /** Susunan bawaan (mirip Ringkasan sebelumnya). */
+    /** Susunan bawaan: antrean problem di depan, angka sesudahnya. */
     public const DEFAULT = [
-        ['k' => 'kpi', 'w' => 'full'], ['k' => 'problems', 'w' => 'half'], ['k' => 'events', 'w' => 'half'],
+        ['k' => 'problems', 'w' => 'full'], ['k' => 'kpi', 'w' => 'full'], ['k' => 'events', 'w' => 'half'],
         ['k' => 'slow', 'w' => 'half'], ['k' => 'sensors', 'w' => 'half'], ['k' => 'sites', 'w' => 'full'],
     ];
 

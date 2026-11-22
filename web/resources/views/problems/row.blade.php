@@ -6,8 +6,8 @@
     <td class="name">
         {{ $p->title }}
         <small>
-            @if(! ($compact ?? false) && $p->device)<a href="{{ route('devices.show', $p->device) }}">{{ $p->device->name }}</a>@if($p->device->site) · {{ $p->device->site->code }}@endif · @endif
-            @if($p->relationLoaded('incidents') && ($inc = $p->incidents->first()))<a class="inc-tag" href="{{ route('incidents.show', $inc) }}">Insiden #{{ $inc->id }}</a> · @endif
+            @if(! ($compact ?? false) && $p->device)<a href="{{ route('devices.show', $p->device) }}">{{ $p->device->name }}</a>@if($p->device->site), {{ $p->device->site->code }}@endif, @endif
+            @if($p->relationLoaded('incidents') && ($inc = $p->incidents->first()))<a class="inc-tag" href="{{ route('incidents.show', $inc) }}">Insiden #{{ $inc->id }}</a>, @endif
             @if($p->suppressed)<span style="color:var(--info)">{{ $p->suppressed_note }}</span>@else{{ $p->detail }}@endif
         </small>
     </td>
@@ -29,7 +29,7 @@
         @if(! $p->resolved_at && ! $p->acked_at)
             <details class="ack">
                 <summary class="btn sm">ACK</summary>
-                <form method="post" action="{{ route('problems.ack', $p) }}" class="card ack-pop">
+                <form method="post" action="{{ route('problems.ack', $p) }}" class="ack-pop">
                     @csrf
                     <label for="note-{{ $p->id }}" style="font-weight:500">Catatan <span class="muted">(opsional)</span></label>
                     <input class="input" id="note-{{ $p->id }}" name="note" maxlength="500" placeholder="mis. Tim lapangan menuju lokasi">

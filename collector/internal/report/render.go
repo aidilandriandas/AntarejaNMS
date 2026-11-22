@@ -14,7 +14,7 @@ var freqName = map[string]string{"daily": "harian", "weekly": "mingguan", "month
 
 func pct(v float64) string {
 	if v < 0 {
-		return "–"
+		return "tidak ada"
 	}
 	if v >= 99.995 && v < 100 {
 		return "99,99%"
@@ -59,7 +59,7 @@ func Subject(freq string, d Data) string {
 	if d.SiteName != "" {
 		scope = d.SiteName
 	}
-	return fmt.Sprintf("[ANTAREJA] Laporan %s %s — %s — ketersediaan %s", freqName[freq], d.Period.Label, scope, pct(d.Total.Avail))
+	return fmt.Sprintf("[ANTAREJA] Laporan %s %s, %s, ketersediaan %s", freqName[freq], d.Period.Label, scope, pct(d.Total.Avail))
 }
 
 var sevOrder = []struct{ Key, Label, Color string }{
@@ -154,7 +154,7 @@ func Text(freq string, d Data) string {
 	if d.SiteName != "" {
 		scope = d.SiteName
 	}
-	fmt.Fprintf(&b, "ANTAREJA NMS — laporan %s %s (%s)\n\n", freqName[freq], d.Period.Label, scope)
+	fmt.Fprintf(&b, "ANTAREJA NMS: laporan %s %s (%s)\n\n", freqName[freq], d.Period.Label, scope)
 	fmt.Fprintf(&b, "Ketersediaan: %s (target %s), %d perangkat\n", pct(d.Total.Avail), pct(d.Target), d.Total.Devices)
 	fmt.Fprintf(&b, "Gangguan down: %d, total downtime %s, %d perangkat di bawah target\n", d.Total.Incidents, durText(d.Total.Down), d.BelowCount)
 	fmt.Fprintf(&b, "Sekarang: %d down, %d problem terbuka (%d High+ belum ACK)\n", len(d.DownNow), d.OpenNow, d.OpenHigh)
@@ -197,7 +197,7 @@ func Telegram(freq string, d Data) string {
 			if i >= 5 {
 				break
 			}
-			fmt.Fprintf(&b, "• %s — %s (%s)\n", html.EscapeString(x.Name), pct(x.Avail), durText(x.Down))
+			fmt.Fprintf(&b, "• %s: %s (%s)\n", html.EscapeString(x.Name), pct(x.Avail), durText(x.Down))
 		}
 	}
 	return b.String()

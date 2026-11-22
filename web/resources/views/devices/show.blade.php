@@ -4,7 +4,7 @@
 <div class="crumbs"><a href="{{ route('devices.index') }}">Perangkat</a>@if($device->site) / <a href="{{ route('devices.index', ['site' => $device->site_id]) }}">{{ $device->site->code }}</a>@endif</div>
 <div class="page-head">
     <div><h1>{{ $device->name }} <x-status :device="$device"/></h1>
-        <p class="mono">{{ $device->host }} · {{ $device->categoryLabel() }}@if($device->status === 'down' && $device->status_reason) · <span style="color:var(--crit)">{{ $device->status_reason }}</span>@endif</p></div>
+        <div class="meta" style="margin-top:6px"><span class="mono">{{ $device->host }}</span><span>{{ $device->categoryLabel() }}</span>@if($device->status === 'down' && $device->status_reason)<span style="color:var(--color-crit);white-space:normal">{{ $device->status_reason }}</span>@endif</div></div>
     @can('manage-devices')
         <div class="actions">
             <form method="post" action="{{ route('devices.poll', $device) }}">@csrf<button class="btn"><x-icon name="refresh"/>Periksa sekarang</button></form>
@@ -14,11 +14,11 @@
 </div>
 
 <div class="kpis">
-    <div class="kpi"><div class="lbl">Latensi</div><div class="val">{{ $device->ping_enabled ? \App\Support\Fmt::ms($device->last_rtt_ms) : '–' }}</div>
-        <div class="note">{{ $device->last_jitter_ms !== null ? 'jitter ' . \App\Support\Fmt::ms($device->last_jitter_ms) . ' · ' : '' }}{{ $device->last_ping_at ? 'ping ' . $device->last_ping_at->diffForHumans() : ($device->ping_enabled ? 'menunggu ping pertama' : 'ping dimatikan') }}</div></div>
-    <div class="kpi {{ $device->last_loss_pct > 0 ? 'warn' : '' }}"><div class="lbl">Packet loss</div><div class="val">{{ $device->ping_enabled && $device->last_loss_pct !== null ? (int) $device->last_loss_pct : '–' }}<small>%</small></div><div class="note">3 paket per menit</div></div>
-    <div class="kpi"><div class="lbl">Uptime</div><div class="val" style="font-size:22px;padding-top:6px">{{ $device->uptimeHuman() ?? '–' }}</div><div class="note">{{ $device->snmp_enabled ? 'dari SNMP' : 'butuh SNMP' }}</div></div>
-    <div class="kpi"><div class="lbl">Status sejak</div><div class="val" style="font-size:22px;padding-top:6px">{{ $device->status_changed_at?->diffForHumans(short: true, syntax: \Carbon\CarbonInterface::DIFF_ABSOLUTE) ?? '–' }}</div><div class="note">{{ $device->status_changed_at?->format('d/m/Y H:i') }}</div></div>
+    <div class="kpi"><div class="lbl">Latensi</div><div class="val">{{ $device->ping_enabled ? \App\Support\Fmt::ms($device->last_rtt_ms) : 'Ping mati' }}</div>
+        <div class="note">{{ $device->last_jitter_ms !== null ? 'jitter ' . \App\Support\Fmt::ms($device->last_jitter_ms) . ', ' : '' }}{{ $device->last_ping_at ? 'ping ' . $device->last_ping_at->diffForHumans() : ($device->ping_enabled ? 'menunggu ping pertama' : 'ping dimatikan') }}</div></div>
+    <div class="kpi {{ $device->last_loss_pct > 0 ? 'warn' : '' }}"><div class="lbl">Packet loss</div><div class="val">{{ $device->ping_enabled && $device->last_loss_pct !== null ? (int) $device->last_loss_pct : 'tidak ada' }}<small>%</small></div><div class="note">3 paket per menit</div></div>
+    <div class="kpi"><div class="lbl">Uptime</div><div class="val" style="font-size:22px;padding-top:6px">{{ $device->uptimeHuman() ?? 'Belum terbaca' }}</div><div class="note">{{ $device->snmp_enabled ? 'dari SNMP' : 'butuh SNMP' }}</div></div>
+    <div class="kpi"><div class="lbl">Status sejak</div><div class="val" style="font-size:22px;padding-top:6px">{{ $device->status_changed_at?->diffForHumans(short: true, syntax: \Carbon\CarbonInterface::DIFF_ABSOLUTE) ?? 'tidak ada' }}</div><div class="note">{{ $device->status_changed_at?->format('d/m/Y H:i') }}</div></div>
 </div>
 
 @if($problems->isNotEmpty())
@@ -48,9 +48,9 @@
                 </div></div>
             <div class="bd">
                 <div class="live-stats">
-                    <div><span class="lbl in">Masuk</span><b data-live-v="in">–</b><small>rata-rata <span data-live-v="in-avg">–</span> · puncak <span data-live-v="in-max">–</span></small></div>
-                    <div><span class="lbl out">Keluar</span><b data-live-v="out">–</b><small>rata-rata <span data-live-v="out-avg">–</span> · puncak <span data-live-v="out-max">–</span></small></div>
-                    <div><span class="lbl">Pemakaian</span><b data-live-v="util">–</b><small data-live-v="info">–</small></div>
+                    <div><span class="lbl in">Masuk</span><b data-live-v="in"><span class="nil">tidak ada</span></b><small>rata-rata <span data-live-v="in-avg"><span class="nil">tidak ada</span></span>, puncak <span data-live-v="in-max"><span class="nil">tidak ada</span></span></small></div>
+                    <div><span class="lbl out">Keluar</span><b data-live-v="out"><span class="nil">tidak ada</span></b><small>rata-rata <span data-live-v="out-avg"><span class="nil">tidak ada</span></span>, puncak <span data-live-v="out-max"><span class="nil">tidak ada</span></span></small></div>
+                    <div><span class="lbl">Pemakaian</span><b data-live-v="util"><span class="nil">tidak ada</span></b><small data-live-v="info"><span class="nil">tidak ada</span></small></div>
                 </div>
                 <div class="chart" data-live-chart></div>
                 <p class="muted live-note" data-live-note>Dibaca langsung dari perangkat (SNMP) setiap beberapa detik selama halaman ini terbuka; berhenti sendiri saat tab disembunyikan atau setelah 15 menit.</p>
@@ -60,7 +60,7 @@
 
         @if($device->snmp_enabled)
         <section class="card" data-ports-card>
-            <div class="hd"><h2>Port</h2><span class="sub">{{ $device->ports->count() }} port · klik nama port untuk grafik lengkap, baris untuk grafik ringkas, <b>Live</b> untuk trafik saat ini</span>
+            <div class="hd"><h2>Port</h2><span class="sub">{{ $device->ports->count() }} port, klik nama port untuk grafik lengkap, baris untuk grafik ringkas, <b>Live</b> untuk trafik saat ini</span>
                 @if($device->ports->isNotEmpty())<label class="check live-all"><input type="checkbox" data-live-all><span>Live semua port</span></label>@endif</div>
             <div class="bd flush">
                 @if($device->ports->isEmpty())
@@ -77,10 +77,10 @@
                         <tr class="port-row {{ $p->oper_up ? '' : 'is-off' }}" data-port="{{ $p->if_index }}" data-port-name="{{ $p->label() }}" data-speed="{{ (int) $p->speed_bps }}" data-up="{{ $p->oper_up ? 1 : 0 }}" tabindex="0">
                             <td class="name"><a href="{{ route('ports.show', [$device, $p->if_index]) }}" data-stop-row>{{ $p->label() }}</a><small>{{ $p->alias ?: ($p->descr !== $p->name ? $p->descr : '') }}</small></td>
                             <td>@if(! $p->admin_up)<span class="badge">dimatikan</span>@elseif($p->oper_up)<span class="badge ok">up</span>@else<span class="badge">down</span>@endif</td>
-                            <td class="num">{{ $p->speed_bps ? \App\Support\Fmt::bps((float) $p->speed_bps) : '–' }}</td>
+                            <td class="num">{{ $p->speed_bps ? \App\Support\Fmt::bps((float) $p->speed_bps) : 'tidak ada' }}</td>
                             <td class="num" data-cell-in>{{ \App\Support\Fmt::bps($in) }}</td>
                             <td class="num" data-cell-out>{{ \App\Support\Fmt::bps($out) }}</td>
-                            <td data-cell-util>@if($util !== null)<div class="bar {{ $util >= 90 ? 'crit' : ($util >= 70 ? 'warn' : '') }}" title="{{ number_format($util, 1, ',', '.') }}%"><span style="width:{{ max(1, $util) }}%"></span></div>@else<span class="muted">–</span>@endif</td>
+                            <td data-cell-util>@if($util !== null)<div class="bar {{ $util >= 90 ? 'crit' : ($util >= 70 ? 'warn' : '') }}" title="{{ number_format($util, 1, ',', '.') }}%"><span style="width:{{ max(1, $util) }}%"></span></div>@else<span class="muted"><span class="nil">tidak ada</span></span>@endif</td>
                             <td>@include('ports.spark', ['sp' => $traffic['spark'][$p->if_index] ?? []])</td>
                             <td><button type="button" class="btn sm live-btn" data-live-port="{{ $p->if_index }}" title="Trafik live port {{ $p->label() }}">Live</button></td>
                             <td>
@@ -89,7 +89,7 @@
                                     <form method="post" action="{{ route('devices.monitor', [$device, $p->if_index]) }}" data-stop>@csrf
                                         <button class="btn sm {{ $mon ? 'primary' : '' }}" title="{{ $mon ? 'Berhenti memantau' : 'Pantau port ini' }}" aria-pressed="{{ $mon ? 'true' : 'false' }}">{{ $mon ? 'Dipantau' : 'Pantau' }}</button></form>
                                 @else
-                                    {!! $mon ? '<span class="badge info plain">dipantau</span>' : '<span class="muted">–</span>' !!}
+                                    {!! $mon ? '<span class="badge info plain">dipantau</span>' : '<span class="muted"><span class="nil">tidak ada</span></span>' !!}
                                 @endcan
                             </td>
                         </tr>
@@ -136,31 +136,31 @@
                             <td class="num">@if($c->added || $c->removed)<span style="color:var(--ok)">+{{ $c->added }}</span> <span style="color:var(--crit)">−{{ $c->removed }}</span>@else<span class="muted">{{ $c->lines }} baris</span>@endif</td></tr>
                     @endforeach
                 </tbody></table>@endif
-                <p class="muted" style="font-size:12px;margin:0;padding:8px 14px">Dicek terakhir {{ $device->cfg_last_at?->diffForHumans() ?? '–' }} · host key {{ $device->ssh_hostkey ? \Illuminate\Support\Str::limit($device->ssh_hostkey, 22) : 'belum dicatat' }}</p>
+                <p class="muted" style="font-size:12px;margin:0;padding:8px 14px">Dicek terakhir {{ $device->cfg_last_at?->diffForHumans() ?? 'tidak ada' }}, host key {{ $device->ssh_hostkey ? \Illuminate\Support\Str::limit($device->ssh_hostkey, 22) : 'belum dicatat' }}</p>
             </div></section>
         @endif
         @endcan
         <section class="card"><div class="hd"><h2>Informasi</h2></div><div class="bd">
             <dl class="facts">
-                <dt>Site</dt><dd>{{ $device->site ? $device->site->code . ' — ' . $device->site->name : '–' }}</dd>
-                <dt>Induk</dt><dd>@if($device->parent)<a href="{{ route('devices.show', $device->parent) }}">{{ $device->parent->name }}</a>@else – @endif</dd>
+                <dt>Site</dt><dd>{{ $device->site ? $device->site->code . ' (' . $device->site->name . ')' : 'tidak ada' }}</dd>
+                <dt>Induk</dt><dd>@if($device->parent)<a href="{{ route('devices.show', $device->parent) }}">{{ $device->parent->name }}</a>@else<span class="nil">tidak ada</span>@endif</dd>
                 @if($device->children->isNotEmpty())<dt>Di bawahnya</dt><dd>@foreach($device->children as $ch)<a href="{{ route('devices.show', $ch) }}">{{ $ch->name }}</a>@if(! $loop->last), @endif @endforeach</dd>@endif
                 <dt>Ping</dt><dd>{{ $device->ping_enabled ? 'aktif, tiap menit' : 'dimatikan' }}</dd>
-                <dt>SNMP</dt><dd>@if(! $device->snmp_enabled) dimatikan @elseif($device->snmp_ok === false)<span style="color:var(--warn)">gagal — {{ $device->snmp_error }}</span>@else v{{ $device->snmp_version }}, port {{ $device->snmp_port }}@if($device->last_snmp_at) · {{ $device->last_snmp_at->diffForHumans() }}@endif @endif</dd>
+                <dt>SNMP</dt><dd>@if(! $device->snmp_enabled) dimatikan @elseif($device->snmp_ok === false)<span style="color:var(--warn)">gagal: {{ $device->snmp_error }}</span>@else v{{ $device->snmp_version }}, port {{ $device->snmp_port }}@if($device->last_snmp_at), {{ $device->last_snmp_at->diffForHumans() }}@endif @endif</dd>
                 @if($device->sys_name)<dt>sysName</dt><dd>{{ $device->sys_name }}</dd>@endif
                 @if($device->sys_descr)<dt>Deskripsi</dt><dd>{{ \Illuminate\Support\Str::limit($device->sys_descr, 220) }}</dd>@endif
                 @if($device->sys_location)<dt>Lokasi SNMP</dt><dd>{{ $device->sys_location }}</dd>@endif
                 @if($device->profiles)<dt>Profil</dt><dd>{{ collect(explode(',', $device->profiles))->map(fn ($x) => \App\Models\DeviceSensor::PROFILES[$x] ?? $x)->implode(', ') }}</dd>@endif
                 @if($device->sys_object_id)<dt>sysObjectID</dt><dd class="mono">{{ $device->sys_object_id }}</dd>@endif
-                @if(! empty($device->thresholds))<dt>Ambang khusus</dt><dd>{{ collect($device->thresholds)->map(fn ($v, $k) => (\App\Models\Device::THRESHOLDS[$k][0] ?? $k) . ' ' . (is_array($v) ? implode(' / ', $v) : $v))->implode(' · ') }}</dd>@endif
+                @if(! empty($device->thresholds))<dt>Ambang khusus</dt><dd>{{ collect($device->thresholds)->map(fn ($v, $k) => (\App\Models\Device::THRESHOLDS[$k][0] ?? $k) . ' ' . (is_array($v) ? implode(' / ', $v) : $v))->implode(', ') }}</dd>@endif
                 @if($device->notes)<dt>Catatan</dt><dd style="white-space:pre-line">{{ $device->notes }}</dd>@endif
             </dl>
         </div></section>
         @if($logs->isNotEmpty())
-        <section class="card"><div class="hd"><h2>Log terbaru</h2><a class="sub" href="{{ route('logs.index', ['device' => $device->id]) }}">Semua →</a></div>
+        <section class="card"><div class="hd"><h2>Log terbaru</h2><a class="sub" href="{{ route('logs.index', ['device' => $device->id]) }}">Semua log</a></div>
             <div class="bd flush"><ul class="feed logfeed">@foreach($logs as $l)<li><span class="badge plain {{ $l->sevTone() }}">{{ $l->sevLabel() }}</span><div class="msg mono">{{ \Illuminate\Support\Str::limit($l->message, 160) }}@if($l->app)<small>{{ $l->app }}</small>@endif</div><time title="{{ $l->received_at->format('d/m/Y H:i:s') }}">{{ $l->received_at->diffForHumans(short: true) }}</time></li>@endforeach</ul></div></section>
         @endif
-        <section class="card"><div class="hd"><h2>Kejadian terbaru</h2><a class="sub" href="{{ route('events.index', ['q' => $device->host]) }}">Semua →</a></div>
+        <section class="card"><div class="hd"><h2>Kejadian terbaru</h2><a class="sub" href="{{ route('events.index', ['q' => $device->host]) }}">Semua kejadian</a></div>
             <div class="bd flush">@include('events.feed', ['events' => $events, 'showDevice' => false])</div></section>
     </div>
 </div>

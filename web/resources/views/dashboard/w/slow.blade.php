@@ -6,7 +6,7 @@
                 @forelse($slow as $d)
                     <tr>
                         <td class="name"><a href="{{ route('devices.show', $d) }}">{{ $d->name }}</a></td>
-                        <td>{{ $d->site?->code ?? '–' }}</td>
+                        <td>{{ $d->site?->code ?? 'tidak ada' }}</td>
                         <td class="num" style="color:{{ $d->last_rtt_ms >= 150 ? 'var(--crit)' : ($d->last_rtt_ms >= 50 ? 'var(--warn)' : 'inherit') }}">{{ \App\Support\Fmt::ms($d->last_rtt_ms) }}</td>
                         <td class="num" style="color:{{ $d->last_loss_pct > 0 ? 'var(--warn)' : 'inherit' }}">{{ (int) $d->last_loss_pct }}%</td>
                     </tr>

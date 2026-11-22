@@ -124,7 +124,7 @@ func (m *Monitor) evaluate(ctx context.Context) []Alert {
 	var upd time.Time
 	if err := m.DB.QueryRow(ctx, `SELECT value, updated_at FROM system_status WHERE key = 'backup'`).Scan(&raw, &upd); err == nil {
 		out = append(out, Alert{Key: "backup_service", Active: time.Since(upd) > 20*time.Minute, Severity: "high",
-			Message: fmt.Sprintf("Layanan backup tidak melapor sejak %s — backup harian tidak berjalan. Cek: ./antareja.sh logs backup", upd.Local().Format("02/01 15.04"))})
+			Message: fmt.Sprintf("Layanan backup tidak melapor sejak %s, backup harian tidak berjalan. Cek: ./antareja.sh logs backup", upd.Local().Format("02/01 15.04"))})
 		var d struct {
 			Total int64 `json:"disk_total_kb"`
 			Free  int64 `json:"disk_free_kb"`
@@ -243,12 +243,12 @@ func (m *Monitor) send(ctx context.Context, a Alert, resolved bool) int {
 	var msg notify.Message
 	if resolved {
 		msg = notify.Message{Event: "system.resolve", Subject: "[ANTAREJA] Pulih: " + label,
-			Text: "ANTAREJA NMS — masalah sistem sudah pulih: " + label + ".",
+			Text: "ANTAREJA NMS: masalah sistem sudah pulih: " + label + ".",
 			HTML: "✅ <b>ANTAREJA NMS</b>\nMasalah sistem pulih: <b>" + esc(label) + "</b>"}
 	} else {
 		msg = notify.Message{Event: "system", Subject: "[ANTAREJA] Masalah sistem: " + label,
-			Text: "ANTAREJA NMS — masalah sistem: " + label + "\n\n" + a.Message,
-			HTML: "⚙️ <b>ANTAREJA NMS — masalah sistem</b>\n<b>" + esc(label) + "</b>\n" + esc(a.Message)}
+			Text: "ANTAREJA NMS: masalah sistem: " + label + "\n\n" + a.Message,
+			HTML: "⚙️ <b>ANTAREJA NMS: masalah sistem</b>\n<b>" + esc(label) + "</b>\n" + esc(a.Message)}
 	}
 	ok := 0
 	for _, id := range ids {

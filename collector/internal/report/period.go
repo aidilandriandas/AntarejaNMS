@@ -37,7 +37,7 @@ func LastFull(freq string, now time.Time, hour int) (Period, time.Time, error) {
 		p.Start, p.End = monday.AddDate(0, 0, -7), monday
 		p.Key = p.Start.Format("2006-01-02")
 		last := p.End.AddDate(0, 0, -1)
-		p.Label = fmt.Sprintf("%s – %s", p.Start.Format("02/01"), last.Format("02/01/2006"))
+		p.Label = fmt.Sprintf("%s sampai %s", p.Start.Format("02/01"), last.Format("02/01/2006"))
 	case "monthly":
 		first := time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, today.Location())
 		p.Start, p.End = first.AddDate(0, -1, 0), first

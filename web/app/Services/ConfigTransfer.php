@@ -148,7 +148,7 @@ class ConfigTransfer
             throw new RuntimeException('Bukan berkas ekspor ANTAREJA.');
         }
         if ((int) ($d['version'] ?? 0) > self::VERSION) {
-            throw new RuntimeException('Berkas dari versi ANTAREJA yang lebih baru — perbarui aplikasi dulu.');
+            throw new RuntimeException('Berkas dari versi ANTAREJA yang lebih baru, perbarui aplikasi dulu.');
         }
         foreach (['sites', 'devices', 'links', 'subnets', 'cameras', 'channels', 'report_schedules'] as $k) {
             $d[$k] = array_values(array_filter((array) ($d[$k] ?? []), 'is_array'));

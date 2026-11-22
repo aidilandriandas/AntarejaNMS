@@ -11,15 +11,15 @@
             <tbody>
             @foreach($cams as $c)
                 <tr class="{{ $c->enabled ? '' : 'is-off' }}">
-                    <td class="name">{{ $c->name }}<small>{{ $c->device?->name ?? 'tanpa perangkat' }}{{ $c->enabled ? '' : ' · nonaktif' }}</small></td>
-                    <td class="mono" style="font-size:12.5px">{{ $c->host }}:{{ $c->rtsp_port }} · kanal {{ $c->channel }}<div class="muted">{{ $c->username ? 'user ' . $c->username : 'tanpa login' }}</div></td>
-                    <td>{{ $c->site?->code ?? '–' }}</td>
+                    <td class="name">{{ $c->name }}<small>{{ $c->device?->name ?? 'tanpa perangkat' }}{{ $c->enabled ? '' : ', nonaktif' }}</small></td>
+                    <td class="mono" style="font-size:12.5px">{{ $c->host }}:{{ $c->rtsp_port }}, kanal {{ $c->channel }}<div class="muted">{{ $c->username ? 'user ' . $c->username : 'tanpa login' }}</div></td>
+                    <td>{{ $c->site?->code ?? 'tidak ada' }}</td>
                     <td>@if($h = $c->healthMeta())<span class="badge {{ $h[1] }}" title="{{ $c->health_detail }}">{{ $h[0] }}</span>
-                        <div class="muted" style="font-size:12px">{{ $c->health_at?->diffForHumans() }}{{ $c->brightness !== null ? ' · terang ' . round($c->brightness) . ' · detail ' . round($c->detail_score) : '' }}</div>
+                        <div class="muted" style="font-size:12px">{{ $c->health_at?->diffForHumans() }}{{ $c->brightness !== null ? ', terang ' . round($c->brightness) . ', detail ' . round($c->detail_score) : '' }}</div>
                         @else<span class="muted">belum dicek</span>@endif</td>
                     <td class="right nowrap">
                         <details class="ack"><summary class="btn sm">Ubah</summary>
-                            <form method="post" action="{{ route('cctv.update', $c) }}" class="card ack-pop form" style="width:340px">@csrf @method('PUT')
+                            <form method="post" action="{{ route('cctv.update', $c) }}" class="ack-pop form" style="width:340px">@csrf @method('PUT')
                                 <div class="field"><label>Nama</label><input class="input" name="name" value="{{ $c->name }}" required></div>
                                 <div class="row"><div class="field"><label>Host</label><input class="input mono" name="host" value="{{ $c->host }}" required></div>
                                     <div class="field"><label>Port</label><input class="input" type="number" name="rtsp_port" value="{{ $c->rtsp_port }}"></div></div>

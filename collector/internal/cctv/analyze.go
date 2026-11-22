@@ -90,7 +90,7 @@ func Judge(r Result, sameCount int) (health, detail string) {
 	case r.Brightness < DarkBelow:
 		return "dark", "gambar gelap"
 	case r.Detail < CoveredBelow:
-		return "covered", "gambar polos — kemungkinan lensa tertutup / buram"
+		return "covered", "gambar polos, kemungkinan lensa tertutup / buram"
 	case sameCount >= FrozenRepeats:
 		return "frozen", "gambar tidak berubah (beku)"
 	}
