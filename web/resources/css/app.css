@@ -4,6 +4,7 @@
  * axes: light/grotesk-sans/chromatic-teal · posture: settled · contrast: pass · v2.0.0 */
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R3 V4 · weakest: R, layar rapat; kotak kartu dibuang, panel datar dan baris angka menggantikannya */
 /* Hallmark · dismissed 67 · ANTAREJA adalah wordmark merek di samping logo, bukan label */
+/* Hallmark · dismissed 3 · .lg-card adalah contoh di legenda topologi yang meniru pita status kartu perangkat di peta (pita kiri = status), bukan hiasan */
 /* Hallmark · dismissed F4 · .seg button.on dan .seg .btn.primary adalah tanda pilihan aktif di segmen rentang waktu (isian lembut), bukan tombol utama kedua */
 @import './tokens.css';
 @import './base.css';
@@ -345,10 +346,26 @@ kbd { font: 400 12px var(--font-outlier); border: 1px solid var(--color-rule-str
 .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--color-surface); color: var(--color-ink); }
 
 /* ---------- Topologi ---------- */
-.topo-card { display: flex; flex-direction: column; }
-.topo { height: calc(100vh - 260px); min-height: 460px; border: 1px solid var(--color-rule); border-radius: var(--radius-card); background: radial-gradient(circle, var(--color-rule) 1px, transparent 1.2px) 0 0 / 22px 22px; }
-.topo-foot { display: flex; justify-content: space-between; gap: var(--space-sm); flex-wrap: wrap; padding: 10px 0; font-size: var(--text-xs); }
-.legend { display: inline-flex; gap: 6px var(--space-sm); align-items: center; flex-wrap: wrap; color: var(--color-ink-2); }
+.topo-bar { display: flex; justify-content: space-between; align-items: center; gap: var(--space-sm); flex-wrap: wrap; padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-rule-strong); margin-bottom: var(--space-sm); }
+.topo-bar-g { display: flex; gap: var(--space-xs); align-items: center; flex-wrap: wrap; }
+.topo-bar .input { width: auto; height: 32px; }
+.topo-wrap { position: relative; }
+.topo { height: calc(100vh - 230px); min-height: 520px; border: 1px solid var(--color-rule); border-radius: var(--radius-card);
+    background: radial-gradient(circle, var(--color-rule) 1px, transparent 1.2px) 0 0 / 20px 20px, var(--color-paper); }
+.topo:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.topo-foot { display: flex; justify-content: space-between; gap: var(--space-sm); flex-wrap: wrap; padding: var(--space-xs) 0; font-size: var(--text-xs); }
+.topo-legend { position: absolute; left: var(--space-sm); top: var(--space-sm); z-index: var(--z-raised); width: 300px; max-width: calc(100% - 24px); padding: var(--space-sm) var(--space-md);
+    background: var(--color-surface); border: 1px solid var(--color-rule-strong); border-radius: var(--radius-card); box-shadow: var(--shadow-pop); font-size: var(--text-xs); }
+.topo-legend b { display: block; margin: var(--space-2xs) 0; }
+.topo-legend ul { list-style: none; margin: 0 0 var(--space-xs); padding: 0; display: grid; gap: var(--space-2xs); }
+.topo-legend li { display: flex; align-items: center; gap: var(--space-xs); }
+.topo-legend p { margin: 0; color: var(--color-muted); }
+.lg-card { width: 26px; height: 14px; border: 1px solid var(--color-rule-strong); border-left: 4px solid var(--c, var(--color-off)); border-radius: 3px; background: var(--color-surface); color: var(--color-ink); flex: none; }
+.lg-card.ok { --c: var(--color-ok); } .lg-card.warn { --c: var(--color-warn); } .lg-card.info { --c: var(--color-info); }
+.lg-card.crit { --c: var(--color-crit); border-color: var(--color-crit); border-width: 2px 2px 2px 4px; }
+.lg-card.ext { border-style: dashed; border-left-width: 1px; }
+.lg-ln { stroke-width: 2.5; } .lg-ln.acc { stroke: var(--color-accent); } .lg-ln.warn { stroke: var(--color-warn); } .lg-ln.crit { stroke: var(--color-crit); } .lg-ln.mut { stroke: var(--color-muted); }
+.legend { display: inline-flex; gap: var(--space-2xs) var(--space-sm); align-items: center; flex-wrap: wrap; color: var(--color-ink-2); }
 .legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: -6px; }
 .legend i.hollow { border: 2px dashed var(--color-off); }
 div.vis-tooltip { font: 400 var(--text-xs)/1.5 var(--font-body) !important; white-space: pre-line !important; padding: var(--space-xs) var(--space-sm) !important; border-radius: var(--radius-card) !important;

@@ -306,42 +306,83 @@ if (document.querySelector('[data-port-graphs]')) {
 // ---------- Halaman topologi ----------
 const topoRoot = $('[data-topology]');
 if (topoRoot) {
-    import('./topology.js').then(({ createTopology, bps }) => {
+    import('./topology.js').then(({ createTopology, bps, STATE_LABEL }) => {
         const siteSel = $('[data-topo-site]', topoRoot);
         try { siteSel.value = localStorage.getItem('ant-topo-site') || ''; } catch (e) { /* abaikan */ }
         const info = $('[data-topo-info]', topoRoot);
-        const topo = createTopology($('[data-topo-canvas]', topoRoot), {
+        const rowsEl = $('[data-topo-rows]', topoRoot);
+        const cell = (text, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = text ?? ''; return td; };
+        const showInfo = (n) => {
+            if (!n) return;
+            const rows = [['Alamat', n.host], ['Site', n.site], ['Status', STATE_LABEL[n.state]], ['Penyebab', n.reason],
+                ['RTT', n.rtt != null ? `${Number(n.rtt).toFixed(2).replace('.', ',')} ms` : null], ['Platform', n.platform]].filter(([, v]) => v);
+            info.replaceChildren();
+            const h = document.createElement('div'); h.style.cssText = 'font-weight:600;margin-bottom:8px'; h.textContent = n.label; info.appendChild(h);
+            const dl = document.createElement('dl'); dl.className = 'facts';
+            rows.forEach(([k, v]) => { const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v; dl.append(dt, dd); });
+            info.appendChild(dl);
+            if (n.url) { const a = document.createElement('a'); a.href = n.url; a.className = 'btn sm'; a.style.marginTop = '12px'; a.textContent = 'Buka detail perangkat'; info.appendChild(a); }
+            else { const p = document.createElement('p'); p.className = 'muted'; p.textContent = 'Terlihat lewat LLDP/CDP tetapi belum didaftarkan. Tambahkan lewat menu Perangkat agar dipantau.'; info.appendChild(p); }
+        };
+        let topo = null;
+        // Daftar sambungan: versi teks dari peta (bisa dibaca pembaca layar & keyboard)
+        const renderRows = (g) => {
+            const name = new Map(g.nodes.map((n) => [n.id, n]));
+            const list = g.edges.slice().sort((a, b) => Number(b.down) - Number(a.down));
+            if (!list.length) { rowsEl.replaceChildren(); const tr = document.createElement('tr'); tr.append(cell('Belum ada sambungan untuk tampilan ini.', 'empty')); tr.firstChild.colSpan = 8; rowsEl.append(tr); return; }
+            rowsEl.replaceChildren(...list.map((e) => {
+                const tr = document.createElement('tr');
+                if (e.down) tr.className = 'is-down';
+                const dev = (id) => {
+                    const td = document.createElement('td'); td.className = 'name';
+                    const n = name.get(id);
+                    const b = document.createElement('button'); b.type = 'button'; b.className = 'linkbtn'; b.textContent = n?.label ?? id;
+                    b.addEventListener('click', () => { switchView('map'); topo.focus(id); });
+                    td.append(b);
+                    return td;
+                };
+                const st = topo.edgeInfo(e);
+                const badge = document.createElement('span');
+                badge.className = `badge plain ${e.down ? 'crit' : st.state === 'penuh' ? 'crit' : st.state === 'padat' ? 'warn' : st.state === 'normal' ? 'ok' : ''}`;
+                badge.textContent = st.state + (st.util != null ? ` ${st.util.toFixed(0)}%` : '');
+                const tdS = document.createElement('td'); tdS.append(badge);
+                tr.append(dev(e.from), cell(e.label_a || 'tidak diketahui', 'mono'), dev(e.to), cell(e.label_b || 'tidak diketahui', 'mono'),
+                    cell(e.sources.join(', ').replace('induk', 'perangkat induk')), tdS,
+                    cell(st.inB != null ? `${bps(st.inB)}bps` : '', 'num'), cell(st.outB != null ? `${bps(st.outB)}bps` : '', 'num'));
+                return tr;
+            }));
+        };
+        topo = createTopology($('[data-topo-canvas]', topoRoot), {
             dataUrl: () => `${topoRoot.dataset.url}?site=${siteSel.value}`,
             liveUrl: topoRoot.dataset.liveUrl,
             positionsUrl: topoRoot.dataset.positionsUrl,
             live: true,
             onStats: (s) => { $('[data-topo-stats]', topoRoot).textContent = `${s.devices} perangkat, ${s.links} sambungan, ${s.down} down${s.unknown_neighbors ? `, ${s.unknown_neighbors} tetangga belum terdaftar` : ''}`; },
-            onSelect: (n) => {
-                if (!n) return;
-                const rows = [['Alamat', n.host], ['Site', n.site], ['Status', { up: 'Online', problem: 'Ada problem', down: 'DOWN', unknown: 'Menunggu', maintenance: 'Maintenance', external: 'Belum terdaftar' }[n.state]],
-                    ['Penyebab', n.reason], ['RTT', n.rtt != null ? `${Number(n.rtt).toFixed(2).replace('.', ',')} ms` : null], ['Platform', n.platform]].filter(([, v]) => v);
-                info.innerHTML = '';
-                const h = document.createElement('div'); h.style.cssText = 'font-weight:600;margin-bottom:8px'; h.textContent = n.label; info.appendChild(h);
-                const dl = document.createElement('dl'); dl.className = 'facts';
-                rows.forEach(([k, v]) => { const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v; dl.append(dt, dd); });
-                info.appendChild(dl);
-                if (n.url) { const a = document.createElement('a'); a.href = n.url; a.className = 'btn sm'; a.style.marginTop = '12px'; a.textContent = 'Buka detail perangkat'; info.appendChild(a); }
-                else { const p = document.createElement('p'); p.className = 'muted'; p.style.fontSize = '12.5px'; p.textContent = 'Terlihat lewat LLDP/CDP tetapi belum didaftarkan. Tambahkan lewat menu Perangkat agar dipantau.'; info.appendChild(p); }
-            },
+            onData: renderRows,
+            onCrowded: (c) => { $('[data-topo-crowded]', topoRoot).hidden = !c; },
+            onSelect: showInfo,
         });
+        const switchView = (v) => {
+            $$('[data-topo-view]', topoRoot).forEach((b) => { const on = b.dataset.topoView === v; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+            $$('[data-topo-panel]', topoRoot).forEach((p) => { p.hidden = p.dataset.topoPanel !== v; });
+            if (v === 'map') setTimeout(() => topo.network.redraw(), 0);
+        };
+        $$('[data-topo-view]', topoRoot).forEach((b) => b.addEventListener('click', () => switchView(b.dataset.topoView)));
+        const legendBtn = $('[data-topo-legend]', topoRoot);
+        const legend = $('[data-topo-legend-panel]', topoRoot);
+        legendBtn.addEventListener('click', () => { legend.hidden = !legend.hidden; legendBtn.setAttribute('aria-expanded', String(!legend.hidden)); });
         topo.load().then(() => topo.startLive(5)).catch(() => {});
         topo.every(30);
-        siteSel.addEventListener('change', () => { try { localStorage.setItem('ant-topo-site', siteSel.value); } catch (e) { /* abaikan */ } topo.load().then(topo.fit); });
+        siteSel.addEventListener('change', () => { try { localStorage.setItem('ant-topo-site', siteSel.value); } catch (e) { /* abaikan */ } topo.load().then(() => topo.fit()); });
         $('[data-topo-live]', topoRoot).addEventListener('change', (e) => (e.target.checked ? topo.startLive(5) : topo.stopLive()));
-        $('[data-topo-fit]', topoRoot).addEventListener('click', topo.fit);
+        $('[data-topo-fit]', topoRoot).addEventListener('click', () => topo.fit());
         $('[data-topo-unlock]', topoRoot)?.addEventListener('click', () => topo.setPhysics(true));
         const save = $('[data-topo-save]', topoRoot);
         save?.addEventListener('click', async () => {
             save.disabled = true;
-            try { await topo.savePositions(); save.textContent = 'Tersimpan ✓'; } catch (e) { save.textContent = 'Gagal menyimpan'; }
-            setTimeout(() => { save.textContent = 'Simpan tata letak'; save.disabled = false; }, 2000);
+            try { await topo.savePositions(); save.textContent = 'Posisi tersimpan'; } catch (e) { save.textContent = 'Gagal menyimpan'; }
+            setTimeout(() => { save.textContent = 'Simpan posisi'; save.disabled = false; }, 2000);
         });
-        void bps;
     });
 
     // Form sambungan manual: muat daftar port perangkat terpilih
