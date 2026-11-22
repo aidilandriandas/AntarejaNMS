@@ -40,7 +40,7 @@ dibatasi ke server sendiri, `object-src 'none'`, `frame-ancestors 'self'`), `X-F
 
 | Port | Layanan | Catatan |
 |---|---|---|
-| 8443/8080 | Web (HTTPS; HTTP dialihkan) | Satu-satunya pintu untuk pengguna |
+| 80/443 (bisa diganti di `.env`) | Web (HTTPS; HTTP dialihkan) | Satu-satunya pintu untuk pengguna |
 | 514 UDP/TCP | Penerima syslog | Hanya menerima & menyimpan teks; batas laju per IP |
 | — | API collector `:9274`, PostgreSQL, VictoriaMetrics, go2rtc | **Tidak** dipublikasikan; hanya jaringan Docker. Token API = HMAC dari `ANTAREJA_APP_KEY` |
 
@@ -79,7 +79,7 @@ terpisah dari berkasnya. Impor & ekspor khusus admin dan tercatat di jejak audit
 1. `deploy/.env`: `DB_PASSWORD` & `ANTAREJA_APP_KEY` acak; simpan cadangan `ANTAREJA_APP_KEY` di tempat aman
    (tanpa kunci ini semua kredensial terenkripsi tidak bisa dibuka).
 2. Ganti sertifikat HTTPS dengan sertifikat kantor.
-3. Firewall VM: buka 8443/8080 hanya untuk jaringan kantor/NOC, 514 hanya dari subnet manajemen perangkat.
+3. Firewall VM: buka port web (bawaan 80/443) hanya untuk jaringan kantor/NOC, 514 hanya dari subnet manajemen perangkat.
 4. Buat akun per orang (bukan akun bersama); viewer untuk layar NOC & pemantau.
 5. Arahkan `BACKUP_DIR` ke NAS; uji `./antareja.sh restore` sekali.
 6. Community SNMP read-only khusus NMS (bukan `public`), user SSH backup dengan hak baca saja.

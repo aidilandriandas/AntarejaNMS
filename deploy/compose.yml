@@ -72,17 +72,17 @@ services:
       collector:
         condition: service_started
     ports:
-      - "${HTTPS_PORT:-8443}:443"   # HTTPS (sertifikat self-signed bawaan; ganti dengan sertifikat kantor bila ada)
-      - "${HTTP_PORT:-8080}:80"     # dialihkan ke HTTPS
+      - "${HTTPS_PORT:-443}:443"    # HTTPS (sertifikat self-signed bawaan; ganti dengan sertifikat kantor bila ada)
+      - "${HTTP_PORT:-80}:80"       # http://IP-VM dialihkan otomatis ke HTTPS
     environment:
       APP_NAME: ANTAREJA NMS
       APP_ENV: production
       APP_DEBUG: "false"
       APP_KEY: ${ANTAREJA_APP_KEY}
-      APP_URL: ${APP_URL:-https://localhost:8443}
+      APP_URL: ${APP_URL:-https://localhost}
       APP_TIMEZONE: ${TZ:-Asia/Jakarta}
       APP_FORCE_HTTPS: "true"
-      APP_HTTPS_PORT: ${HTTPS_PORT:-8443}
+      APP_HTTPS_PORT: ${HTTPS_PORT:-443}
       ANTAREJA_SYSLOG_PORT: ${SYSLOG_PORT:-514}
       DB_CONNECTION: pgsql
       DB_HOST: db

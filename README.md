@@ -99,7 +99,7 @@ Keamanan: lihat [`docs/KEAMANAN.md`](docs/KEAMANAN.md) — kontrol yang diterapk
  (switch, radio,   ──syslog UDP/TCP 514────►       │        ──► VictoriaMetrics (grafik)
   NVR, UPS)                                         │ API internal (hanya jaringan Docker)
                                                     ▼
- Browser ◄──HTTPS 8443── web (Laravel + nginx) ── go2rtc (video CCTV, internal) ── backup (pg_dump terjadwal)
+ Browser ◄──HTTP 80 / HTTPS 443── web (Laravel + nginx) ── go2rtc (video CCTV, internal) ── backup (pg_dump terjadwal)
 ```
 
 Semua berjalan sebagai satu Docker Compose (proyek `antareja-core`) di satu VM. Collector **hanya membaca** perangkat:
@@ -191,7 +191,7 @@ sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=$(openssl rand -hex 24)|" .env
 sed -i "s|^ANTAREJA_APP_KEY=.*|ANTAREJA_APP_KEY=base64:$(openssl rand -base64 32)|" .env
 ```
 
-Ganti `IP-VM-ANDA` dengan IP VM (contoh `10.10.0.50`):
+Ganti `IP-VM-ANDA` di `APP_URL` dengan IP VM atau nama DNS (contoh `10.10.0.50`):
 
 ```bash
 sed -i "s|IP-VM-ANDA|10.10.0.50|" .env
@@ -220,7 +220,7 @@ Semua baris harus normal dan diakhiri "Semua pemeriksaan dasar OK".
 
 ## 6. Setup awal di browser
 
-1. Buka **`https://IP-VM:8443`**. Sebelum sertifikat kantor dipasang, browser memperingatkan sertifikat — pilih lanjutkan.
+1. Buka **`http://IP-VM`** (otomatis dialihkan ke `https://IP-VM`). Sebelum sertifikat kantor dipasang, browser memperingatkan sertifikat — pilih lanjutkan.
 2. Halaman **Setup Awal** muncul sekali: buat akun **admin**.
 3. *Administrasi → Pengguna*: buat **akun per orang** (bukan akun bersama). Peran: lihat [Peran pengguna](#peran-pengguna).
 4. *Site*: tambahkan site (kode singkat, mis. `PIT-A`, `JETTY`).
@@ -247,7 +247,7 @@ DNS sertifikat bila ada.
 
 | Port | Dari mana | Untuk |
 |---|---|---|
-| 8443/TCP (+8080 dialihkan) | Jaringan kantor/NOC | Web |
+| 80/TCP & 443/TCP (80 dialihkan ke 443) | Jaringan kantor/NOC | Web |
 | 514/UDP & TCP | Subnet manajemen perangkat | Syslog |
 | 22/TCP | Admin server saja | SSH ke VM |
 
@@ -384,8 +384,8 @@ Semua dari folder `deploy`:
 |---|---|---|
 | `DB_PASSWORD` | — (wajib, acak) | Password database internal |
 | `ANTAREJA_APP_KEY` | — (wajib, acak) | Kunci enkripsi kredensial & sesi. **Simpan cadangannya** |
-| `APP_URL` | — | Alamat web, mis. `https://10.10.0.50:8443` atau `https://nms.perusahaan.co.id:8443` |
-| `HTTPS_PORT` / `HTTP_PORT` | `8443` / `8080` | Port web (HTTP dialihkan ke HTTPS) |
+| `APP_URL` | — | Alamat web untuk tautan di notifikasi/laporan, mis. `https://10.10.0.50` atau `https://nms.perusahaan.co.id` (tambahkan `:PORT` bila `HTTPS_PORT` bukan 443) |
+| `HTTP_PORT` / `HTTPS_PORT` | `80` / `443` | Port web; akses `http://IP-VM` dialihkan otomatis ke HTTPS. Ganti bila bentrok dengan aplikasi lain di VM yang sama (lihat [Mengganti port](#mengganti-port)) |
 | `SYSLOG_PORT` | `514` | Port syslog (UDP & TCP) |
 | `PING_INTERVAL` | `60s` | Jarak antar putaran ping |
 | `SNMP_INTERVAL` | `5m` | Jarak antar putaran SNMP |
@@ -396,6 +396,26 @@ Semua dari folder `deploy`:
 | `ANTAREJA_TAG` | `0.2.0-dev` | Label versi image |
 
 Ambang problem, retensi syslog, jadwal backup, target SLA, dan sumber peta diatur dari web (admin).
+
+### Mengganti port
+
+Bawaannya web memakai port **80** dan **443**: cukup ketik `http://IP-VM` di browser. Bila port itu sudah dipakai aplikasi
+lain di VM yang sama (mis. NMS lama), pilih port lain di `deploy/.env`, contoh:
+
+```
+HTTP_PORT=8080
+HTTPS_PORT=8443
+APP_URL=https://10.10.0.50:8443
+```
+
+Lalu terapkan:
+
+```bash
+cd /opt/antareja/deploy && ./antareja.sh up
+```
+
+Akses menjadi `http://IP-VM:8080` (dialihkan ke `https://IP-VM:8443`). Sesuaikan juga aturan firewall. Port syslog
+diganti dengan `SYSLOG_PORT` dengan cara yang sama (perangkat lalu mengirim ke port tersebut).
 
 ## Peran pengguna
 
@@ -409,7 +429,7 @@ Ambang problem, retensi syslog, jadwal backup, target SLA, dan sumber peta diatu
 
 | Gejala | Periksa |
 |---|---|
-| Web tidak terbuka | `./antareja.sh cek`; `./antareja.sh logs web`; firewall Proxmox port 8443 |
+| Web tidak terbuka | `./antareja.sh cek`; `./antareja.sh logs web`; firewall Proxmox port 80/443; port sudah dipakai aplikasi lain? (`sudo ss -ltnp \| grep -E ':(80\|443) '`) → lihat [Mengganti port](#mengganti-port) |
 | Semua perangkat *down* padahal hidup | VM bisa ping perangkat? (`ping IP` dari VM); `./antareja.sh logs collector` |
 | SNMP gagal | Community/user v3 benar? ACL perangkat mengizinkan IP VM? Coba `snmpwalk -v2c -c COMMUNITY IP .1.3.6.1.2.1.1` dari VM |
 | Backup konfigurasi "host key berubah" | Perangkat diganti/di-reset? Bila ya, tekan *Reset host key* di halaman perangkat |

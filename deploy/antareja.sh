@@ -41,7 +41,7 @@ case "${1:-}" in
             st=$($DC ps --format '{{.State}} {{.Health}}' "$s" 2>/dev/null | head -1)
             case "$st" in running*unhealthy*|'') say "Layanan $s" "MASALAH (${st:-tidak berjalan})"; ok=1 ;; *) say "Layanan $s" "$st" ;; esac
         done
-        port=$(grep -E '^HTTPS_PORT=' .env | cut -d= -f2-); port=${port:-8443}
+        port=$(grep -E '^HTTPS_PORT=' .env | cut -d= -f2-); port=${port:-443}
         code=$(curl -sk -o /dev/null -w '%{http_code}' "https://127.0.0.1:$port/login" || true)
         case "$code" in 200|302) say "Web https://…:$port" "menjawab ($code)" ;; *) say "Web https://…:$port" "TIDAK MENJAWAB ($code)"; ok=1 ;; esac
         n=$($DC exec -T db psql -U antareja -d antareja -qtAc "SELECT count(*) FROM devices WHERE enabled" 2>/dev/null || echo "?")
