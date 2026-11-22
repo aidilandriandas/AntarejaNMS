@@ -118,6 +118,14 @@ svg.i { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none;
 .map-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
 .map-empty { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 500; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; font-size: 13px; box-shadow: var(--shadow); max-width: calc(100% - 24px); }
 .map-settings { border-top: 1px solid var(--line); }
+.map-jump { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); min-width: 150px; max-height: 46vh; overflow: auto; font: 13px var(--sans); }
+.map-jump .mj-hd { display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); }
+.map-jump .mj-hd button { border: 0; background: none; color: var(--accent); cursor: pointer; font: 600 12px var(--sans); }
+.map-jump .mj-it { display: flex; align-items: center; gap: 7px; width: 100%; border: 0; background: none; padding: 6px 10px; cursor: pointer; color: inherit; text-align: left; font: 500 13px var(--sans); }
+.map-jump .mj-it:hover { background: var(--surface-2); }
+.map-jump .mj-it em { margin-left: auto; font-style: normal; font-size: 11px; color: var(--crit); font-weight: 600; }
+.map-jump .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex: none; }
+.leaflet-control-layers { background: var(--surface); color: var(--ink); border-radius: 8px !important; font: 13px var(--sans); }
 .map-settings summary { padding: 12px 16px; cursor: pointer; font-weight: 600; }
 .dot.up, .mk-site.up, .mk-dev.up { --c: var(--ok); } .dot.problem, .mk-site.problem, .mk-dev.problem { --c: var(--warn); }
 .dot.down, .mk-site.down, .mk-dev.down { --c: var(--crit); } .dot.maintenance, .mk-site.maintenance, .mk-dev.maintenance { --c: var(--info); }

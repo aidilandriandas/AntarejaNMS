@@ -18,8 +18,17 @@ export function createMap(el, { csrf, onSelect }) {
         map.setMaxBounds(L.latLngBounds(bounds).pad(0.25));
         el.classList.add('plan');
     } else {
-        if (el.dataset.tiles) {
-            L.tileLayer(el.dataset.tiles, { maxZoom: 19, attribution: esc(el.dataset.attr) }).addTo(map);
+        // Peta dasar: jalan / topografi / satelit (sesuai pengaturan admin); pilihan terakhir diingat per browser
+        const layers = JSON.parse(el.dataset.layers || '[]');
+        const base = {};
+        layers.forEach((l) => { base[l.name] = L.tileLayer(l.url, { maxZoom: l.max || 19, attribution: esc(l.attr), subdomains: 'abc' }); base[l.name]._key = l.key; });
+        let pick = null;
+        try { pick = localStorage.getItem('antareja.mapLayer'); } catch { /* abaikan */ }
+        const first = Object.values(base).find((t) => t._key === pick) || Object.values(base)[0];
+        if (first) {
+            first.addTo(map);
+            if (layers.length > 1) L.control.layers(base, null, { position: 'topright', collapsed: false }).addTo(map);
+            map.on('baselayerchange', (e) => { try { localStorage.setItem('antareja.mapLayer', e.layer._key); } catch { /* abaikan */ } });
         } else {
             el.classList.add('no-tiles');
         }
@@ -29,6 +38,36 @@ export function createMap(el, { csrf, onSelect }) {
     const round = (v) => (plan ? +v.toFixed(1) : +v.toFixed(6));
 
     const linkLayer = L.layerGroup().addTo(map);
+    // Daftar site: lompat ke lokasi (site tersebar di berbagai daerah)
+    let allPts = [];
+    const jump = L.control({ position: 'topright' });
+    jump.onAdd = () => {
+        const d = L.DomUtil.create('div', 'map-jump');
+        L.DomEvent.disableClickPropagation(d);
+        L.DomEvent.disableScrollPropagation(d);
+        return d;
+    };
+    jump.addTo(map);
+    const jumpEl = jump.getContainer();
+    jumpEl.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-go]');
+        if (!b) return;
+        if (b.dataset.go === 'all') {
+            if (allPts.length) allPts.length === 1 ? map.setView(allPts[0], 14) : map.fitBounds(allPts, { padding: [40, 40], maxZoom: 15 });
+        } else {
+            const m = siteMarkers.get(+b.dataset.go);
+            if (m) { map.flyTo(m.getLatLng(), plan ? map.getZoom() : 14, { duration: 0.8 }); m.openPopup(); }
+        }
+    });
+    const renderJump = (sites) => {
+        const placed = sites.filter((x) => x.lat !== null);
+        if (!placed.length) { jumpEl.hidden = true; return; }
+        jumpEl.hidden = false;
+        const order = { down: 0, problem: 1, maintenance: 2, up: 3, idle: 4 };
+        placed.sort((a, b) => (order[a.state] - order[b.state]) || a.code.localeCompare(b.code));
+        jumpEl.innerHTML = `<div class="mj-hd"><b>Site</b><button type="button" data-go="all">Semua</button></div>`
+            + placed.map((x) => `<button type="button" class="mj-it" data-go="${x.id}"><i class="dot ${x.state}"></i><span>${esc(x.code)}</span>${x.down ? `<em>${x.down} down</em>` : ''}</button>`).join('');
+    };
     const siteMarkers = new Map();
     const devMarkers = new Map();
     let editing = false;
@@ -65,7 +104,7 @@ export function createMap(el, { csrf, onSelect }) {
     const place = (store, key, item, icon, popup, type) => {
         let m = store.get(key);
         if (!m) {
-            m = L.marker([item.lat, item.lng], { icon, draggable: editing, riseOnHover: true, zIndexOffset: type === 'site' ? 0 : 500 });
+            m = L.marker([item.lat, item.lng], { icon, draggable: editing, riseOnHover: true, zIndexOffset: type === 'site' ? 1000 : 0 });
             m.on('dragend', () => {
                 const p = m.getLatLng();
                 save(type, item.id, round(p.lat), round(p.lng)).catch((e) => alert(`Posisi tidak tersimpan: ${e.message}`));
@@ -98,6 +137,8 @@ export function createMap(el, { csrf, onSelect }) {
             const color = l.down ? 'var(--crit)' : (l.util >= 90 ? 'var(--warn)' : 'var(--accent)');
             L.polyline([l.a, l.b], { color, weight: l.down ? 4 : 3, opacity: 0.85, dashArray: l.logical ? '6 6' : null, className: l.down ? 'lk-down' : '' }).addTo(linkLayer);
         });
+        allPts = pts;
+        renderJump(j.sites);
         if (!fitted && pts.length && !plan) {
             fitted = true;
             pts.length === 1 ? map.setView(pts[0], 14) : map.fitBounds(pts, { padding: [40, 40], maxZoom: 15 });

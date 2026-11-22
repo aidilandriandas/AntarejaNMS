@@ -34,6 +34,10 @@ class MapController extends Controller
             'plan' => $plan,
             'tileUrl' => (string) Setting::get('map.tile_url', ''),
             'attribution' => (string) Setting::get('map.attribution', ''),
+            'topo' => (bool) Setting::get('map.topo', true),
+            'satUrl' => (string) Setting::get('map.satellite_url', ''),
+            'satAttr' => (string) Setting::get('map.satellite_attribution', ''),
+            'layers' => $this->layers(),
             'sites' => $sites,
             'devices' => $devices,
             'unplaced' => Device::where('enabled', true)->whereNull('lat')
@@ -155,14 +159,40 @@ class MapController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    /** Lapisan peta dasar yang ditawarkan di peta (dipilih pengguna lewat kontrol lapisan). */
+    private function layers(): array
+    {
+        $out = [];
+        if ($u = (string) Setting::get('map.tile_url', '')) {
+            $out[] = ['key' => 'jalan', 'name' => 'Jalan', 'url' => $u, 'attr' => (string) Setting::get('map.attribution', ''), 'max' => 19];
+        }
+        if ((bool) Setting::get('map.topo', true)) {
+            $out[] = ['key' => 'topo', 'name' => 'Topografi', 'url' => 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+                'attr' => 'Data © kontributor OpenStreetMap, SRTM · Gaya © OpenTopoMap (CC-BY-SA)', 'max' => 17];
+        }
+        if ($u = (string) Setting::get('map.satellite_url', '')) {
+            $out[] = ['key' => 'satelit', 'name' => 'Satelit', 'url' => $u, 'attr' => (string) Setting::get('map.satellite_attribution', ''), 'max' => 19];
+        }
+
+        return $out;
+    }
+
     public function settings(Request $request)
     {
+        $tile = ['nullable', 'string', 'max:300', 'regex:/^https?:\/\/[^\s"<>]+\{z\}[^\s"<>]*\{x\}[^\s"<>]*\{y\}[^\s"<>]*$/'];
         $d = $request->validate([
-            'tile_url' => ['nullable', 'string', 'max:300', 'regex:/^https?:\/\/[^\s"<>]+\{z\}[^\s"<>]*\{x\}[^\s"<>]*\{y\}[^\s"<>]*$/'],
+            'tile_url' => $tile,
             'attribution' => ['nullable', 'string', 'max:200'],
-        ], ['tile_url.regex' => 'URL tile harus http(s) dan memuat {z}, {x}, {y} — mis. https://tile.openstreetmap.org/{z}/{x}/{y}.png']);
+            'satellite_url' => $tile,
+            'satellite_attribution' => ['nullable', 'string', 'max:200', 'required_with:satellite_url'],
+        ], ['tile_url.regex' => 'URL tile harus http(s) dan memuat {z}, {x}, {y} — mis. https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            'satellite_url.regex' => 'URL tile satelit harus http(s) dan memuat {z}, {x}, {y}.',
+            'satellite_attribution.required_with' => 'Isi atribusi sesuai syarat penyedia citra satelit.']);
         Setting::put('map.tile_url', $d['tile_url'] ?? '');
         Setting::put('map.attribution', $d['attribution'] ?? '');
+        Setting::put('map.topo', $request->boolean('topo'));
+        Setting::put('map.satellite_url', $d['satellite_url'] ?? '');
+        Setting::put('map.satellite_attribution', $d['satellite_attribution'] ?? '');
         Audit::log('updated', 'Pengaturan sumber peta diubah');
 
         return back()->with('ok', 'Pengaturan peta disimpan.');

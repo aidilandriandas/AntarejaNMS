@@ -19,7 +19,7 @@
     <section class="card map-card">
         <div class="map" data-map data-url="{{ route('map.data', $plan ? ['denah' => $plan->id] : []) }}" data-pos-url="{{ route('map.position') }}"
             @if($plan) data-plan="{{ $plan->id }}" data-plan-w="{{ $plan->width }}" data-plan-h="{{ $plan->height }}" data-plan-img="{{ route('map.plan.image', $plan->id) }}?v={{ strtotime($plan->updated_at) }}"
-            @else data-tiles="{{ $tileUrl }}" data-attr="{{ $attribution }}" @endif></div>
+            @else data-layers='@json($layers)' @endif></div>
         <div class="map-legend">
             <span><i class="dot up"></i>Normal</span><span><i class="dot problem"></i>Ada problem</span><span><i class="dot down"></i>Ada yang down</span>
             <span><i class="dot maintenance"></i>Maintenance</span><span><i class="dot idle"></i>Tanpa perangkat</span>
@@ -64,11 +64,15 @@
             </div>
         </details>
         @unless($plan)
-        <details class="map-settings"><summary>Sumber gambar peta</summary>
+        <details class="map-settings" @if($errors->hasAny(['tile_url', 'satellite_url', 'satellite_attribution'])) open @endif><summary>Peta dasar</summary>
             <form method="post" action="{{ route('map.settings') }}" class="stack" style="padding:0 16px 16px">@csrf
-                <div class="field"><label for="tile_url">URL tile</label><input class="input mono @error('tile_url') is-err @enderror" id="tile_url" name="tile_url" value="{{ old('tile_url', $tileUrl) }}" placeholder="https://tile.openstreetmap.org/{z}/{x}/{y}.png"><x-field-error name="tile_url"/>
-                    <div class="hint">Diambil langsung oleh browser. Untuk ruang kontrol tanpa internet, isi alamat server tile internal; kosongkan untuk peta tanpa latar.</div></div>
+                <p class="muted" style="margin:0;font-size:12px">Gambar peta diambil langsung oleh browser. Untuk ruang kontrol tanpa internet, isi alamat server tile internal.</p>
+                <div class="field"><label for="tile_url">Peta jalan — URL tile</label><input class="input mono @error('tile_url') is-err @enderror" id="tile_url" name="tile_url" value="{{ old('tile_url', $tileUrl) }}" placeholder="https://tile.openstreetmap.org/{z}/{x}/{y}.png"><x-field-error name="tile_url"/></div>
                 <div class="field"><label for="attribution">Atribusi</label><input class="input" id="attribution" name="attribution" value="{{ old('attribution', $attribution) }}"></div>
+                <label class="check"><input type="checkbox" name="topo" value="1" @checked(old('topo', $topo))><span>Tawarkan peta topografi (OpenTopoMap)<small>Kontur & medan — berguna untuk area tambang. Butuh internet.</small></span></label>
+                <div class="field"><label for="satellite_url">Citra satelit — URL tile <span class="muted">(opsional)</span></label><input class="input mono @error('satellite_url') is-err @enderror" id="satellite_url" name="satellite_url" value="{{ old('satellite_url', $satUrl) }}" placeholder="https://…/{z}/{y}/{x}"><x-field-error name="satellite_url"/>
+                    <div class="hint">Isi hanya dari penyedia yang izinnya dimiliki perusahaan (umumnya berbayar), sesuai syarat penggunaannya.</div></div>
+                <div class="field"><label for="satellite_attribution">Atribusi satelit</label><input class="input @error('satellite_attribution') is-err @enderror" id="satellite_attribution" name="satellite_attribution" value="{{ old('satellite_attribution', $satAttr) }}"><x-field-error name="satellite_attribution"/></div>
                 <div><button class="btn primary sm">Simpan</button></div>
             </form>
         </details>
