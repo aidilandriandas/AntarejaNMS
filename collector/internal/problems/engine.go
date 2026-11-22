@@ -244,5 +244,25 @@ func (e *Engine) load(ctx context.Context, th Thresholds) ([]Device, error) {
 			devs[i].Conflicts = append(devs[i].Conflicts, c)
 		}
 	}
-	return devs, crows.Err()
+	if err := crows.Err(); err != nil {
+		return nil, err
+	}
+
+	cams, err := e.DB.Query(ctx, `SELECT device_id, id, name, COALESCE(health, ''), COALESCE(health_detail, ''), COALESCE(health_at > now() - interval '40 minutes', false)
+		FROM cameras WHERE enabled AND device_id IS NOT NULL`)
+	if err != nil {
+		return nil, err
+	}
+	defer cams.Close()
+	for cams.Next() {
+		var dev int64
+		var c CamHealth
+		if err := cams.Scan(&dev, &c.ID, &c.Name, &c.Health, &c.Detail, &c.Fresh); err != nil {
+			return nil, err
+		}
+		if i, ok := idx[dev]; ok {
+			devs[i].Cameras = append(devs[i].Cameras, c)
+		}
+	}
+	return devs, cams.Err()
 }

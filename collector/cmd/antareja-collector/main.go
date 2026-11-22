@@ -28,6 +28,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	apiserver "github.com/aidilandriandas/antarejanms/collector/internal/api"
+	"github.com/aidilandriandas/antarejanms/collector/internal/cctv"
 	"github.com/aidilandriandas/antarejanms/collector/internal/config"
 	"github.com/aidilandriandas/antarejanms/collector/internal/migrate"
 	"github.com/aidilandriandas/antarejanms/collector/internal/notify"
@@ -171,6 +172,26 @@ func run() error {
 				}
 			}()
 			defer api.Close()
+		}
+
+		if cfg.Go2rtcURL != "" {
+			chk := &cctv.Checker{DB: db, Box: box, Go2rtcURL: cfg.Go2rtcURL, Log: log}
+			go func() {
+				t := time.NewTicker(cfg.CCTVInterval)
+				defer t.Stop()
+				for {
+					cctx, cancel := context.WithTimeout(ctx, cfg.CCTVInterval)
+					if err := chk.Run(cctx); err != nil && ctx.Err() == nil {
+						log.Warn("cek gambar CCTV gagal", "galat", err)
+					}
+					cancel()
+					select {
+					case <-ctx.Done():
+						return
+					case <-t.C:
+					}
+				}
+			}()
 		}
 
 		log.Info("ANTAREJA collector berjalan", "versi", version, "ping", cfg.PingInterval, "snmp", cfg.SNMPInterval,

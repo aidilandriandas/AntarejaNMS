@@ -17,6 +17,8 @@ type Config struct {
 	HealthAddr     string
 	APIAddr        string // API internal untuk web; kosong = mati
 	BaseURL        string // alamat web untuk tautan di notifikasi
+	Go2rtcURL      string // go2rtc internal untuk cek gambar CCTV; kosong = mati
+	CCTVInterval   time.Duration
 	PingInterval   time.Duration
 	PingCount      int
 	PingTimeout    time.Duration
@@ -38,6 +40,8 @@ func Load() (Config, error) {
 		HealthAddr:     env("ANTAREJA_HEALTH_ADDR", "127.0.0.1:9273"),
 		APIAddr:        os.Getenv("ANTAREJA_API_ADDR"),
 		BaseURL:        os.Getenv("ANTAREJA_BASE_URL"),
+		Go2rtcURL:      os.Getenv("ANTAREJA_GO2RTC_URL"),
+		CCTVInterval:   dur("ANTAREJA_CCTV_INTERVAL", 15*time.Minute),
 		PingInterval:   dur("ANTAREJA_PING_INTERVAL", 60*time.Second),
 		PingCount:      num("ANTAREJA_PING_COUNT", 3),
 		PingTimeout:    dur("ANTAREJA_PING_TIMEOUT", 2*time.Second),

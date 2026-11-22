@@ -141,3 +141,19 @@ func TestIPConflict(t *testing.T) {
 		t.Fatalf("%+v", r.Conds)
 	}
 }
+
+func TestCameraHealth(t *testing.T) {
+	devs := []Device{{ID: 4, Name: "NVR", Status: "up", Cameras: []CamHealth{
+		{ID: 1, Name: "CAM 01", Health: "covered", Detail: "gambar polos", Fresh: true},
+		{ID: 2, Name: "CAM 02", Health: "nosignal", Detail: "login RTSP ditolak", Fresh: true},
+		{ID: 3, Name: "CAM 03", Health: "ok", Fresh: true},
+		{ID: 4, Name: "CAM 04", Health: "dark", Fresh: false},
+	}}}
+	r := Evaluate(devs, th)
+	if len(r.Conds) != 2 || r.Conds[1].Severity != "average" || r.Conds[0].Title != "Kamera CAM 01: gambar polos" {
+		t.Fatalf("%+v", r.Conds)
+	}
+	if !r.Unknown["4/sensor/cam:4"] {
+		t.Fatal("hasil basi harus unknown")
+	}
+}

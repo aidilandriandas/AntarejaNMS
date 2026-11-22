@@ -41,6 +41,15 @@ type Device struct {
 	Ports         []Port
 	Sensors       []Sensor
 	Conflicts     []Conflict // dari tabel ARP yang dilaporkan perangkat ini (router)
+	Cameras       []CamHealth
+}
+
+// CamHealth adalah hasil cek gambar kamera yang terkait perangkat ini (NVR / kamera).
+type CamHealth struct {
+	ID           int64
+	Name, Health string
+	Detail       string
+	Fresh        bool
 }
 
 // Conflict: satu IP yang berganti-ganti MAC pada router & port yang sama dalam jendela waktu.
@@ -222,6 +231,22 @@ func Evaluate(devs []Device, th Thresholds) Result {
 					Title:  fmt.Sprintf("Konflik IP %s: %s ↔ %s", c.IP, c.MACs[0], c.MACs[1]),
 					Detail: fmt.Sprintf("MAC berganti %d kali dalam %d jam di tabel ARP %s", c.Changes, th.ConflictHours, d.Name)})
 			}
+		}
+
+		for _, c := range d.Cameras {
+			k := fmt.Sprintf("cam:%d", c.ID)
+			if !c.Fresh || d.Status != "up" {
+				res.Unknown[SensorKey(d.ID, k)] = true // perangkat down sudah jadi problem sendiri
+				continue
+			}
+			if c.Health == "" || c.Health == "ok" {
+				continue
+			}
+			sev := "warning"
+			if c.Health == "nosignal" {
+				sev = "average"
+			}
+			add(Cond{Kind: "camera", Sensor: k, Severity: sev, Title: fmt.Sprintf("Kamera %s: %s", c.Name, c.Detail), Detail: "hasil cek gambar otomatis"})
 		}
 
 		sup, note := "", ""

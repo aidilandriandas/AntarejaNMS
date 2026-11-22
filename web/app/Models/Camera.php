@@ -15,7 +15,7 @@ class Camera extends Model
 
     protected function casts(): array
     {
-        return ['enabled' => 'boolean'];
+        return ['enabled' => 'boolean', 'health_at' => 'datetime', 'health_since' => 'datetime'];
     }
 
     public function device(): BelongsTo
@@ -26,6 +26,16 @@ class Camera extends Model
     public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
+    }
+
+    public const HEALTH = [
+        'ok' => ['Normal', 'ok'], 'dark' => ['Gelap', 'warn'], 'covered' => ['Tertutup / buram', 'warn'],
+        'frozen' => ['Beku', 'warn'], 'nosignal' => ['Tanpa sinyal', 'crit'],
+    ];
+
+    public function healthMeta(): ?array
+    {
+        return $this->health ? (self::HEALTH[$this->health] ?? null) : null;
     }
 
     public function setPassword(?string $plain): void

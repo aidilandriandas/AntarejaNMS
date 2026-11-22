@@ -2,18 +2,21 @@
 @section('title', 'Kelola kamera')
 @section('content')
 <div class="crumbs"><a href="{{ route('cctv.index') }}">CCTV</a> / Kelola</div>
-<div class="page-head"><div><h1>Kelola kamera</h1><p>Untuk NVR Hikvision: satu baris per kanal dengan host NVR. Path bawaan Hikvision: <code>/Streaming/Channels/{ch}01</code> (main) dan <code>{ch}02</code> (sub).</p></div></div>
+<div class="page-head"><div><h1>Kelola kamera</h1><p>Gambar setiap kamera dicek otomatis tiap 15 menit (gelap, tertutup/buram, beku, tanpa sinyal); kamera yang terkait perangkat menjadi problem bila bermasalah. Untuk NVR Hikvision: satu baris per kanal dengan host NVR. Path bawaan Hikvision: <code>/Streaming/Channels/{ch}01</code> (main) dan <code>{ch}02</code> (sub).</p></div></div>
 <div class="grid g-main">
     <section class="card"><div class="hd"><h2>Kamera</h2><span class="sub">{{ $cams->count() }}</span></div><div class="bd flush">
         @if($cams->isEmpty())<div class="empty">Belum ada kamera.</div>@else
         <div class="table-wrap"><table class="t">
-            <thead><tr><th>Nama</th><th>Sumber</th><th>Site</th><th></th></tr></thead>
+            <thead><tr><th>Nama</th><th>Sumber</th><th>Site</th><th>Gambar</th><th></th></tr></thead>
             <tbody>
             @foreach($cams as $c)
                 <tr class="{{ $c->enabled ? '' : 'is-off' }}">
                     <td class="name">{{ $c->name }}<small>{{ $c->device?->name ?? 'tanpa perangkat' }}{{ $c->enabled ? '' : ' · nonaktif' }}</small></td>
                     <td class="mono" style="font-size:12.5px">{{ $c->host }}:{{ $c->rtsp_port }} · kanal {{ $c->channel }}<div class="muted">{{ $c->username ? 'user ' . $c->username : 'tanpa login' }}</div></td>
                     <td>{{ $c->site?->code ?? '–' }}</td>
+                    <td>@if($h = $c->healthMeta())<span class="badge {{ $h[1] }}" title="{{ $c->health_detail }}">{{ $h[0] }}</span>
+                        <div class="muted" style="font-size:12px">{{ $c->health_at?->diffForHumans() }}{{ $c->brightness !== null ? ' · terang ' . round($c->brightness) . ' · detail ' . round($c->detail_score) : '' }}</div>
+                        @else<span class="muted">belum dicek</span>@endif</td>
                     <td class="right nowrap">
                         <details class="ack"><summary class="btn sm">Ubah</summary>
                             <form method="post" action="{{ route('cctv.update', $c) }}" class="card ack-pop form" style="width:340px">@csrf @method('PUT')

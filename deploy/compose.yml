@@ -50,6 +50,8 @@ services:
       ANTAREJA_LATENCY_HIGH_MS: ${LATENCY_HIGH_MS:-150}
       ANTAREJA_API_ADDR: ":9274"   # API internal untuk web (hanya jaringan Docker, tidak dipublikasikan)
       ANTAREJA_BASE_URL: ${APP_URL:-}   # tautan di pesan notifikasi
+      ANTAREJA_GO2RTC_URL: http://go2rtc:1984   # cek kesehatan gambar CCTV
+      ANTAREJA_CCTV_INTERVAL: ${CCTV_INTERVAL:-15m}
       TZ: ${TZ:-Asia/Jakarta}
 
   web:

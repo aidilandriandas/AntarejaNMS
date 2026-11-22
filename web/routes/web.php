@@ -7,6 +7,7 @@ use App\Http\Controllers\CctvController;
 use App\Http\Controllers\ChannelController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
+use App\Http\Controllers\DeviceImportController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\IpamController;
 use App\Http\Controllers\MaintenanceController;
@@ -38,6 +39,10 @@ Route::middleware('auth')->group(function () {
     Route::get('perangkat', [DeviceController::class, 'index'])->name('devices.index');
     Route::middleware('can:manage-devices')->group(function () {
         Route::get('perangkat/tambah', [DeviceController::class, 'create'])->name('devices.create');
+        Route::get('perangkat/impor', [DeviceImportController::class, 'form'])->name('devices.import');
+        Route::get('perangkat/impor/templat.csv', [DeviceImportController::class, 'template'])->name('devices.import.template');
+        Route::post('perangkat/impor/pratinjau', [DeviceImportController::class, 'preview'])->name('devices.import.preview');
+        Route::post('perangkat/impor', [DeviceImportController::class, 'store'])->name('devices.import.store');
         Route::post('perangkat', [DeviceController::class, 'store'])->name('devices.store');
         Route::post('perangkat/uji', [DeviceController::class, 'test'])->name('devices.test')->middleware('throttle:20,1');
         Route::get('perangkat/{device}/ubah', [DeviceController::class, 'edit'])->name('devices.edit');
