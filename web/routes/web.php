@@ -25,6 +25,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SensorController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\StatusLinkController;
+use App\Http\Controllers\SystemController;
 use App\Http\Controllers\TopologyController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -135,6 +136,7 @@ Route::middleware('auth')->group(function () {
         Route::post('log/pengaturan', [LogController::class, 'settings'])->name('logs.settings');
         Route::post('peta/pengaturan', [MapController::class, 'settings'])->name('map.settings');
         Route::get('tautan-status', [StatusLinkController::class, 'index'])->name('status.links');
+        Route::get('sistem', [SystemController::class, 'index'])->name('system.index');
         Route::get('ekspor-impor', [ConfigTransferController::class, 'index'])->name('transfer.index');
         Route::post('ekspor-impor/ekspor', [ConfigTransferController::class, 'export'])->name('transfer.export')->middleware('throttle:10,1');
         Route::post('ekspor-impor/pratinjau', [ConfigTransferController::class, 'preview'])->name('transfer.preview')->middleware('throttle:10,1');

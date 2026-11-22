@@ -42,6 +42,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/snmp"
 	"github.com/aidilandriandas/antarejanms/collector/internal/store"
 	"github.com/aidilandriandas/antarejanms/collector/internal/syslog"
+	"github.com/aidilandriandas/antarejanms/collector/internal/system"
 )
 
 var version = "0.2.0-dev"
@@ -248,14 +249,32 @@ func run() error {
 			}
 		}()
 
+		mon := &system.Monitor{DB: db, Notify: disp, Log: log, Version: version, Started: time.Now(),
+			C: system.Counters{LastPing: p.LastPing, LastSNMP: p.LastSNMP}}
 		if cfg.SyslogUDP != "" || cfg.SyslogTCP != "" {
 			sl := &syslog.Server{DB: db, Log: log, UDPAddr: cfg.SyslogUDP, TCPAddr: cfg.SyslogTCP}
+			mon.C.Syslog = func() (int64, int64, int64) { return sl.Received.Load(), sl.Stored.Load(), sl.Dropped.Load() }
 			go func() {
 				if err := sl.Run(ctx); err != nil {
 					log.Error("penerima syslog gagal", "galat", err)
 				}
 			}()
 		}
+		// Kesehatan ANTAREJA sendiri: detak tiap menit + peringatan sistem ke kanal notifikasi
+		go func() {
+			t := time.NewTicker(time.Minute)
+			defer t.Stop()
+			for {
+				if err := mon.Run(ctx); err != nil && ctx.Err() == nil {
+					log.Warn("pemantauan sistem gagal", "galat", err)
+				}
+				select {
+				case <-ctx.Done():
+					return
+				case <-t.C:
+				}
+			}
+		}()
 
 		log.Info("ANTAREJA collector berjalan", "versi", version, "ping", cfg.PingInterval, "snmp", cfg.SNMPInterval,
 			"metrik", cfg.VMURL != "")

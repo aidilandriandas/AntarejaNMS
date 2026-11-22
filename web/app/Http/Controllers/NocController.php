@@ -60,6 +60,12 @@ class NocController extends Controller
         $sev = collect(Problem::SEVERITIES)->map(fn ($m, $k) => ['key' => $k, 'label' => $m[0], 'tone' => $m[1],
             'n' => $problems->where('severity', $k)->whereNull('acked_at')->whereNull('suppressed')->count()])->values();
 
+        // Collector tidak melapor: semua status di layar usang — peringatan ini mengalahkan alarm lain
+        [$stale, , $beat] = SystemController::brief();
+        if ($stale) {
+            $alarm = ['level' => 'crit', 'text' => 'COLLECTOR TIDAK MELAPOR' . ($beat ? ' SEJAK ' . $beat->format('H.i') : '') . ' — DATA USANG'];
+        }
+
         return response()->json([
             'time' => now()->toIso8601String(),
             'alarm' => $alarm,

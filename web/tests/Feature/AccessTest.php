@@ -10,7 +10,7 @@ class AccessTest extends TestCase
 {
     use DatabaseTransactions;
 
-    private const ADMIN_ONLY = ['/pengguna', '/audit', '/notifikasi', '/backup', '/laporan/terjadwal', '/tautan-status', '/ekspor-impor'];
+    private const ADMIN_ONLY = ['/pengguna', '/audit', '/notifikasi', '/backup', '/laporan/terjadwal', '/tautan-status', '/ekspor-impor', '/sistem'];
 
     private const ENGINEER = ['/perangkat/tambah', '/perangkat/impor', '/discovery', '/cctv/kelola'];
 

@@ -2,6 +2,8 @@
     $u = auth()->user();
     $downCount = \App\Models\Device::where('enabled', true)->where('status', 'down')->count();
     $probCount = \App\Models\Problem::whereNull('resolved_at')->whereNull('acked_at')->whereNull('suppressed')->count();
+    [$sysStale, $sysAlerts, $sysBeat] = \App\Http\Controllers\SystemController::brief();
+    $sysIssue = $sysStale || $sysAlerts > 0;
     $nav = fn (string $pattern) => request()->routeIs($pattern) ? 'on' : '';
 @endphp
 <!DOCTYPE html>
@@ -50,6 +52,8 @@
                 <a href="{{ route('transfer.index') }}" class="{{ $nav('transfer.*') }}"><x-icon name="download"/>Ekspor & impor</a>
                 <a href="{{ route('status.links') }}" class="{{ $nav('status.*') }}"><x-icon name="share"/>Tautan status</a>
                 <a href="{{ route('audit.index') }}" class="{{ $nav('audit.*') }}"><x-icon name="audit"/>Jejak audit</a>
+                <a href="{{ route('system.index') }}" class="{{ $nav('system.*') }}"><x-icon name="pulse"/>Kesehatan sistem
+                    @if($sysIssue)<span class="count" title="Ada masalah sistem">!</span>@endif</a>
             @endcan
         </nav>
         <div class="side-foot">ANTAREJA NMS v{{ config('antareja.version') }}</div>
@@ -70,6 +74,12 @@
             <form method="post" action="{{ route('logout') }}">@csrf<button class="iconbtn" title="Keluar" aria-label="Keluar"><x-icon name="logout"/></button></form>
         </header>
         <main class="content">
+            @if($sysStale)
+                <div class="alert error sys-banner" role="alert"><x-icon name="alert"/><div><b>Data tidak diperbarui:</b> collector ANTAREJA tidak melapor {{ $sysBeat ? 'sejak ' . $sysBeat->diffForHumans() : '' }}. Status perangkat di layar ini mungkin sudah usang.
+                    @can('admin')<a href="{{ route('system.index') }}">Kesehatan sistem →</a> · jalankan <code>./antareja.sh cek</code> di server.@else Hubungi admin NOC.@endcan</div></div>
+            @elseif($sysAlerts && $u->isAdmin() && ! request()->routeIs('system.*'))
+                <div class="alert warn sys-banner"><x-icon name="alert"/><div>Ada {{ $sysAlerts }} masalah sistem ANTAREJA (mis. backup/disk/notifikasi). <a href="{{ route('system.index') }}">Lihat Kesehatan sistem →</a></div></div>
+            @endif
             @include('partials.flash')
             @yield('content')
         </main>

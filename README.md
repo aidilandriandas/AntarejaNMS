@@ -85,6 +85,7 @@ berlisensi tertutup milik perusahaan. Lihat [`LICENSE`](LICENSE), [`docs/CLEAN-R
 | **Laporan terjadwal** | Ringkasan harian (kemarin), mingguan (Senin–Minggu) atau bulanan otomatis ke kanal notifikasi: ketersediaan vs target, per site, perangkat dengan downtime terbesar, yang sedang down, problem baru per severity, reboot, perubahan konfigurasi, syslog error. Email tampil rapi (HTML + teks), Telegram ringkas. Pratinjau & *Kirim sekarang* dari web (admin) |
 | **Tautan status** | Halaman status hanya-baca untuk manajemen tanpa akun (admin membuat tautan rahasia per site/semua, masa berlaku, bisa dicabut): status per site, ketersediaan bulan ini, gangguan, jumlah problem, opsional nama perangkat down. Tanpa IP/konfigurasi; token disimpan sebagai hash & tidak dicatat di log |
 | **Ekspor & impor konfigurasi** | Satu berkas JSON: site, perangkat (ambang, induk, koordinat), sambungan manual, subnet, kamera, kanal, laporan terjadwal, pengaturan — untuk pindah VM / VM uji / cadangan yang bisa dibaca. Rahasia opsional, dienkripsi frasa sandi (AES-256-GCM). Impor dengan pratinjau; menambah & memperbarui, tidak menghapus |
+| **Kesehatan sistem** | ANTAREJA memantau dirinya sendiri: detak collector, putaran ping/SNMP terakhir, backup (gagal/terlambat), ruang disk folder backup, layanan backup, kegagalan notifikasi, syslog dibuang, ukuran database. Masalah dikirim ke kanal notifikasi (saat muncul, pengingat tiap 6 jam, saat pulih; dicoba ulang 15 menit bila semua kanal gagal). Bila collector berhenti, semua halaman & Layar NOC menampilkan peringatan "data usang" |
 | **Topologi** | Peta otomatis dari **LLDP** dan **CDP**, sambungan manual (radio, NVR, kamera), garis putus-putus untuk perangkat induk. Warna garis = pemakaian, **trafik live** tiap 5 detik, perangkat down berdenyut, tetangga yang belum terdaftar tampil abu-abu, tata letak bisa disimpan |
 | **Peta lokasi** | Site & perangkat berkoordinat (menara radio, NVR) di atas peta jalan atau **topografi** (+ satelit bila perusahaan punya penyedia berlisensi), daftar site untuk lompat ke lokasi yang berjauhan: warna = status (down berdenyut), jumlah down, garis sambungan antarperangkat (merah bila putus). Posisi diatur dengan klik/geser di peta atau tempel koordinat. Sumber gambar peta bisa diganti ke server tile internal untuk ruang kontrol tanpa internet. **Denah tambang**: unggah gambar denah/pit (PNG/JPG/WebP) sebagai latar pengganti peta dunia — posisi per denah terpisah, gambar ikut backup database |
 | **Layar NOC** | Layar penuh untuk TV ruang kontrol (tombol `F`): alarm bertingkat (merah hanya untuk High/Disaster belum di-ACK) dengan **bunyi**, dinding status per site bergantian dengan peta topologi dan **peta lokasi** (peta jalan versi gelap), problem aktif, kejadian 1 jam, port tersibuk. Diperbarui tiap 15 detik |
@@ -370,7 +371,7 @@ Semua dari folder `deploy`:
 
 | Perintah | Fungsi |
 |---|---|
-| `./antareja.sh cek` | Periksa pemasangan: `.env`, layanan, web, perangkat up, backup terakhir |
+| `./antareja.sh cek` | Periksa pemasangan: `.env`, layanan, web, perangkat up, backup terakhir (dari web: *Administrasi → Kesehatan sistem*) |
 | `./antareja.sh up` | Jalankan / terapkan perubahan |
 | `./antareja.sh update` | Ambil versi terbaru dari Git lalu jalankan ulang (migrasi database otomatis) |
 | `./antareja.sh status` | Status container |

@@ -51,7 +51,17 @@ prune() {
 log "layanan backup berjalan, folder $DIR"
 until pg_isready -q; do sleep 2; done
 last_day=""
+disk_at=0
 while true; do
+    # Laporkan ruang disk folder backup tiap 5 menit (dipakai halaman Kesehatan sistem & peringatan disk hampir penuh)
+    if [ $(( $(date +%s) - disk_at )) -ge 300 ]; then
+        set -- $(df -Pk "$DIR" | awk 'NR==2 {print $2, $4}')
+        if [ -n "${1:-}" ]; then
+            q "INSERT INTO system_status (key, value, updated_at) VALUES ('backup', '{\"disk_total_kb\": $1, \"disk_free_kb\": $2}', now())
+               ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()" >/dev/null || true
+        fi
+        disk_at=$(date +%s)
+    fi
     # Backup yang tertinggal 'running' (layanan sempat mati) ditandai gagal
     q "UPDATE backups SET status = 'failed', error = 'terputus (layanan backup restart)', finished_at = now() WHERE status = 'running' AND started_at < now() - interval '2 hours'" >/dev/null
     # Permintaan manual dari web

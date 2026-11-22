@@ -53,6 +53,19 @@ func New(cfg config.Config, st store.Store, box *secret.Box, log *slog.Logger) *
 }
 
 // Healthy: putaran ping terakhir selesai belum lebih dari 3× interval.
+// LastPing waktu putaran ping terakhir selesai (nol bila belum ada).
+func (p *Poller) LastPing() time.Time { return unixOrZero(p.lastPing.Load()) }
+
+// LastSNMP waktu putaran SNMP terakhir selesai (nol bila belum ada).
+func (p *Poller) LastSNMP() time.Time { return unixOrZero(p.lastSNMP.Load()) }
+
+func unixOrZero(v int64) time.Time {
+	if v == 0 {
+		return time.Time{}
+	}
+	return time.Unix(v, 0)
+}
+
 func (p *Poller) Healthy() (bool, string) {
 	last := p.lastPing.Load()
 	if last == 0 {
