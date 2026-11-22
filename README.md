@@ -31,6 +31,8 @@ Network Monitoring System untuk infrastruktur ICT tambang. Engine dan aplikasi d
 | Notifikasi | **Telegram**, **Email (SMTP)**, **Webhook** (gateway WhatsApp, n8n, sistem tiket). Per kanal: severity minimal, site, kirim saat pulih. Banyak problem sekaligus → 1 pesan ringkasan |
 | Eskalasi | Kanal dengan jeda (mis. 30 menit) hanya dikirimi problem yang **belum di-ACK** selama itu — untuk supervisor/manajemen |
 | **Profil & sensor** | Deteksi otomatis: MikroTik (suhu, tegangan, sinyal/CCQ/rate wireless), Ubiquiti airMAX (sinyal, CCQ, quality, capacity, jarak link), Cisco (CPU, memori, suhu), UPS-MIB & APC (di baterai, muatan, waktu cadangan, beban), plus CPU/memori/disk/suhu standar. Sensor di luar ambang jadi problem. Halaman **Sensor**: Radio & PTP, Daya & UPS, Sistem & suhu |
+| **Backup** | Backup database harian otomatis (jam & jumlah simpanan diatur dari web) + tombol *Backup sekarang*, unduh dari web, pemulihan dengan `./antareja.sh restore`. Arahkan `BACKUP_DIR` ke NAS agar aman bila VM rusak |
+| **SLA bulanan** | Ketersediaan per perangkat & per site, downtime, jumlah gangguan, rata-rata waktu pulih; jam maintenance tidak dihitung; target SLA; ekspor CSV (Excel) & cetak/PDF |
 | **Topologi** | Peta otomatis dari **LLDP** dan **CDP**, sambungan manual (radio, NVR, kamera), garis putus-putus untuk perangkat induk. Warna garis = pemakaian, **trafik live** tiap 5 detik, perangkat down berdenyut, tetangga yang belum terdaftar tampil abu-abu, tata letak bisa disimpan |
 | **Layar NOC** | Layar penuh untuk TV ruang kontrol (tombol `F`): alarm bertingkat (merah hanya untuk High/Disaster belum di-ACK) dengan **bunyi**, dinding status per site bergantian dengan peta topologi, problem aktif, kejadian 1 jam, port tersibuk. Diperbarui tiap 15 detik |
 
@@ -126,6 +128,23 @@ Log collector:
 docker compose logs -f collector
 ```
 
+## Operasional sehari-hari (`deploy/antareja.sh`)
+
+| Perintah | Fungsi |
+|---|---|
+| `./antareja.sh up` | Jalankan / perbarui semua layanan |
+| `./antareja.sh update` | `git pull` lalu jalankan ulang |
+| `./antareja.sh status` | Status container |
+| `./antareja.sh logs collector` | Log (collector, web, backup, db, metrics) |
+| `./antareja.sh backup` | Backup database sekarang dan tunggu sampai selesai |
+| `./antareja.sh backups` | Daftar berkas backup |
+| `./antareja.sh restore <berkas>` | Pulihkan database dari backup (minta konfirmasi `PULIHKAN`) |
+
+**Pindah / pulihkan ke VM baru:** pasang ANTAREJA seperti biasa memakai `deploy/.env` lama (terutama
+`ANTAREJA_APP_KEY` yang sama), salin berkas `.dump` ke folder backup, lalu jalankan `./antareja.sh restore <berkas>`.
+Simpan salinan `deploy/.env` di tempat aman terpisah: tanpa kunci yang sama, kredensial SNMP dan notifikasi di
+dalam backup tidak bisa dibuka.
+
 ## Pengaturan (`deploy/.env`)
 
 | Variabel | Bawaan | Arti |
@@ -135,6 +154,7 @@ docker compose logs -f collector
 | `LATENCY_HIGH_MS` | `150` | Ambang kejadian latensi tinggi |
 | `METRICS_RETENTION` | `400d` | Lama data grafik disimpan |
 | `TZ` | `Asia/Jakarta` | Zona waktu log & tampilan |
+| `BACKUP_DIR` | `./backups` | Folder backup di VM (disarankan folder NAS yang di-mount) |
 | `APP_URL` | — | Alamat web, mis. `https://192.168.x.x:8443` |
 | `HTTPS_PORT` / `HTTP_PORT` | `8443` / `8080` | Port web (HTTP dialihkan ke HTTPS) |
 

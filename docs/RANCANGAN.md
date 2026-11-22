@@ -126,5 +126,6 @@ Engine problem berjalan di collector setelah setiap putaran ping (±1 menit):
 | 2a | Problem engine, korelasi perangkat induk, maintenance, notifikasi Telegram/email/webhook, eskalasi bila belum di-ACK, ambang dari web | selesai |
 | 2b | Topologi dari LLDP-MIB & CISCO-CDP-MIB + sambungan manual + perangkat induk, trafik live (API internal `/v1/live`), Layar NOC | selesai |
 | 3 | Profil perangkat (`collector/internal/profiles`, lihat `docs/PROFIL-PERANGKAT.md`): HOST-RESOURCES, ENTITY-SENSOR, MikroTik, Ubiquiti airMAX, Cisco, UPS-MIB, APC; tabel `device_sensors`, problem `sensor`, halaman Sensor. **Sisa:** verifikasi `snmpwalk` lapangan, profil Hikvision, ambang per perangkat | sebagian |
-| 4 | IPAM & konflik IP (ARP), CCTV live view, kualitas jaringan, SLA & laporan bulanan, backup NMS | |
+| 4a | Backup NMS (layanan `backup`: pg_dump terjadwal & manual, retensi, unduh dari web, `antareja.sh restore`) dan laporan SLA bulanan (downtime dikurangi jendela maintenance, target, CSV) | selesai |
+| 4b | **berikutnya:** IPAM & konflik IP (ARP), CCTV live view, kualitas jaringan | |
 | 5 | Alat impor dari `antareja-nms` (perangkat, site, grup) dan peralihan | |

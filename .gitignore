@@ -2,3 +2,4 @@
 /collector/bin/
 *.log
 .DS_Store
+/deploy/backups/

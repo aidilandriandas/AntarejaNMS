@@ -297,3 +297,13 @@ div.vis-tooltip { font: 400 12.5px/1.5 var(--sans) !important; white-space: pre-
 tr.sensor-row { cursor: pointer; }
 tr.sensor-row.sel td { background: var(--accent-soft) !important; }
 .pivot td.c { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* Cetak laporan */
+@media print {
+    .side, .top, .actions, .filters, .menu-toggle { display: none !important; }
+    .app { display: block; background: none; }
+    .content { padding: 0; max-width: none; }
+    body { background: #fff; }
+    .card, .kpi { box-shadow: none; break-inside: avoid; }
+    .g-main { grid-template-columns: 1fr; }
+}

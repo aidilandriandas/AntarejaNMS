@@ -10,3 +10,4 @@ web/storage/framework/cache/*
 web/storage/framework/sessions/*
 web/storage/framework/views/*
 web/.env
+deploy/backups

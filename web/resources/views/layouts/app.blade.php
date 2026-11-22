@@ -31,10 +31,13 @@
             <a href="{{ route('events.index') }}" class="{{ $nav('events.*') }}"><x-icon name="pulse"/>Kejadian</a>
             <a href="{{ route('sites.index') }}" class="{{ $nav('sites.*') }}"><x-icon name="map-pin"/>Site</a>
             <a href="{{ route('maintenance.index') }}" class="{{ $nav('maintenance.*') }}"><x-icon name="wrench"/>Maintenance</a>
+            <div class="grp">Laporan</div>
+            <a href="{{ route('reports.sla') }}" class="{{ $nav('reports.*') }}"><x-icon name="chart"/>SLA bulanan</a>
             @can('admin')
                 <div class="grp">Administrasi</div>
                 <a href="{{ route('channels.index') }}" class="{{ $nav('channels.*') }}"><x-icon name="bell"/>Notifikasi</a>
                 <a href="{{ route('users.index') }}" class="{{ $nav('users.*') }}"><x-icon name="users"/>Pengguna</a>
+                <a href="{{ route('backups.index') }}" class="{{ $nav('backups.*') }}"><x-icon name="database"/>Backup</a>
                 <a href="{{ route('audit.index') }}" class="{{ $nav('audit.*') }}"><x-icon name="audit"/>Jejak audit</a>
             @endcan
         </nav>

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\ChannelController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NocController;
 use App\Http\Controllers\ProblemController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SensorController;
 use App\Http\Controllers\SiteController;
@@ -63,6 +65,8 @@ Route::middleware('auth')->group(function () {
     Route::get('problem', [ProblemController::class, 'index'])->name('problems.index');
     Route::get('maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
     Route::get('sensor', [SensorController::class, 'index'])->name('sensors.index');
+    Route::get('laporan/sla', [ReportController::class, 'sla'])->name('reports.sla');
+    Route::get('laporan/sla.csv', [ReportController::class, 'csv'])->name('reports.sla.csv');
     Route::get('topologi', [TopologyController::class, 'index'])->name('topology.index');
     Route::get('topologi/data', [TopologyController::class, 'data'])->name('topology.data');
     Route::post('topologi/live', [TopologyController::class, 'live'])->name('topology.live')->middleware('throttle:40,1');
@@ -89,5 +93,11 @@ Route::middleware('auth')->group(function () {
         Route::delete('notifikasi/{channel}', [ChannelController::class, 'destroy'])->name('channels.destroy');
         Route::post('notifikasi/{channel}/uji', [ChannelController::class, 'test'])->name('channels.test')->middleware('throttle:10,1');
         Route::put('ambang', [ChannelController::class, 'thresholds'])->name('thresholds.update');
+        Route::put('laporan/sla/target', [ReportController::class, 'target'])->name('reports.sla.target');
+
+        Route::get('backup', [BackupController::class, 'index'])->name('backups.index');
+        Route::post('backup', [BackupController::class, 'store'])->name('backups.store')->middleware('throttle:6,1');
+        Route::put('backup/pengaturan', [BackupController::class, 'settings'])->name('backups.settings');
+        Route::get('backup/{backup}/unduh', [BackupController::class, 'download'])->name('backups.download')->whereNumber('backup');
     });
 });

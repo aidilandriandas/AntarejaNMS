@@ -44,5 +44,8 @@
 @case('expand')<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>@break
 @case('volume')<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/>@break
 @case('volume-x')<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9.5l4 5M21 9.5l-4 5"/>@break
+@case('chart')<path d="M4 20V4M4 20h16"/><path d="M8 16v-5M12 16V8M16 16v-3"/>@break
+@case('database')<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>@break
+@case('download')<path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/>@break
 @default<circle cx="12" cy="12" r="9"/>
 @endswitch</svg>
