@@ -460,3 +460,22 @@ pre.code.diff .del { background: var(--crit-soft); color: var(--crit); } pre.cod
 .spark .lim { stroke: var(--crit); stroke-width: 1; opacity: .7; }
 .ubar { width: 70px; height: 6px; border-radius: 3px; background: var(--surface-2); display: inline-block; margin-right: 8px; vertical-align: middle; overflow: hidden; }
 .ubar span { display: block; height: 100%; background: var(--ok); } .ubar span.warn { background: var(--warn); } .ubar span.crit { background: var(--crit); }
+/* Trafik live */
+.live-card .hd h2 { display: flex; align-items: center; gap: 8px; }
+.live-ctl { display: flex; gap: 6px; align-items: center; margin-left: auto; }
+.live-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--off); flex: none; }
+.live-dot.on { background: var(--ok); box-shadow: 0 0 0 0 var(--ok); animation: livepulse 1.6s infinite; }
+.live-dot.err { background: var(--crit); }
+@keyframes livepulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 60%, transparent); } 100% { box-shadow: 0 0 0 8px transparent; } }
+@media (prefers-reduced-motion: reduce) { .live-dot.on { animation: none; } }
+.live-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+.live-stats > div { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; }
+.live-stats .lbl { display: block; font-size: 12px; color: var(--muted); }
+.live-stats .lbl.in::before, .live-stats .lbl.out::before { content: ''; display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; background: var(--accent); }
+.live-stats .lbl.out::before { background: var(--info); }
+.live-stats b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; margin: 2px 0; }
+.live-stats small { color: var(--muted); font-size: 12px; }
+.live-note { font-size: 12px; margin: 8px 0 0; }
+.live-all { margin-left: auto; font-size: 12.5px; }
+.port-row.live-on [data-cell-in], .port-row.live-on [data-cell-out] { color: var(--accent); font-variant-numeric: tabular-nums; }
+@media (max-width: 700px) { .live-stats { grid-template-columns: 1fr; } .live-ctl { flex-wrap: wrap; } }

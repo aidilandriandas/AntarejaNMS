@@ -119,6 +119,7 @@ Route::middleware('auth')->group(function () {
     });
     Route::get('perangkat/{device}', [DeviceController::class, 'show'])->name('devices.show');
     Route::get('perangkat/{device}/grafik', [DeviceController::class, 'metrics'])->name('devices.metrics');
+    Route::post('perangkat/{device}/live', [DeviceController::class, 'live'])->name('devices.live')->middleware('throttle:150,1');
 
     Route::get('site', [SiteController::class, 'index'])->name('sites.index');
     Route::get('kejadian', [EventController::class, 'index'])->name('events.index');

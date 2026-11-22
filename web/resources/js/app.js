@@ -267,6 +267,11 @@ if (card) {
     setInterval(() => { if (!document.hidden) load(); }, 60000);
 }
 
+// ---------- Trafik live port (halaman perangkat) ----------
+if (document.querySelector('[data-live-card]')) {
+    import('./livetraffic.js').then(({ initLive }) => initLive());
+}
+
 // ---------- Halaman topologi ----------
 const topoRoot = $('[data-topology]');
 if (topoRoot) {

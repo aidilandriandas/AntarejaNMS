@@ -38,28 +38,50 @@
             <div class="bd"><div class="chart" data-chart></div></div>
         </section>
 
+        @if($device->snmp_enabled && $device->ports->isNotEmpty())
+        <section class="card live-card" data-live-card data-url="{{ route('devices.live', $device) }}" hidden>
+            <div class="hd"><h2><span class="live-dot" data-live-dot></span><span data-live-title>Trafik live</span></h2>
+                <div class="live-ctl">
+                    <div class="seg" role="group" aria-label="Interval">@foreach([2 => '2 dtk', 5 => '5 dtk', 10 => '10 dtk'] as $k => $v)<button type="button" data-live-int="{{ $k }}" class="{{ $k === 2 ? 'on' : '' }}">{{ $v }}</button>@endforeach</div>
+                    <button type="button" class="btn sm" data-live-pause>Jeda</button>
+                    <button type="button" class="btn sm" data-live-close aria-label="Tutup trafik live">✕</button>
+                </div></div>
+            <div class="bd">
+                <div class="live-stats">
+                    <div><span class="lbl in">Masuk</span><b data-live-v="in">–</b><small>rata-rata <span data-live-v="in-avg">–</span> · puncak <span data-live-v="in-max">–</span></small></div>
+                    <div><span class="lbl out">Keluar</span><b data-live-v="out">–</b><small>rata-rata <span data-live-v="out-avg">–</span> · puncak <span data-live-v="out-max">–</span></small></div>
+                    <div><span class="lbl">Pemakaian</span><b data-live-v="util">–</b><small data-live-v="info">–</small></div>
+                </div>
+                <div class="chart" data-live-chart></div>
+                <p class="muted live-note" data-live-note>Dibaca langsung dari perangkat (SNMP) setiap beberapa detik selama halaman ini terbuka; berhenti sendiri saat tab disembunyikan atau setelah 15 menit.</p>
+            </div>
+        </section>
+        @endif
+
         @if($device->snmp_enabled)
-        <section class="card">
-            <div class="hd"><h2>Port</h2><span class="sub">{{ $device->ports->count() }} port · klik baris untuk grafik trafik</span></div>
+        <section class="card" data-ports-card>
+            <div class="hd"><h2>Port</h2><span class="sub">{{ $device->ports->count() }} port · klik baris untuk grafik riwayat, <b>Live</b> untuk trafik saat ini</span>
+                @if($device->ports->isNotEmpty())<label class="check live-all"><input type="checkbox" data-live-all><span>Live semua port</span></label>@endif</div>
             <div class="bd flush">
                 @if($device->ports->isEmpty())
                     <div class="empty">{{ $device->snmp_ok === false ? 'SNMP gagal: ' . $device->snmp_error : 'Data port muncul setelah pembacaan SNMP pertama.' }}</div>
                 @else
                 <div class="table-wrap"><table class="t">
-                    <thead><tr><th>Port</th><th>Status</th><th class="num">Kecepatan</th><th class="num">Masuk</th><th class="num">Keluar</th><th>Pemakaian</th><th title="Problem bila port putus atau penuh">Pantau</th></tr></thead>
+                    <thead><tr><th>Port</th><th>Status</th><th class="num">Kecepatan</th><th class="num">Masuk</th><th class="num">Keluar</th><th>Pemakaian</th><th></th><th title="Problem bila port putus atau penuh">Pantau</th></tr></thead>
                     <tbody>
                     @foreach($device->ports as $p)
                         @php
                             $in = $traffic['in'][$p->if_index] ?? null; $out = $traffic['out'][$p->if_index] ?? null;
                             $util = $p->speed_bps > 0 && ($in !== null || $out !== null) ? min(100, max($in ?? 0, $out ?? 0) / $p->speed_bps * 100) : null;
                         @endphp
-                        <tr class="port-row {{ $p->oper_up ? '' : 'is-off' }}" data-port="{{ $p->if_index }}" data-port-name="{{ $p->label() }}" tabindex="0">
+                        <tr class="port-row {{ $p->oper_up ? '' : 'is-off' }}" data-port="{{ $p->if_index }}" data-port-name="{{ $p->label() }}" data-speed="{{ (int) $p->speed_bps }}" data-up="{{ $p->oper_up ? 1 : 0 }}" tabindex="0">
                             <td class="name">{{ $p->label() }}<small>{{ $p->alias ?: ($p->descr !== $p->name ? $p->descr : '') }}</small></td>
                             <td>@if(! $p->admin_up)<span class="badge">dimatikan</span>@elseif($p->oper_up)<span class="badge ok">up</span>@else<span class="badge">down</span>@endif</td>
                             <td class="num">{{ $p->speed_bps ? \App\Support\Fmt::bps((float) $p->speed_bps) : '–' }}</td>
-                            <td class="num">{{ \App\Support\Fmt::bps($in) }}</td>
-                            <td class="num">{{ \App\Support\Fmt::bps($out) }}</td>
-                            <td>@if($util !== null)<div class="bar {{ $util >= 90 ? 'crit' : ($util >= 70 ? 'warn' : '') }}" title="{{ number_format($util, 1, ',', '.') }}%"><span style="width:{{ max(1, $util) }}%"></span></div>@else<span class="muted">–</span>@endif</td>
+                            <td class="num" data-cell-in>{{ \App\Support\Fmt::bps($in) }}</td>
+                            <td class="num" data-cell-out>{{ \App\Support\Fmt::bps($out) }}</td>
+                            <td data-cell-util>@if($util !== null)<div class="bar {{ $util >= 90 ? 'crit' : ($util >= 70 ? 'warn' : '') }}" title="{{ number_format($util, 1, ',', '.') }}%"><span style="width:{{ max(1, $util) }}%"></span></div>@else<span class="muted">–</span>@endif</td>
+                            <td><button type="button" class="btn sm live-btn" data-live-port="{{ $p->if_index }}" title="Trafik live port {{ $p->label() }}">Live</button></td>
                             <td>
                                 @php($mon = in_array($p->if_index, $monitored))
                                 @can('manage-devices')

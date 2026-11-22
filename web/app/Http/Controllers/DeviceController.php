@@ -153,6 +153,26 @@ class DeviceController extends Controller
         return response()->json($res); // tidak memuat kredensial
     }
 
+    /**
+     * Trafik live: counter oktet port saat ini langsung dari perangkat (SNMP GET lewat collector, maks. 60 port).
+     * Laju dihitung di browser dari selisih dua pembacaan. Hanya membaca; semua peran boleh.
+     */
+    public function live(Request $request, Device $device, \App\Services\Collector $collector): JsonResponse
+    {
+        $d = $request->validate(['ports' => ['required', 'array', 'min:1', 'max:60'], 'ports.*' => ['integer', 'min:1']]);
+        if (! $device->snmp_enabled) {
+            return response()->json(['samples' => [], 'error' => 'SNMP perangkat ini dimatikan.']);
+        }
+        try {
+            $samples = $collector->live(array_map(fn ($i) => ['device_id' => $device->id, 'if_index' => (int) $i], array_values(array_unique($d['ports']))));
+        } catch (\Throwable) {
+            return response()->json(['samples' => [], 'error' => 'Collector tidak terjangkau.']);
+        }
+
+        return response()->json(['samples' => array_map(fn ($x) => ['if' => $x['if_index'], 'in' => $x['in'], 'out' => $x['out'], 'at' => $x['at']], $samples),
+            'error' => $samples ? null : 'Perangkat tidak menjawab SNMP.']);
+    }
+
     /** Data grafik perangkat (dibaca server dari VictoriaMetrics). */
     public function metrics(Request $request, Device $device, Metrics $metrics): JsonResponse
     {

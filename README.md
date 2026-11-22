@@ -61,7 +61,7 @@ berlisensi tertutup milik perusahaan. Lihat [`LICENSE`](LICENSE), [`docs/CLEAN-R
 | Keamanan | Semua kredensial (SNMP, SSH, kamera, notifikasi) terenkripsi di database & tidak pernah dikirim ke browser. Hanya membaca perangkat, tanpa SNMP SET. Collector tanpa root. HTTPS, CSP ketat, batas login, sesi diputus saat akun nonaktif/ganti password, jejak audit — lihat [`docs/KEAMANAN.md`](docs/KEAMANAN.md) |
 | **Web** | Setup awal (akun admin pertama), login dengan pembatas percobaan, peran Admin / Engineer / Viewer |
 | Perangkat | Tambah/ubah dengan **uji koneksi** (ping + SNMP) sebelum simpan, daftar dengan filter (status, site, kategori), yang bermasalah di atas |
-| Detail perangkat | Latensi, loss, uptime, info SNMP, grafik latensi/loss dan **trafik per port** (6 jam–30 hari), kejadian |
+| Detail perangkat | Latensi, loss, uptime, info SNMP, grafik latensi/loss dan **trafik per port** (6 jam–30 hari), **trafik live per port** (tombol *Live*: grafik tiap 2/5/10 detik langsung dari perangkat, angka sekarang/rata-rata/puncak) dan *Live semua port* (tabel port diperbarui tiap 5 detik), kejadian |
 | Ringkasan | **Bisa diatur per pengguna** (tombol *Atur tampilan*): pilih widget, urutan, dan lebar (setengah/penuh) — angka utama, problem aktif, kejadian 24 jam, latensi & loss tertinggi, per site, sensor di luar ambang, kamera bermasalah, syslog error, perubahan konfigurasi, maintenance, peta lokasi |
 | Lainnya | Site, riwayat kejadian dengan filter, pengguna, jejak audit, ganti password, tema terang/gelap, tampilan HP |
 | **Problem** | Dinilai tiap menit: perangkat down, packet loss & latensi (rata-rata 5 menit), SNMP gagal, port dipantau putus/penuh. Selesai otomatis saat pulih; ACK dengan catatan |
