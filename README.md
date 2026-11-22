@@ -492,6 +492,24 @@ cd collector && go vet ./... && go test ./...
 cd web && composer install && npm install && npm run build
 ```
 
+Tes web (PHPUnit) memakai PostgreSQL sungguhan di database terpisah yang **wajib** berakhiran `_test` (tes menolak
+berjalan di database lain, karena skemanya dibangun ulang dari `db/migrations/*.sql`). Contoh dengan database stack
+yang sedang berjalan — buat database uji sekali:
+
+```bash
+cd deploy && docker compose exec db psql -U antareja -c "create database antareja_test"
+```
+
+Lalu jalankan dari mesin pengembang (PHP 8.3+ dengan `pdo_pgsql`, dependensi dev Composer), dengan `DB_HOST` = IP
+container `db` atau PostgreSQL lain:
+
+```bash
+cd web && DB_HOST=172.18.0.4 DB_USERNAME=antareja DB_PASSWORD=... php vendor/bin/phpunit
+```
+
+Yang diuji: hak akses tiap peran di semua halaman, setup awal sekali saja, batas login, akun nonaktif, header keamanan,
+tidak ada skrip inline di template, tautan status, ekspor/impor & enkripsi frasa sandi, susunan Ringkasan.
+
 Lingkungan uji dengan agen SNMP palsu (community `uji-tambang`, user v3 `ujiv3`):
 
 ```bash
