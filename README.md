@@ -363,6 +363,7 @@ Hapus community dari nama berkas/isi sebelum dikirim. Detail: [`docs/PROFIL-PERA
 | Status untuk manajemen tanpa akun | *Administrasi → Tautan status* |
 | Jadwal pekerjaan (alarm tidak dikirim) | *Maintenance* |
 | Susun Ringkasan sendiri | *Ringkasan → Atur tampilan* |
+| Arti warna/severity, cara ACK, istilah | Tombol **?** di kanan atas / menu *Panduan* |
 | Pindah ke VM baru | *Ekspor & impor* (dengan rahasia + frasa sandi) atau backup database + `.env` yang sama |
 
 ## Operasional server

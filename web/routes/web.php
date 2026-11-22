@@ -109,6 +109,7 @@ Route::middleware('auth')->group(function () {
     Route::get('kejadian', [EventController::class, 'index'])->name('events.index');
     Route::get('log', [LogController::class, 'index'])->name('logs.index');
     Route::get('peta', [MapController::class, 'index'])->name('map.index');
+    Route::view('panduan', 'help.index')->name('help');
     Route::get('peta/data', [MapController::class, 'data'])->name('map.data');
     Route::get('peta/denah/{plan}', [MapController::class, 'planImage'])->name('map.plan.image')->whereNumber('plan');
     Route::get('problem', [ProblemController::class, 'index'])->name('problems.index');

@@ -44,6 +44,7 @@
             <div class="grp">Laporan</div>
             <a href="{{ route('reports.sla') }}" class="{{ $nav('reports.sla*') }}"><x-icon name="chart"/>SLA bulanan</a>
             @can('admin')<a href="{{ route('reports.schedules') }}" class="{{ $nav('reports.schedules*') }}"><x-icon name="bell"/>Laporan terjadwal</a>@endcan
+            <a href="{{ route('help') }}" class="{{ $nav('help') }}"><x-icon name="info"/>Panduan</a>
             @can('admin')
                 <div class="grp">Administrasi</div>
                 <a href="{{ route('channels.index') }}" class="{{ $nav('channels.*') }}"><x-icon name="bell"/>Notifikasi</a>
@@ -66,6 +67,7 @@
                 <input type="search" name="q" value="{{ request()->routeIs('devices.index') ? request('q') : '' }}" placeholder="Cari perangkat, IP, sysName…" aria-label="Cari perangkat">
             </form>
             <span class="spacer"></span>
+            <a class="iconbtn" href="{{ route('help') }}" title="Panduan operator" aria-label="Panduan operator"><span aria-hidden="true" style="font:700 15px var(--sans)">?</span></a>
             <button type="button" class="iconbtn" data-theme-toggle title="Tema terang/gelap" aria-label="Ganti tema"><x-icon name="moon"/></button>
             <a class="who" href="{{ route('profile') }}" title="Profil & password">
                 <span class="av">{{ mb_strtoupper(mb_substr($u->name, 0, 1)) }}</span>

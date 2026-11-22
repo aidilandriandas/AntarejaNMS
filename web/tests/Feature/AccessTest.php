@@ -14,7 +14,7 @@ class AccessTest extends TestCase
 
     private const ENGINEER = ['/perangkat/tambah', '/perangkat/impor', '/discovery', '/cctv/kelola'];
 
-    private const ANY = ['/', '/perangkat', '/problem', '/kejadian', '/log', '/peta', '/topologi', '/noc', '/kualitas', '/sensor', '/ipam', '/laporan/sla', '/site', '/maintenance', '/profil'];
+    private const ANY = ['/', '/perangkat', '/problem', '/kejadian', '/log', '/peta', '/topologi', '/noc', '/kualitas', '/sensor', '/ipam', '/laporan/sla', '/site', '/maintenance', '/profil', '/panduan'];
 
     public function test_tamu_diarahkan_ke_login(): void
     {
