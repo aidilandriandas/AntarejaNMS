@@ -450,3 +450,6 @@ pre.code.diff .del { background: var(--crit-soft); color: var(--crit); } pre.cod
 .inc-tag { font-weight: 600; color: var(--crit); }
 .feed.timeline li { align-items: start; }
 .kpi .val small { font-size: 14px; color: var(--muted); font-weight: 500; }
+/* SLA layanan */
+.sdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--off); vertical-align: 1px; }
+.sdot.ok { background: var(--ok); } .sdot.crit { background: var(--crit); }

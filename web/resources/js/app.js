@@ -20,6 +20,16 @@ $$('[data-menu]').forEach((b) => b.addEventListener('click', () => document.body
 $$('[data-autosubmit]').forEach((el) => el.addEventListener('change', () => el.form?.submit()));
 $$('[data-print]').forEach((el) => el.addEventListener('click', () => window.print()));
 
+// Saring opsi <select multiple> dengan kotak cari; opsi yang sudah dipilih tetap tampil
+$$('[data-filter-select]').forEach((inp) => {
+    const sel = document.getElementById(inp.dataset.filterSelect);
+    if (!sel) return;
+    inp.addEventListener('input', () => {
+        const q = inp.value.trim().toLowerCase();
+        for (const o of sel.options) o.hidden = q !== '' && !o.selected && !o.text.toLowerCase().includes(q);
+    });
+});
+
 // Muat ulang halaman berkala (mis. Ringkasan), ditunda selama panel pengaturan terbuka atau tab tersembunyi
 const autoReload = $('[data-autoreload]');
 if (autoReload) {

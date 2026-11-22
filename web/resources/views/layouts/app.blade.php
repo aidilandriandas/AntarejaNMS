@@ -45,7 +45,8 @@
             <a href="{{ route('sites.index') }}" class="{{ $nav('sites.*') }}"><x-icon name="map-pin"/>Site</a>
             <a href="{{ route('maintenance.index') }}" class="{{ $nav('maintenance.*') }}"><x-icon name="wrench"/>Maintenance</a>
             <div class="grp">Laporan</div>
-            <a href="{{ route('reports.sla') }}" class="{{ $nav('reports.sla*') }}"><x-icon name="chart"/>SLA bulanan</a>
+            <a href="{{ route('services.index') }}" class="{{ $nav('services.*') }}"><x-icon name="layers"/>SLA layanan</a>
+            <a href="{{ route('reports.sla') }}" class="{{ $nav('reports.sla*') }}"><x-icon name="chart"/>SLA perangkat</a>
             @can('admin')<a href="{{ route('reports.schedules') }}" class="{{ $nav('reports.schedules*') }}"><x-icon name="bell"/>Laporan terjadwal</a>@endcan
             <a href="{{ route('help') }}" class="{{ $nav('help') }}"><x-icon name="info"/>Panduan</a>
             @can('admin')

@@ -51,6 +51,12 @@ class DashboardController extends Controller
                 ->where('m.ends_at', '>', now())->where('m.starts_at', '<', now()->addDays(7))->orderBy('m.starts_at')->limit(8)
                 ->get(['m.id', 'm.title', 'm.scope', 'm.starts_at', 'm.ends_at', 's.code as site'])],
             'map' => fn () => ['mapLayers' => MapController::layers()],
+            'services' => function () {
+                $svc = \App\Models\Service::with(['components.devices:id,status,created_at'])->orderBy('name')->get();
+                $sla = (new \App\Services\ServiceSla)->compute($svc, now()->startOfMonth(), now()->startOfMonth()->addMonthNoOverflow());
+
+                return ['services' => $svc, 'serviceSla' => $sla];
+            },
         ];
         foreach ($load as $k => $fn) {
             if (isset($on[$k])) {

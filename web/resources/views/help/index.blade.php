@@ -14,6 +14,7 @@
     <a href="#tangani">Saat ada perangkat down</a>
     <a href="#ack">ACK, eskalasi & notifikasi</a>
     <a href="#insiden">Insiden</a>
+    <a href="#layanan">SLA layanan</a>
     <a href="#maintenance">Maintenance & perangkat induk</a>
     <a href="#noc">Layar NOC</a>
     <a href="#sensor">Ambang sensor bawaan</a>
@@ -81,6 +82,15 @@
         <li><b>Dibuat manual</b> (engineer/admin): di halaman <i>Problem</i>, centang problem yang berasal dari gangguan yang sama → <b>Buat insiden</b>.</li>
         <li><b>Alur</b>: <span class="badge crit">Terbuka</span> → <span class="badge warn">Ditangani</span> (tekan <i>Saya tangani</i> atau tugaskan engineer) → <span class="badge ok">Pulih</span> (otomatis saat semua problem selesai) → <b>Ditutup</b> setelah <i>penyebab</i> dan <i>tindakan</i> diisi. Bila gangguan muncul lagi ≤ 30 menit setelah pulih, insiden dibuka kembali.</li>
         <li>Tulis temuan lapangan di <b>catatan</b>: semuanya masuk kronologi beserta nama dan jam, berguna untuk laporan ke manajemen. <b>MTTR</b> = rata-rata lama dari mulai gangguan sampai pulih.</li>
+    </ul>
+</div></section>
+
+<section class="card" id="layanan"><div class="hd"><h2>SLA layanan</h2></div><div class="bd">
+    <ul class="help-list">
+        <li><b>Layanan</b> = sesuatu yang dipakai orang, mis. <i>CCTV Pit A</i> atau <i>Internet kantor</i>. Disusun dari <b>komponen</b>; tiap komponen berisi perangkat dan syarat <b>minimal hidup</b>.</li>
+        <li>Jalur seri (Core → Radio PTP → Switch): semua wajib hidup — isi minimal = jumlah perangkat, atau satu komponen per perangkat. Perangkat cadangan (ISP 1 &amp; ISP 2): isi minimal 1.</li>
+        <li>Status: <span class="badge ok">Normal</span> semua hidup · <span class="badge warn">Tanpa cadangan</span> layanan jalan tetapi ada perangkat down (segera perbaiki sebelum cadangannya ikut mati) · <span class="badge crit">Terganggu</span> layanan tidak jalan.</li>
+        <li>Ketersediaan dihitung dari riwayat down perangkat (gangguan saat maintenance tidak dihitung), mulai sejak perangkat ditambahkan. <b>Sisa jatah downtime</b> = berapa lama lagi layanan boleh mati bulan ini agar tetap memenuhi target.</li>
     </ul>
 </div></section>
 

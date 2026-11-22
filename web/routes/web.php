@@ -24,6 +24,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReportScheduleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SensorController;
+use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\StatusLinkController;
 use App\Http\Controllers\SystemController;
@@ -74,6 +75,12 @@ Route::middleware('auth')->group(function () {
 
         Route::post('perangkat/{device}/port/{ifIndex}/pantau', [DeviceController::class, 'toggleMonitor'])->name('devices.monitor')->whereNumber('ifIndex');
 
+        Route::post('layanan', [ServiceController::class, 'store'])->name('services.store');
+        Route::put('layanan/{service}', [ServiceController::class, 'update'])->name('services.update')->whereNumber('service');
+        Route::delete('layanan/{service}', [ServiceController::class, 'destroy'])->name('services.destroy')->whereNumber('service');
+        Route::post('layanan/{service}/komponen', [ServiceController::class, 'storeComponent'])->name('services.components.store')->whereNumber('service');
+        Route::put('layanan/{service}/komponen/{component}', [ServiceController::class, 'updateComponent'])->name('services.components.update')->whereNumber(['service', 'component']);
+        Route::delete('layanan/{service}/komponen/{component}', [ServiceController::class, 'destroyComponent'])->name('services.components.destroy')->whereNumber(['service', 'component']);
         Route::post('insiden', [IncidentController::class, 'store'])->name('incidents.store');
         Route::post('insiden/{incident}/tangani', [IncidentController::class, 'take'])->name('incidents.take')->whereNumber('incident');
         Route::post('insiden/{incident}/catatan', [IncidentController::class, 'note'])->name('incidents.note')->whereNumber('incident');
@@ -131,6 +138,9 @@ Route::middleware('auth')->group(function () {
     Route::get('ipam', [IpamController::class, 'index'])->name('ipam.index');
     Route::get('ipam/cari', [IpamController::class, 'search'])->name('ipam.search');
     Route::get('ipam/subnet/{subnet}', [IpamController::class, 'show'])->name('ipam.show')->whereNumber('subnet');
+    Route::get('layanan', [ServiceController::class, 'index'])->name('services.index');
+    Route::get('layanan.csv', [ServiceController::class, 'csv'])->name('services.csv');
+    Route::get('layanan/{service}', [ServiceController::class, 'show'])->name('services.show')->whereNumber('service');
     Route::get('laporan/sla', [ReportController::class, 'sla'])->name('reports.sla');
     Route::get('laporan/sla.csv', [ReportController::class, 'csv'])->name('reports.sla.csv');
     Route::get('topologi', [TopologyController::class, 'index'])->name('topology.index');

@@ -18,6 +18,7 @@ class Dashboard
         'config' => ['Perubahan konfigurasi', 'half', 'Dari backup konfigurasi SSH, 7 hari', true],
         'maintenance' => ['Maintenance', 'half', 'Yang sedang berjalan & 7 hari ke depan', true],
         'map' => ['Peta lokasi', 'full', 'Status site di peta', true],
+        'services' => ['Layanan', 'half', 'Status & ketersediaan bulan ini per layanan (SLA layanan)', true],
     ];
 
     /** Susunan bawaan (mirip Ringkasan sebelumnya). */
