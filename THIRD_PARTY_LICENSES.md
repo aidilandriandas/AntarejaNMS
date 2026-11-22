@@ -14,6 +14,7 @@ Setiap dependensi baru wajib dicatat di sini **sebelum** di-commit (lihat `docs/
 | github.com/prometheus-community/pro-bing | 0.9.1 | MIT | Ping ICMP (collector) |
 | github.com/jackc/pgx/v5 | 5.13.0 | MIT | Driver PostgreSQL (collector) |
 | github.com/jackc/puddle/v2, pgpassfile, pgservicefile | — | MIT | Bagian dari pgx |
+| golang.org/x/crypto (ssh) | 0.53.0 | BSD-3-Clause | Klien SSH backup konfigurasi (collector) |
 | golang.org/x/net, x/sync, x/sys, x/text, github.com/google/uuid | — | BSD-3-Clause | Dependensi gosnmp / pro-bing |
 | Go standard library | 1.25 | BSD-3-Clause | — |
 

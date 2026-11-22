@@ -30,6 +30,7 @@ import (
 	apiserver "github.com/aidilandriandas/antarejanms/collector/internal/api"
 	"github.com/aidilandriandas/antarejanms/collector/internal/cctv"
 	"github.com/aidilandriandas/antarejanms/collector/internal/config"
+	"github.com/aidilandriandas/antarejanms/collector/internal/configbak"
 	"github.com/aidilandriandas/antarejanms/collector/internal/migrate"
 	"github.com/aidilandriandas/antarejanms/collector/internal/notify"
 	"github.com/aidilandriandas/antarejanms/collector/internal/ping"
@@ -193,6 +194,23 @@ func run() error {
 				}
 			}()
 		}
+
+		// Backup konfigurasi via SSH (hanya baca): cek tiap menit untuk permintaan manual; tiap perangkat paling lambat 24 jam sekali
+		cfgRunner := &configbak.Runner{DB: db, Box: box, Log: log, Every: 24 * time.Hour, Timeout: 20 * time.Second, Keep: 50}
+		go func() {
+			t := time.NewTicker(time.Minute)
+			defer t.Stop()
+			for {
+				if err := cfgRunner.Run(ctx); err != nil && ctx.Err() == nil {
+					log.Warn("backup konfigurasi gagal", "galat", err)
+				}
+				select {
+				case <-ctx.Done():
+					return
+				case <-t.C:
+				}
+			}
+		}()
 
 		log.Info("ANTAREJA collector berjalan", "versi", version, "ping", cfg.PingInterval, "snmp", cfg.SNMPInterval,
 			"metrik", cfg.VMURL != "")

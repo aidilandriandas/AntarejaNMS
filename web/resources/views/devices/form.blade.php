@@ -91,6 +91,20 @@
             <p class="hint muted" style="margin:0">Kredensial disimpan terenkripsi dan tidak pernah ditampilkan kembali.</p>
         </div>
 
+        <details class="thr" @if($errors->has('ssh_*') || $errors->has('cfg_type') || $device->cfg_type) open @endif>
+            <summary class="section-title" style="cursor:pointer;list-style:none">Backup konfigurasi (SSH, hanya baca) {{ $device->cfg_type ? '· aktif' : '' }}</summary>
+            <p class="hint muted" style="margin:10px 0">Konfigurasi diambil harian dan saat diminta; perubahan dicatat sebagai versi dengan diff. Hanya perintah tampil/ekspor yang dijalankan — tidak ada yang mengubah perangkat. Disarankan user khusus dengan hak <em>read</em>.</p>
+            <div class="row r3">
+                <div class="field"><label for="cfg_type">Jenis</label><select class="input @error('cfg_type') is-err @enderror" id="cfg_type" name="cfg_type">
+                    <option value="">— tidak di-backup —</option>
+                    @foreach(\App\Models\Device::CFG_TYPES as $k => $v)<option value="{{ $k }}" @selected(old('cfg_type', $device->cfg_type) === $k)>{{ $v }}</option>@endforeach</select></div>
+                <div class="field"><label for="ssh_user">User SSH</label><input class="input @error('ssh_user') is-err @enderror" id="ssh_user" name="ssh_user" value="{{ old('ssh_user', $device->ssh_user) }}" autocomplete="off"><x-field-error name="ssh_user"/></div>
+                <div class="field"><label for="ssh_port">Port</label><input class="input" type="number" id="ssh_port" name="ssh_port" value="{{ old('ssh_port', $device->ssh_port ?? 22) }}"></div>
+            </div>
+            <div class="field"><label for="ssh_password">Password SSH</label><input class="input @error('ssh_password') is-err @enderror" type="password" id="ssh_password" name="ssh_password" autocomplete="new-password"
+                placeholder="{{ $device->hasSecret('ssh_password_enc') ? '•••••• (tersimpan — kosongkan bila tetap)' : '' }}"><x-field-error name="ssh_password"/></div>
+        </details>
+
         <details class="thr" @if($errors->has('thr.*') || ! empty($device->thresholds)) open @endif>
             <summary class="section-title" style="cursor:pointer;list-style:none">Ambang khusus perangkat ini {{ ! empty($device->thresholds) ? '(' . count($device->thresholds) . ' diatur)' : '' }}</summary>
             <p class="hint muted" style="margin:10px 0">Kosongkan untuk memakai ambang bawaan. Contoh: radio PTP jarak jauh boleh latensi & sinyal lebih longgar daripada core switch.</p>

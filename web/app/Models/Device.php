@@ -49,10 +49,12 @@ class Device extends Model
 
     protected $fillable = [
         'name', 'host', 'site_id', 'parent_id', 'category', 'enabled', 'notes', 'ping_enabled', 'snmp_enabled', 'snmp_version', 'snmp_port',
-        'snmp_v3_user', 'snmp_v3_level', 'snmp_v3_auth_proto', 'snmp_v3_priv_proto',
+        'snmp_v3_user', 'snmp_v3_level', 'snmp_v3_auth_proto', 'snmp_v3_priv_proto', 'cfg_type', 'ssh_port', 'ssh_user',
     ];
 
-    protected $hidden = ['snmp_community_enc', 'snmp_v3_auth_enc', 'snmp_v3_priv_enc'];
+    protected $hidden = ['snmp_community_enc', 'snmp_v3_auth_enc', 'snmp_v3_priv_enc', 'ssh_password_enc'];
+
+    public const CFG_TYPES = ['mikrotik' => 'MikroTik RouterOS (/export hide-sensitive)', 'cisco' => 'Cisco IOS / IOS-XE (show running-config)'];
 
     protected function casts(): array
     {
@@ -68,6 +70,8 @@ class Device extends Model
             'status_changed_at' => 'datetime',
             'last_ping_at' => 'datetime',
             'last_snmp_at' => 'datetime',
+            'cfg_last_at' => 'datetime',
+            'cfg_requested' => 'boolean',
         ];
     }
 

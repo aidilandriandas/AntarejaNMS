@@ -96,6 +96,27 @@
             @endforeach
         </div></section>
         @endif
+        @can('manage-devices')
+        @if($device->cfg_type)
+        <section class="card"><div class="hd"><h2>Konfigurasi</h2>
+            <form method="post" action="{{ route('devices.config.backup', $device) }}">@csrf<button class="btn sm" @disabled($device->cfg_requested)>{{ $device->cfg_requested ? 'Diminta…' : 'Backup sekarang' }}</button></form></div>
+            <div class="bd flush">
+                @if($device->cfg_error)
+                    <div class="alert error" style="margin:12px"><x-icon name="alert"/><div>{{ $device->cfg_error }}
+                        @if(str_contains($device->cfg_error, 'host key'))<form method="post" action="{{ route('devices.config.hostkey', $device) }}" data-confirm="Reset host key SSH {{ $device->name }}? Lakukan hanya bila perangkat memang diganti / di-reset." style="margin-top:8px">@csrf<button class="btn sm danger">Reset host key</button></form>@endif
+                    </div></div>
+                @endif
+                @if($configs->isEmpty())<div class="empty">Belum ada versi.{{ $device->cfg_last_at ? '' : ' Backup pertama berjalan dalam 1 menit.' }}</div>@else
+                <table class="t"><tbody>
+                    @foreach($configs as $c)
+                        <tr><td><a href="{{ route('devices.config', [$device, $c->id]) }}">{{ \Illuminate\Support\Carbon::parse($c->taken_at)->format('d/m/Y H:i') }}</a></td>
+                            <td class="num">@if($c->added || $c->removed)<span style="color:var(--ok)">+{{ $c->added }}</span> <span style="color:var(--crit)">−{{ $c->removed }}</span>@else<span class="muted">{{ $c->lines }} baris</span>@endif</td></tr>
+                    @endforeach
+                </tbody></table>@endif
+                <p class="muted" style="font-size:12px;margin:0;padding:8px 14px">Dicek terakhir {{ $device->cfg_last_at?->diffForHumans() ?? '–' }} · host key {{ $device->ssh_hostkey ? \Illuminate\Support\Str::limit($device->ssh_hostkey, 22) : 'belum dicatat' }}</p>
+            </div></section>
+        @endif
+        @endcan
         <section class="card"><div class="hd"><h2>Informasi</h2></div><div class="bd">
             <dl class="facts">
                 <dt>Site</dt><dd>{{ $device->site ? $device->site->code . ' — ' . $device->site->name : '–' }}</dd>

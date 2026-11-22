@@ -74,6 +74,8 @@ class DeviceController extends Controller
             'monitored' => $device->monitoredPorts(),
             'problems' => $device->problems()->whereNull('resolved_at')->triage()->get(),
             'sensors' => $device->sensors()->get()->groupBy('grp'),
+            'configs' => \Illuminate\Support\Facades\DB::table('device_configs')->where('device_id', $device->id)->orderByDesc('taken_at')->limit(8)
+                ->get(['id', 'taken_at', 'lines', 'added', 'removed']),
         ]);
     }
 
@@ -265,7 +267,12 @@ class DeviceController extends Controller
             'snmp_v3_auth_pass' => ['nullable', 'string', 'min:8', 'max:128'],
             'snmp_v3_priv_proto' => ['nullable', Rule::in(['DES', 'AES', 'AES192', 'AES256'])],
             'snmp_v3_priv_pass' => ['nullable', 'string', 'min:8', 'max:128'],
+            'cfg_type' => ['nullable', Rule::in(array_keys(Device::CFG_TYPES))],
+            'ssh_port' => ['nullable', 'integer', 'between:1,65535'],
+            'ssh_user' => ['nullable', 'required_with:cfg_type', 'string', 'max:64'],
+            'ssh_password' => ['nullable', 'string', 'max:128'],
         ], [
+            'ssh_user.required_with' => 'User SSH wajib diisi untuk backup konfigurasi.',
             'host.regex' => 'Isi alamat IP atau nama DNS saja (tanpa http:// atau spasi).',
             'snmp_v3_user.required_if' => 'User SNMPv3 wajib diisi.',
             'snmp_v3_auth_pass.min' => 'Password SNMPv3 minimal 8 karakter (aturan SNMPv3).',
@@ -281,7 +288,15 @@ class DeviceController extends Controller
         if (! $d['ping_enabled'] && ! $d['snmp_enabled']) {
             throw \Illuminate\Validation\ValidationException::withMessages(['ping_enabled' => 'Aktifkan ping, SNMP, atau keduanya — perangkat harus bisa dipantau.']);
         }
-        $device->fill(collect($d)->except(['snmp_community', 'snmp_v3_auth_pass', 'snmp_v3_priv_pass'])->all());
+        $d['ssh_port'] = (int) ($d['ssh_port'] ?? 22) ?: 22;
+        $device->fill(collect($d)->except(['snmp_community', 'snmp_v3_auth_pass', 'snmp_v3_priv_pass', 'ssh_password'])->all());
+        $device->setSecret('ssh_password_enc', $d['ssh_password'] ?? null);
+        if (! empty($d['cfg_type']) && ! $device->hasSecret('ssh_password_enc')) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['ssh_password' => 'Password SSH wajib diisi untuk backup konfigurasi.']);
+        }
+        if ($device->isDirty('host')) {
+            $device->ssh_hostkey = null; // host berubah: host key lama tidak berlaku
+        }
         $device->setSecret('snmp_community_enc', $d['snmp_community'] ?? null);
         $device->setSecret('snmp_v3_auth_enc', $d['snmp_v3_auth_pass'] ?? null);
         $device->setSecret('snmp_v3_priv_enc', $d['snmp_v3_priv_pass'] ?? null);

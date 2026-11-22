@@ -6,6 +6,7 @@ require (
 	github.com/gosnmp/gosnmp v1.47.0
 	github.com/jackc/pgx/v5 v5.13.0
 	github.com/prometheus-community/pro-bing v0.9.1
+	golang.org/x/crypto v0.53.0
 )
 
 require (

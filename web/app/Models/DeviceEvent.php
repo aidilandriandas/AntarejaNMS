@@ -20,6 +20,7 @@ class DeviceEvent extends Model
         'latency_high' => ['Latensi tinggi', 'warn', 'gauge'],
         'snmp_fail' => ['SNMP gagal', 'warn', 'plug-off'],
         'snmp_ok' => ['SNMP pulih', 'ok', 'plug'],
+        'config_change' => ['Konfigurasi berubah', 'info', 'edit'],
     ];
 
     protected function casts(): array

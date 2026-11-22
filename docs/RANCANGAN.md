@@ -1,6 +1,6 @@
 # Rancangan ANTAREJA NMS (engine mandiri)
 
-Status: **Tahap 3 awal selesai** (profil & sensor) · menunggu verifikasi perangkat lapangan · Dokumen hidup, perbarui setiap ada keputusan desain.
+Status: **Tahap 5c selesai** (backup konfigurasi SSH) · menunggu verifikasi perangkat lapangan · Dokumen hidup, perbarui setiap ada keputusan desain.
 
 ## 1. Sasaran
 
@@ -47,8 +47,11 @@ Satu sumber skema: `db/migrations/*.sql`, dijalankan otomatis oleh collector saa
 - Kredensial SNMP disimpan **terenkripsi** (AES-256-CBC + HMAC-SHA256, format payload kompatibel
   Laravel `Crypt`) dengan kunci `ANTAREJA_APP_KEY` dari environment. Tidak ada kredensial di kode,
   log, maupun respons API.
-- Collector hanya baca (lihat di atas). Fitur yang mengubah perangkat (mis. backup konfigurasi via
-  SSH) wajib persetujuan engineer dan dirancang terpisah.
+- Collector hanya baca (lihat di atas). Backup konfigurasi SSH (tahap 5c) juga hanya baca: perintah dipatok
+  per jenis (`/export hide-sensitive`; `terminal length 0` + `show running-config`), tidak ada masukan perintah dari
+  pengguna. Host key trust-on-first-use; key berubah → backup ditolak sampai engineer mereset dari web. Password SSH
+  dan isi konfigurasi disimpan terenkripsi. Fitur yang **mengubah** perangkat tidak ada dan wajib persetujuan engineer
+  bila kelak dirancang.
 - Port collector tidak dibuka ke luar; metrik internal hanya untuk jaringan Docker.
 
 ## 4. Model data (tahap 1a)
@@ -131,4 +134,5 @@ Engine problem berjalan di collector setelah setiap putaran ping (±1 menit):
 | 4c | CCTV: go2rtc internal (tanpa port publik), kamera/kanal NVR (password terenkripsi), grid snapshot & live view MSE; nginx hanya membuka `/live/ws` & `/live/frame.jpeg` setelah dicek login Laravel (auth_request); URL RTSP berkredensial tidak pernah ke browser maupun disk | selesai |
 | 5a | Cek kesehatan gambar CCTV (collector, lewat go2rtc; gelap / tertutup / beku = sidik seluruh piksel identik 3× / tanpa sinyal setelah 2× gagal) → problem `camera`; impor perangkat dari CSV | selesai |
 | 5b | Kualitas jaringan (ping min/maks/jitter, halaman peringkat avg/p95/maks/jitter/loss), ambang per perangkat (`devices.thresholds` JSON: latensi, loss, util, kelas sensor) | selesai |
-| 5c | **berikutnya:** backup konfigurasi perangkat via SSH (hanya baca) + diff; verifikasi profil `snmpwalk` lapangan; profil Hikvision | |
+| 5c | Backup konfigurasi via SSH (MikroTik, Cisco IOS; hanya baca): jadwal 24 jam + manual, normalisasi baris volatil, versi terenkripsi (retensi 50), diff Myers, kejadian `config_change`, TOFU host key + reset | selesai |
+| berikutnya | Verifikasi profil `snmpwalk` lapangan; profil Hikvision | |

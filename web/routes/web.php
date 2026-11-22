@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CctvController;
 use App\Http\Controllers\ChannelController;
+use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\DeviceImportController;
@@ -63,6 +64,11 @@ Route::middleware('auth')->group(function () {
         Route::post('topologi/sambungan', [TopologyController::class, 'storeLink'])->name('topology.links.store');
         Route::delete('topologi/sambungan/{link}', [TopologyController::class, 'destroyLink'])->name('topology.links.destroy')->whereNumber('link');
         Route::post('topologi/posisi', [TopologyController::class, 'savePositions'])->name('topology.positions');
+
+        Route::get('perangkat/{device}/konfigurasi/{version}', [ConfigController::class, 'show'])->name('devices.config')->whereNumber('version');
+        Route::get('perangkat/{device}/konfigurasi/{version}/unduh', [ConfigController::class, 'download'])->name('devices.config.download')->whereNumber('version');
+        Route::post('perangkat/{device}/konfigurasi/backup', [ConfigController::class, 'backupNow'])->name('devices.config.backup')->middleware('throttle:10,1');
+        Route::post('perangkat/{device}/konfigurasi/reset-hostkey', [ConfigController::class, 'resetHostKey'])->name('devices.config.hostkey');
 
         Route::get('cctv/kelola', [CctvController::class, 'manage'])->name('cctv.manage');
         Route::post('cctv/kamera', [CctvController::class, 'store'])->name('cctv.store');
