@@ -1,0 +1,7 @@
+# Dipakai otomatis oleh ./antareja.sh bila certs/server.crt & certs/server.key ada:
+# sertifikat HTTPS kantor menggantikan sertifikat self-signed bawaan image web.
+services:
+  web:
+    volumes:
+      - ./certs/server.crt:/opt/docker/etc/nginx/ssl/server.crt:ro
+      - ./certs/server.key:/opt/docker/etc/nginx/ssl/server.key:ro
