@@ -49,6 +49,8 @@ Network Monitoring System untuk infrastruktur ICT tambang. Engine dan aplikasi d
 | **Peta lokasi** | Site & perangkat berkoordinat (menara radio, NVR) di atas peta jalan atau **topografi** (+ satelit bila perusahaan punya penyedia berlisensi), daftar site untuk lompat ke lokasi yang berjauhan: warna = status (down berdenyut), jumlah down, garis sambungan antarperangkat (merah bila putus). Posisi diatur dengan klik/geser di peta atau tempel koordinat. Sumber gambar peta bisa diganti ke server tile internal untuk ruang kontrol tanpa internet. **Denah tambang**: unggah gambar denah/pit (PNG/JPG/WebP) sebagai latar pengganti peta dunia — posisi per denah terpisah, gambar ikut backup database |
 | **Layar NOC** | Layar penuh untuk TV ruang kontrol (tombol `F`): alarm bertingkat (merah hanya untuk High/Disaster belum di-ACK) dengan **bunyi**, dinding status per site bergantian dengan peta topologi dan **peta lokasi** (peta jalan versi gelap), problem aktif, kejadian 1 jam, port tersibuk. Diperbarui tiap 15 detik |
 
+Keamanan: lihat [`docs/KEAMANAN.md`](docs/KEAMANAN.md) — kontrol yang diterapkan, batasan yang diketahui, dan daftar periksa pemasangan.
+
 ## Menjalankan (Docker)
 
 Butuh Docker + Docker Compose di VM (mis. Ubuntu 24.04 di Proxmox).

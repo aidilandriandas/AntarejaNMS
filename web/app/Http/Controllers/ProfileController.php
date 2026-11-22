@@ -20,6 +20,8 @@ class ProfileController extends Controller
             'password' => ['required', 'confirmed', Password::min(10)->letters()->numbers()],
         ], ['current_password.current_password' => 'Password saat ini salah.']);
         $request->user()->update(['password' => $request->input('password')]);
+        // Sesi lain (perangkat lain, "Ingat saya") otomatis keluar lewat AuthenticateSession; sesi ini tetap masuk
+        $request->session()->put('password_hash_web', $request->user()->getAuthPassword());
         Audit::log('updated', $request->user()->username . ' mengganti password', $request->user());
 
         return back()->with('ok', 'Password diganti.');
