@@ -142,6 +142,9 @@ svg.i { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none;
 .mp { font: 13px/1.45 var(--sans); } .mp > b { display: block; } .mp ul { margin: 4px 0; padding-left: 18px; } .mp a { color: var(--accent); }
 .mp-st { display: block; margin: 3px 0; font-weight: 600; color: var(--c); } .mp-st.up { --c: var(--ok); } .mp-st.down { --c: var(--crit); } .mp-st.problem { --c: var(--warn); } .mp-st.maintenance { --c: var(--info); } .mp-st.idle, .mp-st.unknown { --c: var(--off); }
 .leaflet-container { font-family: var(--sans); }
+/* Peta jalan versi gelap (layar NOC & tema gelap); topografi/satelit tetap warna asli */
+.n-geo .tl-jalan, :root[data-theme="dark"] .map .tl-jalan { filter: invert(1) hue-rotate(180deg) brightness(.88) contrast(.92) saturate(.7); }
+:root[data-theme="dark"] .map.leaflet-container { background: #0e151d; }
 .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--surface); color: var(--ink); }
 @media (max-width: 900px) { .map-wrap { grid-template-columns: 1fr; } .map-panel { width: auto; } .map { height: 60vh; } }
 .modal { position: fixed; inset: 0; z-index: 60; background: rgb(0 0 0 / .55); display: grid; place-items: center; padding: 16px; }

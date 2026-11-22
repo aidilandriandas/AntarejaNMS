@@ -119,3 +119,9 @@
     .n-center { height: 70vh; } .n-right .n-panel { min-height: 280px; } .n-head { flex-wrap: wrap; padding: 10px; height: auto; }
 }
 @media (prefers-reduced-motion: reduce) { .n-alarm.crit, .n-live i, .n-list li.new, .n-tile.down { animation: none; } }
+
+/* Peta lokasi di layar NOC */
+.n-geo, .n-geo.leaflet-container { position: absolute; inset: 0; border-radius: 0 0 8px 8px; background: #0b1117; }
+.n-geo .leaflet-control-attribution { background: rgba(7, 11, 16, .7); color: #8a9aa8; }
+.n-geo .leaflet-control-attribution a { color: #8fb8c8; }
+.n-geo.no-tiles { background: #0b1117; }

@@ -39,11 +39,12 @@
     <section class="n-center n-panel">
         <h2><span data-view-title>Dinding status</span>
             <span class="n-tabs" role="tablist">
-                <button type="button" data-view="wall">DINDING</button><button type="button" data-view="map">TOPOLOGI</button><button type="button" data-view="auto" title="Bergantian tiap 30 detik">OTOMATIS ↻</button>
+                <button type="button" data-view="wall">DINDING</button><button type="button" data-view="map">TOPOLOGI</button>@if($hasGeo)<button type="button" data-view="geo">PETA</button>@endif<button type="button" data-view="auto" title="Bergantian tiap 30 detik (dinding → topologi{{ $hasGeo ? ' → peta' : '' }})">OTOMATIS ↻</button>
             </span></h2>
         <div class="n-views">
             <div class="n-view" data-v="wall"><div class="n-wall" data-wall></div></div>
             <div class="n-view hidden" data-v="map"><div class="n-map" data-map></div></div>
+            @if($hasGeo)<div class="n-view hidden" data-v="geo"><div class="n-geo" data-geo data-url="{{ route('map.data') }}" data-pos-url="{{ route('map.position') }}" data-layers='@json($mapLayers)'></div></div>@endif
             <div class="n-legend"><i class="ok"></i>Normal <i class="problem"></i>Ada problem <i class="down"></i>Down <i class="impacted"></i>Terdampak induk <i class="maintenance"></i>Maintenance <i class="unknown"></i>Menunggu</div>
         </div>
     </section>

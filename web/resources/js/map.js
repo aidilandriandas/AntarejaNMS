@@ -21,7 +21,7 @@ export function createMap(el, { csrf, onSelect }) {
         // Peta dasar: jalan / topografi / satelit (sesuai pengaturan admin); pilihan terakhir diingat per browser
         const layers = JSON.parse(el.dataset.layers || '[]');
         const base = {};
-        layers.forEach((l) => { base[l.name] = L.tileLayer(l.url, { maxZoom: l.max || 19, attribution: esc(l.attr), subdomains: 'abc' }); base[l.name]._key = l.key; });
+        layers.forEach((l) => { base[l.name] = L.tileLayer(l.url, { maxZoom: l.max || 19, attribution: esc(l.attr), subdomains: 'abc', className: `tl-${l.key}` }); base[l.name]._key = l.key; });
         let pick = null;
         try { pick = localStorage.getItem('antareja.mapLayer'); } catch { /* abaikan */ }
         const first = Object.values(base).find((t) => t._key === pick) || Object.values(base)[0];

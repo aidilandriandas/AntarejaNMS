@@ -37,7 +37,7 @@ class MapController extends Controller
             'topo' => (bool) Setting::get('map.topo', true),
             'satUrl' => (string) Setting::get('map.satellite_url', ''),
             'satAttr' => (string) Setting::get('map.satellite_attribution', ''),
-            'layers' => $this->layers(),
+            'layers' => self::layers(),
             'sites' => $sites,
             'devices' => $devices,
             'unplaced' => Device::where('enabled', true)->whereNull('lat')
@@ -160,7 +160,7 @@ class MapController extends Controller
     }
 
     /** Lapisan peta dasar yang ditawarkan di peta (dipilih pengguna lewat kontrol lapisan). */
-    private function layers(): array
+    public static function layers(): array
     {
         $out = [];
         if ($u = (string) Setting::get('map.tile_url', '')) {

@@ -15,7 +15,8 @@ class NocController extends Controller
 {
     public function index()
     {
-        return view('noc.index', ['sites' => Site::orderBy('code')->get()]);
+        return view('noc.index', ['sites' => Site::orderBy('code')->get(), 'mapLayers' => MapController::layers(),
+            'hasGeo' => Site::whereNotNull('lat')->exists() || \App\Models\Device::whereNotNull('lat')->exists()]);
     }
 
     public function data(Request $request): JsonResponse

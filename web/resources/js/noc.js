@@ -85,11 +85,29 @@ let mode = store.get('ant-noc-view') || 'wall';
 let showing = 'wall';
 let rot = null;
 let topo = null;
+// Peta lokasi (Leaflet) dimuat saat pertama kali ditampilkan
+const geoEl = $('[data-geo]');
+let geo = null;
+let geoTimer = null;
+async function showGeo() {
+    if (!geo) {
+        const { createMap } = await import('./map.js');
+        geo = createMap(geoEl, { csrf: () => '' });
+    }
+    geo.map.invalidateSize();
+    await geo.load();
+    clearInterval(geoTimer);
+    geoTimer = setInterval(() => { if (!document.hidden && showing === 'geo') geo.load(); }, 30000);
+}
+const VIEWS = ['wall', 'map', ...(geoEl ? ['geo'] : [])];
+const TITLES = { wall: 'Dinding status', map: 'Topologi jaringan', geo: 'Peta lokasi' };
 function show(v) {
+    if (!VIEWS.includes(v)) v = 'wall';
     showing = v;
     $$('[data-v]').forEach((el) => el.classList.toggle('hidden', el.dataset.v !== v));
-    $('[data-view-title]').textContent = v === 'wall' ? 'Dinding status' : 'Topologi jaringan';
+    $('[data-view-title]').textContent = TITLES[v];
     if (v === 'map' && topo) setTimeout(() => topo.fit(false), 80);
+    if (v === 'geo') setTimeout(() => showGeo().catch(() => {}), 50);
 }
 function setMode(m) {
     mode = m;
@@ -98,7 +116,7 @@ function setMode(m) {
     clearInterval(rot);
     if (m === 'auto') {
         show('wall');
-        rot = setInterval(() => show(showing === 'wall' ? 'map' : 'wall'), 30000);
+        rot = setInterval(() => show(VIEWS[(VIEWS.indexOf(showing) + 1) % VIEWS.length]), 30000);
     } else {
         show(m);
     }
