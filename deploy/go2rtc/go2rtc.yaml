@@ -1,0 +1,12 @@
+# go2rtc untuk ANTAREJA: hanya API internal (jaringan Docker). Aliran kamera didaftarkan web saat dibutuhkan.
+# Browser tidak pernah mengakses go2rtc langsung — hanya lewat web ANTAREJA (/live/ws, /live/frame.jpeg) setelah login.
+api:
+  listen: ":1984"
+  # go2rtc hanya bisa dicapai lewat proxy web ANTAREJA (wajib login), jadi pemeriksaan Origin WebSocket dilonggarkan
+  origin: "*"
+rtsp:
+  listen: ""      # server RTSP go2rtc dimatikan
+webrtc:
+  listen: ""      # pakai MSE lewat WebSocket (tanpa port UDP tambahan)
+log:
+  level: warn

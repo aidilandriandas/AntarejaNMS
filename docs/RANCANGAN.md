@@ -128,5 +128,5 @@ Engine problem berjalan di collector setelah setiap putaran ping (±1 menit):
 | 3 | Profil perangkat (`collector/internal/profiles`, lihat `docs/PROFIL-PERANGKAT.md`): HOST-RESOURCES, ENTITY-SENSOR, MikroTik, Ubiquiti airMAX, Cisco, UPS-MIB, APC; tabel `device_sensors`, problem `sensor`, halaman Sensor. **Sisa:** verifikasi `snmpwalk` lapangan, profil Hikvision, ambang per perangkat | sebagian |
 | 4a | Backup NMS (layanan `backup`: pg_dump terjadwal & manual, retensi, unduh dari web, `antareja.sh restore`) dan laporan SLA bulanan (downtime dikurangi jendela maintenance, target, CSV) | selesai |
 | 4b | IPAM: ipAddrTable & ipNetToMediaTable (router kategori Core/Distribution/Firewall atau MikroTik), subnet otomatis/manual, peta alamat, IP kosong, cari IP/MAC; konflik IP = 2 MAC bergantian ≥ 3× dalam 6 jam di router & port yang sama → problem `ip_conflict` | selesai |
-| 4c | **berikutnya:** CCTV live view (Hikvision RTSP), kualitas jaringan (grafik jitter/loss mirip SmokePing) | |
-| 5 | Alat impor dari `antareja-nms` (perangkat, site, grup) dan peralihan | |
+| 4c | CCTV: go2rtc internal (tanpa port publik), kamera/kanal NVR (password terenkripsi), grid snapshot & live view MSE; nginx hanya membuka `/live/ws` & `/live/frame.jpeg` setelah dicek login Laravel (auth_request); URL RTSP berkredensial tidak pernah ke browser maupun disk | selesai |
+| 5 | **berikutnya:** verifikasi profil dengan `snmpwalk` lapangan, profil Hikvision, cek kesehatan gambar CCTV (gelap/beku/tertutup), alat impor dari `antareja-nms`, kualitas jaringan (jitter) | |

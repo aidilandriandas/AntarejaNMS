@@ -23,4 +23,5 @@ RUN composer dump-autoload --optimize --no-dev \
     && mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
     && chown -R application:application storage bootstrap/cache
 COPY web/docker/10-antareja.sh /opt/docker/provision/entrypoint.d/10-antareja.sh
+COPY web/docker/live.conf /opt/docker/etc/nginx/vhost.common.d/20-antareja-live.conf
 RUN chmod +x /opt/docker/provision/entrypoint.d/10-antareja.sh

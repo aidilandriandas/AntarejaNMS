@@ -317,3 +317,21 @@ tr.sensor-row.sel td { background: var(--accent-soft) !important; }
 .ipgrid .ip.conflict { background: var(--crit); border: 0; color: #fff; }
 .ipgrid .ip.reserved { border-style: solid; background: var(--off-soft); }
 @media (max-width: 860px) { .ipgrid { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
+
+/* CCTV */
+.cams { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.cam { position: relative; display: block; padding: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #0b0f14; cursor: pointer; aspect-ratio: 16 / 9; text-align: left; }
+.cam:hover { border-color: var(--accent); }
+.cam img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cam .cam-label { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 10px 8px; background: linear-gradient(transparent, rgba(0,0,0,.75)); color: #fff; }
+.cam .cam-label b { display: block; font-size: 13px; } .cam .cam-label small { font-size: 11.5px; opacity: .8; }
+.cam .cam-nosig { position: absolute; inset: 0; display: none; place-items: center; color: #8592a0; font: 500 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.cam.nosignal .cam-nosig { display: grid; } .cam.nosignal img { opacity: 0; }
+.cam .cam-badge { position: absolute; top: 8px; right: 8px; }
+.cam-modal { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.75); display: grid; place-items: center; padding: 16px; }
+.cam-box { width: min(1200px, 100%); background: var(--surface); border-radius: 10px; overflow: hidden; }
+.cam-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.cam-video { position: relative; background: #000; aspect-ratio: 16 / 9; }
+.cam-video video { width: 100%; height: 100%; display: block; }
+.cam-status { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: #fff; font: 500 13px var(--mono); text-align: center; pointer-events: none; }
+.cam-status:empty { display: none; }

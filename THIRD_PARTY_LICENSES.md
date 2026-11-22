@@ -34,4 +34,5 @@ Dependensi turunan tercantum di `collector/go.sum` dan `web/composer.lock`. Peri
 | PostgreSQL | 17 | PostgreSQL License (permisif) |
 | VictoriaMetrics (single-node) | 1.123 | Apache-2.0 |
 | webdevops/php-nginx (image dasar web: PHP-FPM 8.4 + nginx) | 8.4-alpine | MIT (image); PHP License, BSD (nginx) |
+| go2rtc (server media CCTV: RTSP → MSE/WebSocket) | 1.9.9 | MIT; image resminya memuat ffmpeg (LGPL/GPL) sebagai program terpisah, tidak digabung ke kode ANTAREJA |
 | net-snmp `snmpd` | — | BSD-like — **hanya** untuk pengujian (`deploy/test`) |

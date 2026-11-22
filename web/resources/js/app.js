@@ -280,3 +280,46 @@ if (topoRoot) {
         (await r.json()).forEach((p) => { const o = document.createElement('option'); o.value = p.if_index; o.textContent = p.label; portSel.appendChild(o); });
     }));
 }
+
+// ---------- CCTV ----------
+const cctv = document.querySelector('[data-cctv]');
+if (cctv) {
+    import('./cctv.js').then(({ play }) => {
+        // Snapshot tiap 10 detik (gambar dari sub-stream lewat /live/frame.jpeg)
+        const refresh = () => {
+            if (document.hidden) return;
+            $$('img[data-snap]', cctv).forEach((img) => {
+                const next = new Image();
+                next.onload = () => { img.src = next.src; img.closest('.cam').classList.remove('nosignal'); };
+                next.onerror = () => img.closest('.cam').classList.add('nosignal');
+                next.src = `/live/frame.jpeg?src=${img.dataset.snap}&t=${Date.now()}`;
+            });
+        };
+        refresh();
+        setInterval(refresh, 10000);
+
+        const modal = $('[data-cam-modal]');
+        const video = $('video', modal);
+        const status = $('[data-cam-status]', modal);
+        let stop = null;
+        let current = null;
+        const open = async (camId, name, q) => {
+            stop?.();
+            current = { camId, name, q };
+            $('[data-cam-title]', modal).textContent = name;
+            $$('[data-q]', modal).forEach((b) => b.classList.toggle('primary', b.dataset.q === q));
+            modal.hidden = false;
+            status.textContent = 'Menyiapkan aliran…';
+            const r = await fetch(`/cctv/${camId}/live?q=${q}`, { method: 'POST', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrf() } });
+            const j = await r.json().catch(() => ({}));
+            if (!r.ok) { status.textContent = j.error || 'Gagal menyiapkan aliran'; return; }
+            stop = play(video, j.src, (s) => { status.textContent = s; });
+        };
+        const close = () => { stop?.(); stop = null; modal.hidden = true; };
+        $$('[data-cam]', cctv).forEach((el) => el.addEventListener('click', () => open(el.dataset.cam, el.dataset.camName, 'sub')));
+        $$('[data-q]', modal).forEach((b) => b.addEventListener('click', () => current && open(current.camId, current.name, b.dataset.q)));
+        $('[data-cam-close]', modal).addEventListener('click', close);
+        modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) close(); });
+    });
+}

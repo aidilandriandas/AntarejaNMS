@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\CctvController;
 use App\Http\Controllers\ChannelController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
@@ -21,6 +22,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('setup', [AuthController::class, 'setup'])->name('setup');
 Route::post('setup', [AuthController::class, 'storeSetup'])->name('setup.store');
+
+// Dipanggil nginx (auth_request) untuk tiap koneksi video CCTV; tidak memakai middleware auth agar menjawab 401, bukan redirect.
+Route::get('cctv/auth', [CctvController::class, 'auth'])->name('cctv.auth');
 
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthController::class, 'showLogin'])->name('login');
@@ -54,6 +58,11 @@ Route::middleware('auth')->group(function () {
         Route::delete('topologi/sambungan/{link}', [TopologyController::class, 'destroyLink'])->name('topology.links.destroy')->whereNumber('link');
         Route::post('topologi/posisi', [TopologyController::class, 'savePositions'])->name('topology.positions');
 
+        Route::get('cctv/kelola', [CctvController::class, 'manage'])->name('cctv.manage');
+        Route::post('cctv/kamera', [CctvController::class, 'store'])->name('cctv.store');
+        Route::put('cctv/kamera/{camera}', [CctvController::class, 'update'])->name('cctv.update');
+        Route::delete('cctv/kamera/{camera}', [CctvController::class, 'destroy'])->name('cctv.destroy');
+
         Route::post('ipam/subnet', [IpamController::class, 'store'])->name('ipam.store');
         Route::put('ipam/subnet/{subnet}', [IpamController::class, 'update'])->name('ipam.update')->whereNumber('subnet');
         Route::delete('ipam/subnet/{subnet}', [IpamController::class, 'destroy'])->name('ipam.destroy')->whereNumber('subnet');
@@ -70,6 +79,8 @@ Route::middleware('auth')->group(function () {
     Route::get('problem', [ProblemController::class, 'index'])->name('problems.index');
     Route::get('maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
     Route::get('sensor', [SensorController::class, 'index'])->name('sensors.index');
+    Route::get('cctv', [CctvController::class, 'index'])->name('cctv.index');
+    Route::post('cctv/{camera}/live', [CctvController::class, 'live'])->name('cctv.live')->middleware('throttle:60,1');
     Route::get('ipam', [IpamController::class, 'index'])->name('ipam.index');
     Route::get('ipam/cari', [IpamController::class, 'search'])->name('ipam.search');
     Route::get('ipam/subnet/{subnet}', [IpamController::class, 'show'])->name('ipam.show')->whereNumber('subnet');

@@ -90,9 +90,19 @@ services:
       ANTAREJA_METRICS_URL: http://metrics:8428
       ANTAREJA_VERSION: ${ANTAREJA_TAG:-0.2.0-dev}
       ANTAREJA_BACKUP_DIR: /backups
+      ANTAREJA_GO2RTC_URL: http://go2rtc:1984
       TZ: ${TZ:-Asia/Jakarta}
     volumes:
       - ${BACKUP_DIR:-./backups}:/backups:ro   # hanya untuk unduh dari web
+
+  go2rtc:
+    # Server media (MIT) untuk live view CCTV: RTSP kamera -> MSE/WebSocket. Tidak ada port yang dipublikasikan.
+    image: alexxit/go2rtc:1.9.9
+    restart: unless-stopped
+    volumes:
+      - ./go2rtc/go2rtc.yaml:/config/go2rtc.yaml:ro
+    environment:
+      TZ: ${TZ:-Asia/Jakarta}
 
   backup:
     image: postgres:17.6-alpine
