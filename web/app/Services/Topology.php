@@ -17,7 +17,7 @@ class Topology
     {
         $devices = Device::query()->where('enabled', true)->with('site:id,code')
             ->when($siteId, fn ($q) => $q->where('site_id', $siteId))
-            ->get(['id', 'name', 'host', 'site_id', 'category', 'status', 'parent_id', 'last_rtt_ms', 'snmp_enabled', 'status_reason']);
+            ->get(['id', 'name', 'host', 'site_id', 'category', 'status', 'parent_id', 'last_rtt_ms', 'snmp_enabled', 'status_reason', 'sys_name']);
         $ids = $devices->pluck('id')->all();
         $idSet = array_flip($ids);
         $positions = (array) Setting::get('topology.positions', []);
@@ -99,6 +99,28 @@ class Topology
 
         $unknown = DB::table('neighbors')->whereIn('device_id', $ids ?: [0])->whereNull('remote_device_id')
             ->limit(200)->get(['device_id', 'local_if_index', 'remote_name', 'remote_ip', 'remote_port', 'remote_platform', 'protocol']);
+        // Tetangga yang belum dicocokkan collector (mis. perangkatnya baru ditambahkan) tetapi IP / sysName / nama-nya
+        // sama dengan perangkat terdaftar → langsung jadi garis ke perangkat itu, bukan node abu-abu.
+        $byKey = [];
+        foreach ($devices as $d) {
+            foreach ([$d->host, $d->sys_name, $d->sys_name ? explode('.', $d->sys_name)[0] : null, $d->name] as $k) {
+                if ($k !== null && $k !== '') {
+                    $byKey[strtolower($k)] ??= $d->id;
+                }
+            }
+        }
+        $unknown = $unknown->reject(function ($n) use ($byKey, $addEdge) {
+            foreach ([$n->remote_ip, $n->remote_name, $n->remote_name ? explode('.', $n->remote_name)[0] : null] as $k) {
+                $id = $k ? ($byKey[strtolower($k)] ?? null) : null;
+                if ($id && $id !== (int) $n->device_id) {
+                    $addEdge($n->device_id, $n->local_if_index, $id, null, $n->protocol);
+
+                    return true;
+                }
+            }
+
+            return false;
+        })->values();
         $need = [];
         foreach ($edges as $e) {
             foreach ([[$e['from'], $e['a_if']], [$e['to'], $e['b_if']]] as [$d, $i]) {

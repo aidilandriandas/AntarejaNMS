@@ -318,6 +318,12 @@ func (p *Poller) SNMPCycle(ctx context.Context) error {
 	}
 	close(jobs)
 	wg.Wait()
+	// konteks sendiri: batas waktu putaran bisa sudah habis dipakai perangkat yang tidak menjawab
+	mctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+	defer cancel()
+	if err := p.Store.RematchNeighbors(mctx); err != nil {
+		p.Log.Warn("cocokkan ulang tetangga gagal", "galat", err)
+	}
 	p.lastSNMP.Store(time.Now().Unix())
 	p.Log.Info("putaran SNMP", "berhasil", ok.Load(), "gagal", fail.Load())
 	return ctx.Err()
