@@ -31,6 +31,7 @@ use App\Http\Controllers\SiteController;
 use App\Http\Controllers\StatusLinkController;
 use App\Http\Controllers\SystemController;
 use App\Http\Controllers\TopologyController;
+use App\Http\Controllers\TriggerController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -77,6 +78,12 @@ Route::middleware('auth')->group(function () {
 
         Route::post('perangkat/{device}/port/{ifIndex}/pantau', [DeviceController::class, 'toggleMonitor'])->name('devices.monitor')->whereNumber('ifIndex');
 
+        Route::get('trigger/tambah', [TriggerController::class, 'create'])->name('triggers.create');
+        Route::post('trigger', [TriggerController::class, 'store'])->name('triggers.store');
+        Route::get('trigger/{trigger}/ubah', [TriggerController::class, 'edit'])->name('triggers.edit')->whereNumber('trigger');
+        Route::put('trigger/{trigger}', [TriggerController::class, 'update'])->name('triggers.update')->whereNumber('trigger');
+        Route::post('trigger/{trigger}/aktif', [TriggerController::class, 'toggle'])->name('triggers.toggle')->whereNumber('trigger');
+        Route::delete('trigger/{trigger}', [TriggerController::class, 'destroy'])->name('triggers.destroy')->whereNumber('trigger');
         Route::post('layanan', [ServiceController::class, 'store'])->name('services.store');
         Route::put('layanan/{service}', [ServiceController::class, 'update'])->name('services.update')->whereNumber('service');
         Route::delete('layanan/{service}', [ServiceController::class, 'destroy'])->name('services.destroy')->whereNumber('service');
@@ -143,6 +150,7 @@ Route::middleware('auth')->group(function () {
     Route::get('ipam', [IpamController::class, 'index'])->name('ipam.index');
     Route::get('ipam/cari', [IpamController::class, 'search'])->name('ipam.search');
     Route::get('ipam/subnet/{subnet}', [IpamController::class, 'show'])->name('ipam.show')->whereNumber('subnet');
+    Route::get('trigger', [TriggerController::class, 'index'])->name('triggers.index');
     Route::get('kapasitas', [CapacityController::class, 'index'])->name('capacity.index');
     Route::get('kapasitas.csv', [CapacityController::class, 'csv'])->name('capacity.csv');
     Route::get('layanan', [ServiceController::class, 'index'])->name('services.index');

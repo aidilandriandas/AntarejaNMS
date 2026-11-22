@@ -29,6 +29,7 @@ class Problem extends Model
         'sensor' => 'Sensor',
         'ip_conflict' => 'Konflik IP',
         'camera' => 'Gambar kamera',
+        'custom' => 'Trigger custom',
     ];
 
     protected function casts(): array

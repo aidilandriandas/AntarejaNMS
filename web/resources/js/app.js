@@ -24,6 +24,25 @@ $$('[data-menu]').forEach((b) => b.addEventListener('click', () => document.body
 $$('[data-autosubmit]').forEach((el) => el.addEventListener('change', () => el.form?.submit()));
 $$('[data-print]').forEach((el) => el.addEventListener('click', () => window.print()));
 
+// Tampilkan field sesuai pilihan lain: data-show-if="nama=nilai1,nilai2". Tanpa JS semua field tampil.
+$$('[data-show-if]').forEach((el) => {
+    const [name, vals] = el.dataset.showIf.split('=');
+    const src = el.closest('form')?.querySelector(`[name="${name}"]`);
+    if (!src) return;
+    const ok = vals.split(',');
+    const sync = () => { el.hidden = !ok.includes(src.value); };
+    src.addEventListener('change', sync);
+    sync();
+});
+// Satuan ambang mengikuti metrik terpilih
+$$('[data-unit-src]').forEach((sel) => {
+    const out = sel.closest('form')?.querySelector('[data-unit-out]');
+    if (!out) return;
+    const sync = () => { out.textContent = sel.selectedOptions[0]?.dataset.unit || ''; };
+    sel.addEventListener('change', sync);
+    sync();
+});
+
 // Saring opsi <select multiple> dengan kotak cari; opsi yang sudah dipilih tetap tampil
 $$('[data-filter-select]').forEach((inp) => {
     const sel = document.getElementById(inp.dataset.filterSelect);

@@ -25,6 +25,7 @@ type Device struct {
 	ID          int64
 	Name        string
 	Category    string
+	SiteID      int64
 	Status      string
 	Reason      string
 	FailStreak  int   // putaran ping gagal total berturut-turut (sedang menuju down)
@@ -63,9 +64,9 @@ type Conflict struct {
 
 // Sensor adalah pembacaan sensor tersimpan (lihat profiles). Fresh=false bila tidak diperbarui > 20 menit.
 type Sensor struct {
-	Key, Label, Unit, Text, Status string
-	Value                          *float64
-	Fresh                          bool
+	Key, Label, Unit, Text, Status, Class string
+	Value                                 *float64
+	Fresh                                 bool
 }
 
 type Port struct {
@@ -301,7 +302,7 @@ func Summary(r Result) string {
 		n[c.Kind]++
 	}
 	var parts []string
-	for _, k := range []string{"down", "loss", "latency", "snmp", "port_down", "port_util"} {
+	for _, k := range []string{"down", "loss", "latency", "snmp", "port_down", "port_util", "custom"} {
 		if n[k] > 0 {
 			parts = append(parts, fmt.Sprintf("%s=%d", k, n[k]))
 		}

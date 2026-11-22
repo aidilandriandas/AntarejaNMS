@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"math"
 	"strconv"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -22,6 +23,7 @@ type StatsSource interface {
 type Engine struct {
 	DB    *pgxpool.Pool
 	Stats StatsSource
+	trig  TriggerState
 }
 
 type Outcome struct {
@@ -41,6 +43,18 @@ func (e *Engine) Run(ctx context.Context) (Outcome, error) {
 		return out, err
 	}
 	res := Evaluate(devs, th)
+	if trs, ports, err := e.loadTriggers(ctx); err != nil {
+		return out, err
+	} else if len(trs) > 0 || len(e.trig) > 0 {
+		if e.trig == nil {
+			e.trig = TriggerState{}
+		}
+		tr := EvaluateTriggers(trs, devs, ports, time.Now(), e.trig)
+		res.Conds = append(res.Conds, tr.Conds...)
+		for k := range tr.Unknown {
+			res.Unknown[k] = true
+		}
+	}
 	out.Summary = Summary(res)
 
 	tx, err := e.DB.Begin(ctx)
@@ -155,7 +169,7 @@ func (e *Engine) thresholds(ctx context.Context) (Thresholds, error) {
 
 func (e *Engine) load(ctx context.Context, th Thresholds) ([]Device, error) {
 	rows, err := e.DB.Query(ctx, `
-		SELECT d.id, d.name, d.category, d.status, COALESCE(d.status_reason, ''), d.fail_streak, COALESCE(d.parent_id, 0), d.ping_enabled, d.snmp_enabled, d.thresholds,
+		SELECT d.id, d.name, d.category, COALESCE(d.site_id, 0), d.status, COALESCE(d.status_reason, ''), d.fail_streak, COALESCE(d.parent_id, 0), d.ping_enabled, d.snmp_enabled, d.thresholds,
 			COALESCE((SELECT m.title FROM maintenances m
 				WHERE now() >= m.starts_at AND now() < m.ends_at
 				  AND (m.scope = 'all' OR (m.scope = 'site' AND m.site_id = d.site_id)
@@ -170,7 +184,7 @@ func (e *Engine) load(ctx context.Context, th Thresholds) ([]Device, error) {
 	for rows.Next() {
 		var d Device
 		var thr []byte
-		if err := rows.Scan(&d.ID, &d.Name, &d.Category, &d.Status, &d.Reason, &d.FailStreak, &d.ParentID, &d.PingEnabled, &d.SNMPEnabled, &thr, &d.InMaintenance); err != nil {
+		if err := rows.Scan(&d.ID, &d.Name, &d.Category, &d.SiteID, &d.Status, &d.Reason, &d.FailStreak, &d.ParentID, &d.PingEnabled, &d.SNMPEnabled, &thr, &d.InMaintenance); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -210,7 +224,7 @@ func (e *Engine) load(ctx context.Context, th Thresholds) ([]Device, error) {
 		return nil, err
 	}
 
-	srows, err := e.DB.Query(ctx, `SELECT device_id, key, label, unit, COALESCE(text, ''), status, value, updated_at > now() - interval '20 minutes' FROM device_sensors`)
+	srows, err := e.DB.Query(ctx, `SELECT device_id, key, label, unit, COALESCE(text, ''), status, value, updated_at > now() - interval '20 minutes', class FROM device_sensors`)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +232,7 @@ func (e *Engine) load(ctx context.Context, th Thresholds) ([]Device, error) {
 	for srows.Next() {
 		var dev int64
 		var s Sensor
-		if err := srows.Scan(&dev, &s.Key, &s.Label, &s.Unit, &s.Text, &s.Status, &s.Value, &s.Fresh); err != nil {
+		if err := srows.Scan(&dev, &s.Key, &s.Label, &s.Unit, &s.Text, &s.Status, &s.Value, &s.Fresh, &s.Class); err != nil {
 			return nil, err
 		}
 		if i, ok := idx[dev]; ok {

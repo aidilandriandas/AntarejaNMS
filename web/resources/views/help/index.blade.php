@@ -15,6 +15,7 @@
     <a href="#ack">ACK, eskalasi & notifikasi</a>
     <a href="#insiden">Insiden</a>
     <a href="#layanan">SLA layanan</a>
+    <a href="#trigger">Trigger</a>
     <a href="#kapasitas">Kapasitas port</a>
     <a href="#maintenance">Maintenance & perangkat induk</a>
     <a href="#noc">Layar NOC</a>
@@ -92,6 +93,16 @@
         <li>Jalur seri (Core → Radio PTP → Switch): semua wajib hidup, isi minimal = jumlah perangkat, atau satu komponen per perangkat. Perangkat cadangan (ISP 1 &amp; ISP 2): isi minimal 1.</li>
         <li>Status: <span class="badge ok">Normal</span> semua hidup; <span class="badge warn">Tanpa cadangan</span> layanan jalan tetapi ada perangkat down (segera perbaiki sebelum cadangannya ikut mati); <span class="badge crit">Terganggu</span> layanan tidak jalan.</li>
         <li>Ketersediaan dihitung dari riwayat down perangkat (gangguan saat maintenance tidak dihitung), mulai sejak perangkat ditambahkan. <b>Sisa jatah downtime</b> = berapa lama lagi layanan boleh mati bulan ini agar tetap memenuhi target.</li>
+    </ul>
+</div></section>
+
+<section class="card" id="trigger"><div class="hd"><h2>Trigger</h2></div><div class="bd">
+    <ul class="help-list">
+        <li><b>Trigger</b> adalah aturan problem buatan sendiri, untuk kondisi yang tidak ditangkap ambang bawaan. Contoh: trafik masuk port uplink kurang dari 0,01 Mbps selama 10 menit di jam kerja (link putus tetapi port masih up), atau suhu panel paling sedikit 60 °C selama 5 menit.</li>
+        <li><b>Bertahan selama</b>: problem baru dibuat bila kondisinya terus terpenuhi selama itu, supaya lonjakan sesaat tidak membunyikan alarm. Isi 0 untuk langsung.</li>
+        <li><b>Saring nama</b>: untuk trafik port dan sensor, hanya port atau sensor yang namanya berisi teks itu. Trafik port dibaca tiap putaran SNMP (bawaan 5 menit), jadi durasi di bawah itu tidak lebih cepat.</li>
+        <li><b>Jadwal aktif</b>: di luar hari dan jam ini trigger tidak dinilai dan problem-nya selesai sendiri.</li>
+        <li>Problem dari trigger diperlakukan sama dengan problem lain: ikut maintenance, induk down, notifikasi, eskalasi, dan insiden. Trigger yang dimatikan atau dihapus menutup problem-nya pada putaran berikutnya.</li>
     </ul>
 </div></section>
 
