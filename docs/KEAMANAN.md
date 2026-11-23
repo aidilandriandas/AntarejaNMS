@@ -62,6 +62,14 @@ tidak dicatat di access log nginx. Siapa pun yang memegang tautan bisa membukany
 - Kolom keluaran ditulis eksplisit per endpoint; kolom `*_enc` (kredensial) tidak pernah dipilih. Dibatasi 120 permintaan per menit.
 - Pembuatan dan pencabutan token tercatat di jejak audit; waktu dan IP pemakaian terakhir tampil di daftar token.
 
+## 5b. Salinan backup ke luar server
+
+- Password/private key SFTP dan secret key S3 disimpan terenkripsi (kunci aplikasi), tidak pernah dikirim ke browser.
+- SFTP: sidik jari host key server dikunci pada koneksi pertama; bila berubah, salinan ditolak sampai admin mereset.
+- S3: tanda tangan AWS SigV4; isi diverifikasi Content-MD5 (oleh server) dan ETag (oleh collector).
+- Collector hanya membaca folder backup (mount read-only). Akun tujuan cukup diberi hak tulis dan hapus di satu folder.
+- Berkas backup berisi seluruh database, termasuk kredensial perangkat yang terenkripsi; perlakukan tujuan salinan sebagai rahasia.
+
 ## 6. Ekspor konfigurasi
 
 Berkas ekspor tanpa rahasia hanya berisi nama, host/IP, dan pengaturan — tetap perlakukan sebagai dokumen internal.

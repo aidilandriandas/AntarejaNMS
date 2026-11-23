@@ -12,6 +12,7 @@ class SystemController extends Controller
     public const LABELS = [
         'backup_failed' => 'Backup gagal', 'backup_late' => 'Backup terlambat', 'backup_service' => 'Layanan backup berhenti',
         'backup_disk' => 'Disk backup hampir penuh', 'notify_failed' => 'Notifikasi gagal terkirim', 'syslog_dropped' => 'Syslog dibuang',
+        'backup_offsite' => 'Salinan backup ke luar server gagal',
     ];
 
     /** Status ringkas untuk banner & halaman: [collectorStale, activeAlerts]. */

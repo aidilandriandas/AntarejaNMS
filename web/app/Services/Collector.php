@@ -119,4 +119,15 @@ class Collector
 
         return $res->json();
     }
+
+    /** Uji tujuan salinan backup (tulis, daftar, hapus berkas kecil). */
+    public function offsiteTest(): array
+    {
+        $res = $this->http()->timeout(60)->post('/v1/backup/offsite/test');
+        if (! $res->successful()) {
+            throw new RuntimeException($res->json('error') ?? ('collector menjawab ' . $res->status()));
+        }
+
+        return $res->json();
+    }
 }

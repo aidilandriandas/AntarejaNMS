@@ -237,6 +237,9 @@ Route::middleware('auth')->group(function () {
         Route::get('backup', [BackupController::class, 'index'])->name('backups.index');
         Route::post('backup', [BackupController::class, 'store'])->name('backups.store')->middleware('throttle:6,1');
         Route::put('backup/pengaturan', [BackupController::class, 'settings'])->name('backups.settings');
+        Route::put('backup/luar-server', [BackupController::class, 'offsite'])->name('backups.offsite');
+        Route::post('backup/luar-server/uji', [BackupController::class, 'offsiteTest'])->name('backups.offsite.test')->middleware('throttle:6,1');
+        Route::post('backup/luar-server/reset-host-key', [BackupController::class, 'offsiteResetHostKey'])->name('backups.offsite.hostkey');
         Route::get('backup/{backup}/unduh', [BackupController::class, 'download'])->name('backups.download')->whereNumber('backup');
     });
 });

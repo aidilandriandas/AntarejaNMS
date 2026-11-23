@@ -154,6 +154,9 @@ table.t { width: 100%; border-collapse: collapse; }
 .form { display: grid; gap: var(--space-md); }
 .row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); }
 .row.r3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.row > * { min-width: 0; }
+.stack > *, .card > .bd, .form { min-width: 0; }
+.hint code, .notes code, .alert code { overflow-wrap: anywhere; }
 .field label { display: block; font-weight: 600; margin-bottom: 6px; }
 .field .hint { font-size: var(--text-xs); color: var(--color-muted); margin-top: 5px; min-height: 1lh; }
 .field .err { font-size: var(--text-xs); color: var(--color-crit); margin-top: 5px; }
@@ -503,6 +506,7 @@ table.t.logs td:nth-child(4) { font-size: var(--text-xs); white-space: nowrap; }
 .dt-matrix td.dt-crit { color: var(--color-crit); font-weight: 700; }
 .dt-matrix td.muted { color: var(--color-muted); }
 .dt-matrix .dt-total td { border-top: 1px solid var(--color-rule-strong); font-weight: 600; }
+.stack-sm { display: grid; gap: var(--space-sm); }
 .notes { font-size: var(--text-sm); }
 .notes p { margin: 0; }
 .notes p + p { margin-top: var(--space-sm); }

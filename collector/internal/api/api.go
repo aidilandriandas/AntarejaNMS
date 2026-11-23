@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/aidilandriandas/antarejanms/collector/internal/notify"
+	"github.com/aidilandriandas/antarejanms/collector/internal/offsite"
 	"github.com/aidilandriandas/antarejanms/collector/internal/poller"
 	"github.com/aidilandriandas/antarejanms/collector/internal/snmp"
 	"github.com/aidilandriandas/antarejanms/collector/internal/tools"
@@ -39,8 +40,10 @@ type Server struct {
 	Notify *notify.Dispatcher
 	// Preview laporan terjadwal (opsional)
 	Report func(ctx context.Context, scheduleID int64) (subject, html string, err error)
-	Token  string
-	Log    *slog.Logger
+	// Salinan backup ke luar server (opsional)
+	Offsite *offsite.Runner
+	Token   string
+	Log     *slog.Logger
 }
 
 func (s *Server) Handler() http.Handler {
@@ -50,6 +53,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /v1/topology/sync", s.auth(s.syncTopology))
 	mux.HandleFunc("GET /v1/devices/{id}/diagnose", s.auth(s.diagnose))
 	mux.HandleFunc("POST /v1/devices/{id}/tools", s.auth(s.tools))
+	mux.HandleFunc("POST /v1/backup/offsite/test", s.auth(s.offsiteTest))
 	mux.HandleFunc("POST /v1/channels/{id}/test", s.auth(s.testChannel))
 	mux.HandleFunc("POST /v1/live", s.auth(s.live))
 	mux.HandleFunc("GET /v1/reports/{id}/preview", s.auth(s.reportPreview))
@@ -154,6 +158,17 @@ func (s *Server) poll(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	writeJSON(w, http.StatusAccepted, map[string]string{"status": "dijadwalkan"})
+}
+
+// offsiteTest menguji tujuan salinan backup: tulis, baca daftar, hapus berkas kecil.
+func (s *Server) offsiteTest(w http.ResponseWriter, r *http.Request) {
+	if s.Offsite == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "salinan backup tidak aktif di collector ini"})
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
+	defer cancel()
+	writeJSON(w, http.StatusOK, s.Offsite.Test(ctx))
 }
 
 // tools menjalankan alat diagnosa ke host perangkat itu (bukan sembarang alamat, supaya NMS tidak jadi alat pemindai).

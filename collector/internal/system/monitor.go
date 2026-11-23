@@ -53,6 +53,7 @@ type Alert struct {
 var labels = map[string]string{
 	"backup_failed": "Backup gagal", "backup_late": "Backup terlambat", "backup_service": "Layanan backup berhenti",
 	"backup_disk": "Disk backup hampir penuh", "notify_failed": "Notifikasi gagal terkirim", "syslog_dropped": "Syslog dibuang",
+	"backup_offsite": "Salinan backup ke luar server gagal",
 }
 
 // Run menulis detak lalu menilai & mengirim peringatan. Dipanggil tiap menit.
@@ -118,6 +119,19 @@ func (m *Monitor) evaluate(ctx context.Context) []Alert {
 		msg = fmt.Sprintf("Backup database berhasil terakhir %s (lebih dari 36 jam).", lastOK.Local().Format("02/01/2006 15.04"))
 	}
 	out = append(out, Alert{Key: "backup_late", Active: late, Severity: "high", Message: msg})
+
+	// Salinan ke luar server: backup berhasil terakhir belum tersalin setelah percobaan habis, atau tertahan > 6 jam
+	var offType string
+	_ = m.DB.QueryRow(ctx, `SELECT COALESCE((SELECT value->>'type' FROM settings WHERE key = 'backup.offsite'), 'off')`).Scan(&offType)
+	var offSt, offErr string
+	var offFin *time.Time
+	if offType != "off" {
+		_ = m.DB.QueryRow(ctx, `SELECT COALESCE(offsite_status, 'pending'), COALESCE(offsite_error, ''), finished_at FROM backups
+			WHERE status = 'ok' ORDER BY id DESC LIMIT 1`).Scan(&offSt, &offErr, &offFin)
+	}
+	offBad := offType != "off" && offFin != nil && offSt != "ok" && (offSt == "failed" || time.Since(*offFin) > 6*time.Hour)
+	out = append(out, Alert{Key: "backup_offsite", Active: offBad, Severity: "high",
+		Message: "Backup terakhir belum tersalin ke luar server: " + trim(map[bool]string{true: offErr, false: "masih tertunda lebih dari 6 jam"}[offErr != ""], 200)})
 
 	// Layanan backup & disk folder backup (dilaporkan layanan backup tiap 5 menit)
 	var raw []byte

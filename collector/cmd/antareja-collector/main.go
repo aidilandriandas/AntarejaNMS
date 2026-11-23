@@ -36,6 +36,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/incidents"
 	"github.com/aidilandriandas/antarejanms/collector/internal/migrate"
 	"github.com/aidilandriandas/antarejanms/collector/internal/notify"
+	"github.com/aidilandriandas/antarejanms/collector/internal/offsite"
 	"github.com/aidilandriandas/antarejanms/collector/internal/ping"
 	"github.com/aidilandriandas/antarejanms/collector/internal/poller"
 	"github.com/aidilandriandas/antarejanms/collector/internal/problems"
@@ -206,6 +207,25 @@ func run() error {
 			}()
 		}
 
+		// Salinan backup NMS ke luar server (SFTP / S3), dicek tiap menit
+		off := &offsite.Runner{DB: db, Box: box, Log: log, Dir: cfg.BackupDir}
+		go func() {
+			t := time.NewTicker(time.Minute)
+			defer t.Stop()
+			for {
+				rctx, cancel := context.WithTimeout(ctx, 2*time.Hour)
+				if err := off.Run(rctx); err != nil && ctx.Err() == nil {
+					log.Warn("salinan backup ke luar server", "galat", err)
+				}
+				cancel()
+				select {
+				case <-ctx.Done():
+					return
+				case <-t.C:
+				}
+			}
+		}()
+
 		// Rekap down bulanan per perangkat (tiap jam)
 		go func() {
 			mr := &report.MonthlyRunner{DB: db, Log: log}
@@ -242,7 +262,7 @@ func run() error {
 		}()
 
 		if cfg.APIAddr != "" {
-			api := &http.Server{Addr: cfg.APIAddr, Handler: (&apiserver.Server{Poller: p, Notify: disp, Report: reports.Preview, Token: apiserver.Token(box.Key()), Log: log}).Handler(),
+			api := &http.Server{Addr: cfg.APIAddr, Handler: (&apiserver.Server{Poller: p, Notify: disp, Report: reports.Preview, Offsite: off, Token: apiserver.Token(box.Key()), Log: log}).Handler(),
 				ReadHeaderTimeout: 5 * time.Second, WriteTimeout: 60 * time.Second}
 			go func() {
 				if err := api.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
