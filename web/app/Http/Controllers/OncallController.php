@@ -33,7 +33,7 @@ class OncallController extends Controller
 
             return ['date' => $d, 'slots' => $slots->filter(fn ($s) => $s->starts_at < $de && $s->ends_at > $d)->values()];
         });
-        $upcoming = OncallSlot::with('user')->where('ends_at', '>', now())->orderBy('starts_at')->limit(60)->get();
+        $upcoming = OncallSlot::with('user')->where('ends_at', '>', now())->where('starts_at', '<', now()->addDays(7))->orderBy('starts_at')->limit(100)->get();
         $users = User::where('active', true)->orderBy('name')->get(['id', 'name', 'username', 'email', 'telegram_chat_id', 'phone', 'role']);
         // Orang yang punya giliran mendatang tetapi tidak punya email maupun Telegram: notifikasi piket tidak sampai ke mereka
         $noContact = $upcoming->pluck('user')->unique('id')->filter(fn ($u) => $u && ! $u->email && ! $u->telegram_chat_id)->values();

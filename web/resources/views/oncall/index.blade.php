@@ -67,12 +67,12 @@
                 <div class="row r3">
                     @for($i = 0; $i < 6; $i++)
                     <select class="input" name="people[]" aria-label="Orang ke-{{ $i + 1 }}">
-                        <option value="">{{ $i ? 'Orang ke-' . ($i + 1) . ' (opsional)' : 'Orang pertama' }}</option>
+                        <option value="">{{ $i ? 'Orang ke-' . ($i + 1) : 'Orang pertama' }}</option>
                         @foreach($users as $u)<option value="{{ $u->id }}" @selected((old('people')[$i] ?? null) == $u->id)>{{ $u->name }}</option>@endforeach
                     </select>
                     @endfor
                 </div>
-                <div class="hint">Giliran dibagi bergantian sesuai urutan ini.</div><x-field-error name="people"/></fieldset>
+                <div class="hint">Giliran dibagi bergantian sesuai urutan ini. Isi seperlunya, kotak kosong dilewati.</div><x-field-error name="people"/></fieldset>
             <div class="row">
                 <div class="field"><label for="start_date">Mulai tanggal</label><input class="input" type="date" id="start_date" name="start_date" value="{{ old('start_date', $week->isPast() ? now()->format('Y-m-d') : $week->format('Y-m-d')) }}" required><x-field-error name="start_date"/></div>
                 <div class="field"><label for="start_hour">Jam ganti giliran pertama</label><select class="input" id="start_hour" name="start_hour">
@@ -107,7 +107,7 @@
 @endif
 
 <section class="card" style="margin-top:var(--space-xl)">
-    <div class="hd"><h2>Giliran berjalan dan mendatang</h2></div>
+    <div class="hd"><h2>Giliran berjalan dan 7 hari ke depan</h2></div>
     <div class="bd flush">
     @if($upcoming->isEmpty())
         <div class="empty">Belum ada giliran piket. {{ $canEdit ? 'Buat rotasi di atas untuk mengisi seminggu sekaligus.' : 'Minta engineer atau admin mengisi jadwal.' }}</div>
@@ -118,7 +118,7 @@
         @foreach($upcoming as $s)
             @php($live = $s->starts_at->isPast())
             <tr>
-                <td class="nowrap">{{ $s->starts_at->translatedFormat('D d/m') }}, {{ $span($s) }}@if($live) <span class="badge plain ok">bertugas</span>@endif</td>
+                <td class="nowrap">{{ $s->starts_at->isSameDay($s->ends_at->copy()->subSecond()) ? $s->starts_at->translatedFormat('D d/m') . ', ' : '' }}{{ $span($s) }}@if($live) <span class="badge plain ok">bertugas</span>@endif</td>
                 <td class="name">{{ $s->user->name }}<small>{{ $s->user->roleLabel() }}</small></td>
                 <td>@if($contact($s->user) !== ''){{ $contact($s->user) }} @else <span class="badge plain warn">belum ada kontak</span>@endif</td>
                 <td class="muted">{{ $s->note }}</td>
