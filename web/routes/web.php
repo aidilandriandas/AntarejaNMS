@@ -81,6 +81,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('perangkat/{device}', [DeviceController::class, 'destroy'])->name('devices.destroy');
         Route::post('perangkat/{device}/periksa', [DeviceController::class, 'poll'])->name('devices.poll')->middleware('throttle:10,1');
         Route::get('perangkat/{device}/diagnosa', [DeviceController::class, 'diagnose'])->name('devices.diagnose')->middleware('throttle:6,1');
+        Route::post('perangkat/{device}/alat', [DeviceController::class, 'tool'])->name('devices.tool')->middleware('throttle:12,1');
 
         Route::post('perangkat/{device}/port/{ifIndex}/pantau', [DeviceController::class, 'toggleMonitor'])->name('devices.monitor')->whereNumber('ifIndex');
 

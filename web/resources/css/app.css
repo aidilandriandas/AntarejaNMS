@@ -492,6 +492,12 @@ table.t.logs td:nth-child(4) { font-size: var(--text-xs); white-space: nowrap; }
 .tr-vb summary { cursor: pointer; font-family: var(--font-outlier); }
 .tr-vb .facts { margin-top: var(--space-xs); font-size: var(--text-xs); }
 .txt-warn { color: var(--color-warn); font-weight: 600; }
+.tool-bar { display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: center; }
+.tool-port { display: inline-flex; gap: var(--space-xs); align-items: center; }
+.tool-port .input { width: 88px; }
+.tool-out { margin-top: var(--space-sm); font-size: var(--text-sm); }
+.tool-out .t td, .tool-out .t th { padding-top: var(--space-3xs); padding-bottom: var(--space-3xs); }
+.tool-out .verdict { font-weight: 600; margin: 0 0 var(--space-xs); }
 .notes { font-size: var(--text-sm); }
 .notes p { margin: 0; }
 .notes p + p { margin-top: var(--space-sm); }

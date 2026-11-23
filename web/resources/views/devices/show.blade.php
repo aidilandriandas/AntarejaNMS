@@ -122,6 +122,15 @@
         </div></section>
         @endif
         @can('manage-devices')
+        @php($defPort = ['camera' => 554, 'nvr' => 554, 'server' => 22][$device->category] ?? ($device->cfg_type ? 22 : 80))
+        <section class="card" data-tools data-url="{{ route('devices.tool', $device) }}"><div class="hd"><h2>Alat diagnosa</h2><span class="sub">dari server ANTAREJA ke {{ $device->host }}</span></div><div class="bd">
+            <div class="tool-bar">
+                <button type="button" class="btn sm" data-tool="ping"><x-icon name="pulse"/>Ping 10 kali</button>
+                <button type="button" class="btn sm" data-tool="traceroute"><x-icon name="share"/>Traceroute</button>
+                <span class="tool-port"><label class="sr-only" for="tool-port">Port TCP</label><input class="input sm mono" id="tool-port" type="number" min="1" max="65535" value="{{ $defPort }}" data-tool-port><button type="button" class="btn sm" data-tool="port"><x-icon name="plug"/>Cek port</button></span>
+            </div>
+            <div class="tool-out" data-tool-out aria-live="polite"><p class="muted">Hasil muncul di sini. Traceroute bisa butuh sampai 30 detik.</p></div>
+        </div></section>
         @if($device->cfg_type)
         <section class="card"><div class="hd"><h2>Konfigurasi</h2>
             <form method="post" action="{{ route('devices.config.backup', $device) }}">@csrf<button class="btn sm" @disabled($device->cfg_requested)>{{ $device->cfg_requested ? 'Diminta…' : 'Backup sekarang' }}</button></form></div>

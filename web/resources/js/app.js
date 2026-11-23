@@ -303,6 +303,56 @@ if (document.querySelector('[data-port-graphs]')) {
     import('./portgraphs.js').then(({ initPortGraphs }) => initPortGraphs());
 }
 
+// ---------- Alat diagnosa di halaman perangkat ----------
+const toolsCard = $('[data-tools]');
+if (toolsCard) {
+    const out = $('[data-tool-out]', toolsCard);
+    const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+    const num = (v, d = 1) => (v == null ? 'tidak ada' : Number(v).toFixed(d).replace('.', ','));
+    const table = (head, rows) => {
+        const t = el('table', 't'); const th = el('thead'); const tr = el('tr');
+        head.forEach(([h, c]) => tr.append(el('th', c, h))); th.append(tr); t.append(th);
+        const tb = el('tbody');
+        rows.forEach((r) => { const x = el('tr'); r.forEach(([v, c]) => x.append(el('td', c, v))); tb.append(x); });
+        t.append(tb); const w = el('div', 'table-wrap'); w.append(t); return w;
+    };
+    const render = (tool, r) => {
+        out.replaceChildren();
+        if (r.error) { out.append(el('p', 'verdict txt-warn', r.error)); return; }
+        if (tool === 'ping') {
+            const ok = r.recv > 0;
+            out.append(el('p', 'verdict' + (r.loss_pct > 0 ? ' txt-warn' : ''), ok
+                ? `${r.recv} dari ${r.sent} dibalas (loss ${num(r.loss_pct, 0)}%), RTT rata-rata ${num(r.avg_ms, 2)} ms, min ${num(r.min_ms, 2)}, maks ${num(r.max_ms, 2)}, jitter ${num(r.jitter_ms, 2)}`
+                : `Tidak ada balasan dari ${r.target} (${r.sent} paket).`));
+            out.append(table([['Paket', ''], ['RTT', 'num']], (r.rtts_ms || []).map((v, i) => [[`#${i + 1}`, ''], [v == null ? 'tidak dibalas' : `${num(v, 2)} ms`, 'num']])));
+        } else if (tool === 'traceroute') {
+            out.append(el('p', 'verdict' + (r.reached ? '' : ' txt-warn'), r.reached ? `Sampai di ${r.target} dalam ${r.hops.length} hop.` : `Belum sampai ke ${r.target}; hop terakhir yang menjawab adalah titik untuk diperiksa.`));
+            out.append(table([['Hop', 'num'], ['Alamat', 'mono'], ['Waktu', 'num'], ['Keterangan', '']],
+                r.hops.map((h) => [[String(h.ttl), 'num'], [h.address || 'tidak menjawab', 'mono'], [h.ms == null ? '' : `${num(h.ms, h.ms < 10 ? 2 : 1)} ms`, 'num'], [h.note || '', 'muted']])));
+        } else {
+            const txt = { open: `Port ${r.port} terbuka (${num(r.ms, 1)} ms).`, closed: `Port ${r.port} tertutup: ${r.detail}.`, timeout: `Port ${r.port}: ${r.detail}.` }[r.state] || `Port ${r.port}: ${r.detail || r.state}`;
+            out.append(el('p', 'verdict' + (r.state === 'open' ? '' : ' txt-warn'), txt));
+        }
+    };
+    $$('[data-tool]', toolsCard).forEach((b) => b.addEventListener('click', async () => {
+        const tool = b.dataset.tool;
+        const body = { tool };
+        if (tool === 'port') body.port = Number($('[data-tool-port]', toolsCard).value);
+        $$('[data-tool]', toolsCard).forEach((x) => { x.disabled = true; });
+        out.replaceChildren(el('p', 'muted', tool === 'traceroute' ? 'Menjalankan traceroute, bisa sampai 30 detik…' : 'Menjalankan…'));
+        try {
+            const res = await fetch(toolsCard.dataset.url, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrf() }, body: JSON.stringify(body) });
+            const j = await res.json().catch(() => ({}));
+            if (!res.ok) { out.replaceChildren(el('p', 'verdict txt-warn', res.status === 429 ? 'Terlalu sering, tunggu sebentar.' : (j.error || j.message || `Gagal (${res.status})`))); return; }
+            render(j.tool, j.result);
+        } catch (e) {
+            out.replaceChildren(el('p', 'verdict txt-warn', 'Tidak bisa menghubungi server.'));
+        } finally {
+            $$('[data-tool]', toolsCard).forEach((x) => { x.disabled = false; });
+        }
+    }));
+}
+
 // ---------- Halaman topologi ----------
 const topoRoot = $('[data-topology]');
 if (topoRoot) {

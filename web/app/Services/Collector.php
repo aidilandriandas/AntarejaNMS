@@ -108,4 +108,15 @@ class Collector
 
         return $res->json();
     }
+
+    /** Alat diagnosa ke host perangkat: ping, traceroute, atau cek port TCP. Menunggu hasil (maks. ±40 detik). */
+    public function tool(int $deviceId, string $tool, ?int $port = null): array
+    {
+        $res = $this->http()->timeout(50)->post("/v1/devices/{$deviceId}/tools", array_filter(['tool' => $tool, 'port' => $port]));
+        if (! $res->successful()) {
+            throw new RuntimeException($res->json('error') ?? ('collector menjawab ' . $res->status()));
+        }
+
+        return $res->json();
+    }
 }

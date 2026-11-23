@@ -119,6 +119,21 @@ class DeviceController extends Controller
         return back()->with($ok ? 'ok' : 'error', $ok ? "Pemeriksaan {$device->name} dijalankan. Muat ulang halaman dalam beberapa detik." : 'Collector tidak dapat dihubungi.');
     }
 
+    /** Alat diagnosa dari collector ke host perangkat ini (JSON untuk kartu Alat diagnosa). */
+    public function tool(Request $request, Device $device, Collector $collector): JsonResponse
+    {
+        $d = $request->validate(['tool' => ['required', Rule::in(['ping', 'traceroute', 'port'])], 'port' => ['required_if:tool,port', 'nullable', 'integer', 'between:1,65535']]);
+        $label = ['ping' => 'Ping', 'traceroute' => 'Traceroute', 'port' => 'Cek port TCP ' . ($d['port'] ?? '')][$d['tool']];
+        try {
+            $r = $collector->tool($device->id, $d['tool'], isset($d['port']) ? (int) $d['port'] : null);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => 'Collector tidak dapat dihubungi: ' . $e->getMessage()], 502);
+        }
+        Audit::log('viewed', "{$label} ke {$device->name} ({$device->host}) dari collector", $device);
+
+        return response()->json(['tool' => $d['tool'], 'result' => $r]);
+    }
+
     /** Unduh berkas diagnosa SNMP (JSON) untuk membuat atau memperbaiki profil perangkat yang belum dikenal. */
     public function diagnose(Device $device, Collector $collector)
     {

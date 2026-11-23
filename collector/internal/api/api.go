@@ -22,6 +22,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/notify"
 	"github.com/aidilandriandas/antarejanms/collector/internal/poller"
 	"github.com/aidilandriandas/antarejanms/collector/internal/snmp"
+	"github.com/aidilandriandas/antarejanms/collector/internal/tools"
 )
 
 const tokenLabel = "antareja-collector-api"
@@ -48,6 +49,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /v1/devices/{id}/poll", s.auth(s.poll))
 	mux.HandleFunc("POST /v1/topology/sync", s.auth(s.syncTopology))
 	mux.HandleFunc("GET /v1/devices/{id}/diagnose", s.auth(s.diagnose))
+	mux.HandleFunc("POST /v1/devices/{id}/tools", s.auth(s.tools))
 	mux.HandleFunc("POST /v1/channels/{id}/test", s.auth(s.testChannel))
 	mux.HandleFunc("POST /v1/live", s.auth(s.live))
 	mux.HandleFunc("GET /v1/reports/{id}/preview", s.auth(s.reportPreview))
@@ -152,6 +154,44 @@ func (s *Server) poll(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	writeJSON(w, http.StatusAccepted, map[string]string{"status": "dijadwalkan"})
+}
+
+// tools menjalankan alat diagnosa ke host perangkat itu (bukan sembarang alamat, supaya NMS tidak jadi alat pemindai).
+func (s *Server) tools(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "perangkat tidak ditemukan"})
+		return
+	}
+	var in struct {
+		Tool string `json:"tool"`
+		Port int    `json:"port"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&in); err != nil {
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "permintaan tidak valid"})
+		return
+	}
+	d, err := s.Poller.Store.Device(r.Context(), id)
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "perangkat tidak ditemukan"})
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 40*time.Second)
+	defer cancel()
+	switch in.Tool {
+	case "ping":
+		writeJSON(w, http.StatusOK, tools.Ping(ctx, d.Host, 10, s.Poller.Ping.Privileged))
+	case "traceroute":
+		writeJSON(w, http.StatusOK, tools.Traceroute(ctx, d.Host, 20))
+	case "port":
+		if in.Port < 1 || in.Port > 65535 {
+			writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "port 1 sampai 65535"})
+			return
+		}
+		writeJSON(w, http.StatusOK, tools.CheckPort(ctx, d.Host, in.Port))
+	default:
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "alat tidak dikenal"})
+	}
 }
 
 // diagnose membaca perangkat sekarang untuk berkas diagnosa SNMP (hanya baca, tanpa kredensial).
