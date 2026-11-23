@@ -129,6 +129,7 @@
         <li>Setiap engineer mengisi <b>email</b> dan <b>chat ID Telegram</b> di <i>Profil</i>. Untuk Telegram: kirim /start ke bot notifikasi kantor dulu, karena bot tidak bisa memulai obrolan.</li>
         <li>Di <i>Jadwal piket</i>, pakai <b>Buat rotasi</b> untuk mengisi seminggu atau sebulan sekaligus, mis. giliran 12 jam mulai 07.00 untuk Budi, Sari, Andi bergantian. Tukar giliran: tambah giliran pengganti, lalu hapus yang lama.</li>
         <li>Admin mencentang <b>Kirim ke yang sedang piket</b> di kanal email atau Telegram. Email dikirim ke semua yang sedang piket; Telegram ke orang piket pertama yang punya chat ID. Tujuan yang diisi di kanal tetap dipakai sebagai cadangan bila tidak ada yang piket.</li>
+        <li>Kanal Telegram dengan <b>Tombol ACK</b>: tiap pesan problem baru membawa tombol <i>ACK, saya tangani</i>. Engineer yang chat ID-nya terisi di Profil cukup menekannya dari HP; eskalasi berhenti dan nama penekan tampil di tombol. Viewer dan akun Telegram yang belum terdaftar ditolak.</li>
         <li>Supaya supervisor tetap tahu, biarkan kanal grup NOC atau kanal eskalasi (jeda 30 menit) seperti biasa; kanal piket berjalan di sampingnya.</li>
     </ul>
 </div></section>

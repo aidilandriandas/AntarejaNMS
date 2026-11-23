@@ -14,7 +14,7 @@ class NotifyChannel extends Model
 
     /** Kolom konfigurasi per jenis; yang bertanda true adalah rahasia (tidak pernah ditampilkan ulang). */
     public const FIELDS = [
-        'telegram' => ['bot_token' => true, 'chat_id' => false],
+        'telegram' => ['bot_token' => true, 'chat_id' => false, 'ack_button' => false],
         'email' => ['host' => false, 'port' => false, 'security' => false, 'username' => false, 'password' => true, 'from' => false, 'to' => false],
         'webhook' => ['url' => false, 'secret' => true],
     ];
@@ -66,7 +66,7 @@ class NotifyChannel extends Model
         $c = $this->config();
 
         return match ($this->type) {
-            'telegram' => 'chat ' . ($c['chat_id'] ?? '?'),
+            'telegram' => 'chat ' . ($c['chat_id'] ?? '?') . (($c['ack_button'] ?? '') === '1' ? ', tombol ACK' : ''),
             'email' => $c['to'] ?? '?',
             'webhook' => parse_url($c['url'] ?? '', PHP_URL_HOST) ?: '?',
             default => '',

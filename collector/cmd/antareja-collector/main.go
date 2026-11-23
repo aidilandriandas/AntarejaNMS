@@ -140,6 +140,11 @@ func run() error {
 		p := poller.New(cfg, store.Store{DB: db}, box, log)
 		engine := &problems.Engine{DB: db, Stats: p.Stats}
 		disp := notify.NewDispatcher(db, box, log, cfg.BaseURL)
+		if cfg.TelegramAPI != "" {
+			disp.Senders["telegram"] = notify.Telegram{BaseURL: cfg.TelegramAPI}
+		}
+		// Tombol ACK di pesan Telegram (hanya bot kanal yang mengaktifkannya)
+		go (&notify.AckBot{Disp: disp, API: cfg.TelegramAPI, Log: log}).Run(ctx)
 		inc := &incidents.Runner{DB: db, Log: log}
 		p.AfterPing = func(ctx context.Context) {
 			out, err := engine.Run(ctx)

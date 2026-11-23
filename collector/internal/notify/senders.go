@@ -33,7 +33,11 @@ func (t Telegram) Send(ctx context.Context, cfg map[string]string, m Message) er
 	if base == "" {
 		base = "https://api.telegram.org"
 	}
-	body, _ := json.Marshal(map[string]any{"chat_id": chat, "text": m.HTML, "parse_mode": "HTML", "disable_web_page_preview": true})
+	payload := map[string]any{"chat_id": chat, "text": m.HTML, "parse_mode": "HTML", "disable_web_page_preview": true}
+	if kb := AckKeyboard(cfg, m); kb != nil {
+		payload["reply_markup"] = kb
+	}
+	body, _ := json.Marshal(payload)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, base+"/bot"+token+"/sendMessage", bytes.NewReader(body))
 	if err != nil {
 		return errors.New("token bot tidak valid")

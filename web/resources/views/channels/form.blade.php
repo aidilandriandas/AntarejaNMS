@@ -20,6 +20,8 @@
             <input class="input mono @error('cfg.chat_id') is-err @enderror" id="chat_id" name="cfg[chat_id]" value="{{ old('cfg.chat_id', $config['chat_id'] ?? '') }}" placeholder="-1001234567890">
             <div class="hint">ID grup diawali <code>-100</code>. Cara mudah: masukkan bot ke grup, kirim pesan, lalu buka <code>api.telegram.org/bot&lt;token&gt;/getUpdates</code> dari browser.</div>
             <x-field-error name="cfg.chat_id"/></div>
+        <label class="check"><input type="checkbox" name="cfg[ack_button]" value="1" @checked(old('cfg.ack_button', $config['ack_button'] ?? ($channel->exists ? '' : '1')) === '1')><span>Tombol ACK di pesan problem
+            <small>Engineer/admin yang chat ID-nya terisi di Profil bisa ACK langsung dari Telegram. Collector membaca tombol lewat getUpdates, jadi bot ini jangan dipakai sistem lain yang juga membaca pesannya (webhook atau getUpdates).</small></span></label>
     @elseif($t === 'email')
         <div class="row r3">
             <div class="field"><label for="host">Server SMTP</label><input class="input @error('cfg.host') is-err @enderror" id="host" name="cfg[host]" value="{{ old('cfg.host', $config['host'] ?? '') }}" placeholder="smtp.perusahaan.co.id"><x-field-error name="cfg.host"/></div>

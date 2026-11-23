@@ -38,3 +38,30 @@ func TestApplyOncallFallback(t *testing.T) {
 		}
 	}
 }
+
+func TestAckKeyboard(t *testing.T) {
+	m := Message{Event: "problem.open", Items: []Problem{{ID: 42}}}
+	if AckKeyboard(map[string]string{}, m) != nil {
+		t.Fatal("tombol muncul padahal kanal tidak mengaktifkan")
+	}
+	on := map[string]string{"ack_button": "1"}
+	kb := AckKeyboard(on, m)
+	rows := kb["inline_keyboard"].([][]map[string]string)
+	if rows[0][0]["callback_data"] != "ack:42" {
+		t.Fatalf("%v", kb)
+	}
+	for _, x := range []Message{{Event: "problem.resolve", Items: []Problem{{ID: 1}}}, {Event: "summary", Items: []Problem{{ID: 1}, {ID: 2}}},
+		{Event: "problem.open", Items: []Problem{{ID: 1, AckedBy: "budi"}}}} {
+		if AckKeyboard(on, x) != nil {
+			t.Fatalf("tombol muncul untuk %+v", x)
+		}
+	}
+	if id, ok := ParseAck("ack:42"); !ok || id != 42 {
+		t.Fatal("parse")
+	}
+	for _, s := range []string{"ack:", "ack:-1", "ack:x", "done", "ACK:1"} {
+		if _, ok := ParseAck(s); ok {
+			t.Fatalf("%q diterima", s)
+		}
+	}
+}

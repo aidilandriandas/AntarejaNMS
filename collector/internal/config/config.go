@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -17,6 +18,7 @@ type Config struct {
 	HealthAddr     string
 	APIAddr        string // API internal untuk web; kosong = mati
 	BaseURL        string // alamat web untuk tautan di notifikasi
+	TelegramAPI    string // kosong = https://api.telegram.org (isi bila memakai Bot API server sendiri)
 	Go2rtcURL      string // go2rtc internal untuk cek gambar CCTV; kosong = mati
 	CCTVInterval   time.Duration
 	SyslogUDP      string // mis. ":5514"; kosong = penerima syslog UDP mati
@@ -42,6 +44,7 @@ func Load() (Config, error) {
 		HealthAddr:     env("ANTAREJA_HEALTH_ADDR", "127.0.0.1:9273"),
 		APIAddr:        os.Getenv("ANTAREJA_API_ADDR"),
 		BaseURL:        os.Getenv("ANTAREJA_BASE_URL"),
+		TelegramAPI:    strings.TrimRight(os.Getenv("ANTAREJA_TELEGRAM_API"), "/"),
 		Go2rtcURL:      os.Getenv("ANTAREJA_GO2RTC_URL"),
 		CCTVInterval:   dur("ANTAREJA_CCTV_INTERVAL", 15*time.Minute),
 		SyslogUDP:      os.Getenv("ANTAREJA_SYSLOG_UDP"),

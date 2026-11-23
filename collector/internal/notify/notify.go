@@ -78,7 +78,34 @@ func NewDispatcher(db *pgxpool.Pool, box *secret.Box, log *slog.Logger, baseURL 
 		Senders: map[string]Sender{"telegram": Telegram{}, "email": Email{}, "webhook": Webhook{}}}
 }
 
+// channels: kanal aktif (atau satu kanal), tujuan sudah diganti kontak piket bila to_oncall.
 func (d *Dispatcher) channels(ctx context.Context, onlyID int64) ([]Channel, error) {
+	out, err := d.rawChannels(ctx, onlyID)
+	if err != nil {
+		return nil, err
+	}
+	var oc []OncallPerson
+	loaded := false
+	for i := range out {
+		if !out[i].ToOncall {
+			continue
+		}
+		if !loaded {
+			var lerr error
+			if oc, lerr = CurrentOncall(ctx, d.DB); lerr != nil {
+				d.Log.Warn("jadwal piket tidak bisa dibaca, pakai tujuan tetap kanal", "galat", lerr)
+			}
+			loaded = true
+		}
+		if ApplyOncall(&out[i], oc) == 0 {
+			d.Log.Info("tidak ada kontak piket untuk kanal ini, pakai tujuan tetap", "kanal", out[i].Name)
+		}
+	}
+	return out, nil
+}
+
+// rawChannels: kanal apa adanya dari database (konfigurasi sudah dibuka), tanpa penggantian tujuan.
+func (d *Dispatcher) rawChannels(ctx context.Context, onlyID int64) ([]Channel, error) {
 	q := `SELECT id, name, type, config_enc, min_severity, delay_minutes, notify_resolve, COALESCE(site_id, 0), to_oncall FROM notify_channels WHERE enabled`
 	args := []any{}
 	if onlyID > 0 {
@@ -108,28 +135,7 @@ func (d *Dispatcher) channels(ctx context.Context, onlyID int64) ([]Channel, err
 		}
 		out = append(out, c)
 	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	rows.Close()
-	var oc []OncallPerson
-	loaded := false
-	for i := range out {
-		if !out[i].ToOncall {
-			continue
-		}
-		if !loaded {
-			var lerr error
-			if oc, lerr = CurrentOncall(ctx, d.DB); lerr != nil {
-				d.Log.Warn("jadwal piket tidak bisa dibaca, pakai tujuan tetap kanal", "galat", lerr)
-			}
-			loaded = true
-		}
-		if ApplyOncall(&out[i], oc) == 0 {
-			d.Log.Info("tidak ada kontak piket untuk kanal ini, pakai tujuan tetap", "kanal", out[i].Name)
-		}
-	}
-	return out, nil
+	return out, rows.Err()
 }
 
 const problemCols = `p.id, p.severity, p.title, COALESCE(p.suppressed_note, p.detail, ''), d.name, d.host, COALESCE(s.code, ''), p.started_at, p.resolved_at, COALESCE(u.username, '')`

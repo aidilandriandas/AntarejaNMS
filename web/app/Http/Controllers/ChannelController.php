@@ -112,7 +112,7 @@ class ChannelController extends Controller
         $need = fn ($k) => empty($existing[$k]) ? 'required' : 'nullable';
         $rules += match ($type) {
             'telegram' => ['cfg.bot_token' => [$need('bot_token'), 'nullable', 'string', 'max:200', 'regex:/^\d+:[A-Za-z0-9_-]+$/'],
-                'cfg.chat_id' => ['required', 'string', 'max:64', 'regex:/^(-?\d+|@[A-Za-z0-9_]{5,})$/']],
+                'cfg.chat_id' => ['required', 'string', 'max:64', 'regex:/^(-?\d+|@[A-Za-z0-9_]{5,})$/'], 'cfg.ack_button' => ['nullable', 'in:1']],
             'email' => ['cfg.host' => ['required', 'string', 'max:255'], 'cfg.port' => ['required', 'integer', 'between:1,65535'],
                 'cfg.security' => ['required', Rule::in(['starttls', 'tls', 'none'])], 'cfg.username' => ['nullable', 'string', 'max:255'],
                 'cfg.password' => ['nullable', 'string', 'max:255'], 'cfg.from' => ['required', 'email'], 'cfg.to' => ['required', 'string', 'max:1000']],
