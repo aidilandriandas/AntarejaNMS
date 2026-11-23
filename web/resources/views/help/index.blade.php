@@ -25,6 +25,8 @@
     <a href="#topologi">Sinkron LLDP & diagnosa SNMP</a>
     <a href="#api">Integrasi lewat API</a>
     <a href="#diag">Alat diagnosa & down bulanan</a>
+    <a href="#site">Collector site</a>
+    <a href="#akun">2FA & login kantor</a>
     <a href="#noc">Layar NOC</a>
     <a href="#sensor">Ambang sensor bawaan</a>
     <a href="#istilah">Istilah</a>
@@ -186,6 +188,24 @@
     <ul class="help-list">
         <li><b>Alat diagnosa</b> di halaman perangkat menjalankan ping, traceroute, atau cek port TCP dari server ANTAREJA ke perangkat itu. Bila traceroute berhenti sebelum tujuan, hop terakhir yang menjawab adalah titik yang perlu diperiksa (radio, switch, atau router di lokasi itu). Cek port berguna untuk kamera (554 RTSP), web perangkat (80/443), atau SSH (22).</li>
         <li><b>Down bulanan</b> (menu Laporan) menunjukkan persen waktu down tiap perangkat per bulan, dengan rumus yang sama seperti SLA perangkat. Waktu di dalam maintenance tidak dihitung down. Angka bulan berjalan masih sementara dan dikunci setelah bulan berganti.</li>
+    </ul>
+</div></section>
+
+<section class="card" id="site"><div class="hd"><h2>Collector site</h2></div><div class="bd">
+    <ul class="help-list">
+        <li>Perangkat di site yang jalurnya ke pusat bisa putus (radio, VSAT) dipantau oleh <b>collector site</b> yang dipasang di site itu. Di halaman perangkat tertulis <i>Dipantau dari collector site ...</i>.</li>
+        <li>Bila jalur ke pusat putus, status perangkat site <b>tidak</b> berubah menjadi down. Yang muncul adalah peringatan sistem <i>Collector site tidak melapor</i>. Angka di layar adalah hasil terakhir yang diterima.</li>
+        <li>Selama putus, collector site tetap mengukur dan menyimpan hasilnya. Begitu jalur pulih, semua hasil dikirim dan kejadian down atau up yang terjadi selama putus muncul dengan jam aslinya.</li>
+        <li>Tombol <i>Periksa sekarang</i> tidak berlaku untuk perangkat ini; pemeriksaan berjalan dari site setiap menit.</li>
+    </ul>
+</div></section>
+
+<section class="card" id="akun"><div class="hd"><h2>2FA & login kantor</h2></div><div class="bd">
+    <ul class="help-list">
+        <li><b>Verifikasi dua langkah</b>: di Profil, klik <i>Aktifkan</i>, pindai kode QR dengan aplikasi autentikator di HP, lalu masukkan 6 digit kodenya. Setelah itu setiap login meminta kode dari aplikasi.</li>
+        <li>Simpan <b>kode cadangan</b> yang tampil saat aktivasi. Bila HP hilang, satu kode cadangan bisa dipakai sekali untuk masuk. Bila semuanya hilang, minta admin mereset 2FA akun Anda.</li>
+        <li>Kode ditolak padahal benar? Jam HP kemungkinan tidak tepat. Aktifkan waktu otomatis di pengaturan HP.</li>
+        <li>Bila admin mengaktifkan <b>login kantor (LDAP)</b>, masuk dengan username dan password akun kantor. Peran mengikuti grup di direktori kantor; password diganti di sana, bukan di ANTAREJA.</li>
     </ul>
 </div></section>
 

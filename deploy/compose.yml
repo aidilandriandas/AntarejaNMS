@@ -32,8 +32,8 @@ services:
       context: ..
       dockerfile: collector/Dockerfile
       args:
-        VERSION: ${ANTAREJA_TAG:-0.4.0}
-    image: antareja-collector:${ANTAREJA_TAG:-0.4.0}
+        VERSION: ${ANTAREJA_TAG:-0.5.0}
+    image: antareja-collector:${ANTAREJA_TAG:-0.5.0}
     restart: unless-stopped
     depends_on:
       db:
@@ -72,7 +72,7 @@ services:
     build:
       context: ..
       dockerfile: web/Dockerfile
-    image: antareja-web:${ANTAREJA_TAG:-0.4.0}
+    image: antareja-web:${ANTAREJA_TAG:-0.5.0}
     restart: unless-stopped
     depends_on:
       db:
@@ -106,7 +106,7 @@ services:
       LOG_CHANNEL: stderr
       ANTAREJA_COLLECTOR_URL: http://collector:9274
       ANTAREJA_METRICS_URL: http://metrics:8428
-      ANTAREJA_VERSION: ${ANTAREJA_TAG:-0.4.0}
+      ANTAREJA_VERSION: ${ANTAREJA_TAG:-0.5.0}
       ANTAREJA_BACKUP_DIR: /backups
       ANTAREJA_GO2RTC_URL: http://go2rtc:1984
       TZ: ${TZ:-Asia/Jakarta}
@@ -134,7 +134,7 @@ services:
       PGUSER: antareja
       PGDATABASE: antareja
       PGPASSWORD: ${DB_PASSWORD}
-      ANTAREJA_VERSION: ${ANTAREJA_TAG:-0.4.0}
+      ANTAREJA_VERSION: ${ANTAREJA_TAG:-0.5.0}
       TZ: ${TZ:-Asia/Jakarta}
     volumes:
       - ./backup/backup.sh:/usr/local/bin/antareja-backup.sh:ro

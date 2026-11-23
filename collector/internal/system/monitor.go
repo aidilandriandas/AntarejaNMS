@@ -54,6 +54,7 @@ var labels = map[string]string{
 	"backup_failed": "Backup gagal", "backup_late": "Backup terlambat", "backup_service": "Layanan backup berhenti",
 	"backup_disk": "Disk backup hampir penuh", "notify_failed": "Notifikasi gagal terkirim", "syslog_dropped": "Syslog dibuang",
 	"backup_offsite": "Salinan backup ke luar server gagal",
+	"site_collector": "Collector site tidak melapor",
 }
 
 // Run menulis detak lalu menilai & mengirim peringatan. Dipanggil tiap menit.
@@ -173,6 +174,32 @@ func (m *Monitor) evaluate(ctx context.Context) []Alert {
 		rows.Close()
 	}
 	out = append(out, Alert{Key: "notify_failed", Active: len(bad) > 0, Severity: "high", Message: "Kanal notifikasi gagal mengirim dalam 1 jam terakhir: " + strings.Join(bad, "; ")})
+
+	// Collector site diam > 5 menit: status perangkatnya di pusat tidak diperbarui (bukan berarti perangkatnya down).
+	// Collector yang belum pernah melapor diberi waktu 15 menit sejak dibuat.
+	crows, err := m.DB.Query(ctx, `SELECT c.name, c.last_seen_at, (SELECT count(*) FROM devices d WHERE d.collector_id = c.id AND d.enabled)
+		FROM site_collectors c WHERE c.enabled
+		  AND ((c.last_seen_at IS NULL AND c.created_at < now() - interval '15 minutes') OR c.last_seen_at < now() - interval '5 minutes')
+		ORDER BY c.name`)
+	var silent []string
+	if err == nil {
+		for crows.Next() {
+			var name string
+			var seen *time.Time
+			var n int
+			if crows.Scan(&name, &seen, &n) == nil {
+				when := "belum pernah terhubung"
+				if seen != nil {
+					when = "terakhir " + seen.Local().Format("02/01 15.04")
+				}
+				silent = append(silent, fmt.Sprintf("%s (%s, %d perangkat)", name, when, n))
+			}
+		}
+		crows.Close()
+	}
+	out = append(out, Alert{Key: "site_collector", Active: len(silent) > 0, Severity: "high",
+		Message: "Collector site tidak melapor ke pusat: " + strings.Join(silent, "; ") +
+			". Status perangkatnya tidak diperbarui sampai jalur pulih; hasil yang diantrekan di site akan dikirim otomatis."})
 
 	// Syslog dibuang (batas laju / antrean penuh)
 	if m.C.Syslog != nil {

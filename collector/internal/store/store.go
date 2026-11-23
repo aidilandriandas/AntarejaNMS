@@ -33,25 +33,44 @@ type Device struct {
 	SysObjectID     *string
 	Category        string
 	ThresholdsJSON  []byte
+	CollectorID     *int64 // collector site yang memantau; nil = collector pusat
 }
 
 type Store struct{ DB *pgxpool.Pool }
 
 const deviceCols = `id, name, host, ping_enabled, snmp_enabled, snmp_version, snmp_port,
 	snmp_community_enc, snmp_v3_user, snmp_v3_level, snmp_v3_auth_proto, snmp_v3_auth_enc, snmp_v3_priv_proto, snmp_v3_priv_enc,
-	status, status_changed_at, fail_streak, last_rtt_ms, snmp_ok, last_snmp_at, uptime_seconds, sys_object_id, category, thresholds`
+	status, status_changed_at, fail_streak, last_rtt_ms, snmp_ok, last_snmp_at, uptime_seconds, sys_object_id, category, thresholds, collector_id`
 
 func scanDevice(r pgx.Row) (Device, error) {
 	var d Device
 	err := r.Scan(&d.ID, &d.Name, &d.Host, &d.PingEnabled, &d.SNMPEnabled, &d.SNMPVersion, &d.SNMPPort,
 		&d.CommunityEnc, &d.V3User, &d.V3Level, &d.V3AuthProto, &d.V3AuthEnc, &d.V3PrivProto, &d.V3PrivEnc,
-		&d.Status, &d.StatusChangedAt, &d.FailStreak, &d.LastRTT, &d.SNMPOK, &d.LastSNMPAt, &d.UptimeSeconds, &d.SysObjectID, &d.Category, &d.ThresholdsJSON)
+		&d.Status, &d.StatusChangedAt, &d.FailStreak, &d.LastRTT, &d.SNMPOK, &d.LastSNMPAt, &d.UptimeSeconds, &d.SysObjectID, &d.Category, &d.ThresholdsJSON, &d.CollectorID)
 	return d, err
 }
 
 // Devices mengembalikan semua perangkat aktif.
 func (s Store) Devices(ctx context.Context) ([]Device, error) {
 	rows, err := s.DB.Query(ctx, `SELECT `+deviceCols+` FROM devices WHERE enabled ORDER BY id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Device
+	for rows.Next() {
+		d, err := scanDevice(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, d)
+	}
+	return out, rows.Err()
+}
+
+// CollectorDevices perangkat aktif yang dipantau satu collector site.
+func (s Store) CollectorDevices(ctx context.Context, collectorID int64) ([]Device, error) {
+	rows, err := s.DB.Query(ctx, `SELECT `+deviceCols+` FROM devices WHERE enabled AND collector_id = $1 ORDER BY id`, collectorID)
 	if err != nil {
 		return nil, err
 	}

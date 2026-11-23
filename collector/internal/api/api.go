@@ -6,11 +6,13 @@
 package api
 
 import (
+	"compress/gzip"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -22,6 +24,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/notify"
 	"github.com/aidilandriandas/antarejanms/collector/internal/offsite"
 	"github.com/aidilandriandas/antarejanms/collector/internal/poller"
+	"github.com/aidilandriandas/antarejanms/collector/internal/sitecollector"
 	"github.com/aidilandriandas/antarejanms/collector/internal/snmp"
 	"github.com/aidilandriandas/antarejanms/collector/internal/tools"
 )
@@ -44,6 +47,8 @@ type Server struct {
 	Offsite *offsite.Runner
 	Token   string
 	Log     *slog.Logger
+
+	ingestMu sync.Mutex // kiriman collector site diterapkan satu per satu
 }
 
 func (s *Server) Handler() http.Handler {
@@ -57,6 +62,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /v1/channels/{id}/test", s.auth(s.testChannel))
 	mux.HandleFunc("POST /v1/live", s.auth(s.live))
 	mux.HandleFunc("GET /v1/reports/{id}/preview", s.auth(s.reportPreview))
+	mux.HandleFunc("POST /v1/site-collectors/{id}/ingest", s.auth(s.siteIngest))
 	return mux
 }
 
@@ -355,4 +361,52 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(v) //nolint:errcheck
+}
+
+// siteIngest menerima kiriman collector site yang sudah diautentikasi web (token collector site).
+// Header dari site: X-Antareja-Sent-At (jam site saat kirim), X-Antareja-Queued, X-Antareja-Version.
+func (s *Server) siteIngest(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil || id <= 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "id tidak valid"})
+		return
+	}
+	var body io.Reader = http.MaxBytesReader(w, r.Body, 16<<20)
+	if strings.EqualFold(r.Header.Get("Content-Encoding"), "gzip") {
+		zr, err := gzip.NewReader(body)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "gzip tidak valid"})
+			return
+		}
+		defer zr.Close()
+		body = io.LimitReader(zr, 128<<20) // batas setelah dibuka
+	}
+	var b sitecollector.Batch
+	if err := json.NewDecoder(body).Decode(&b); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "isi kiriman tidak terbaca: " + err.Error()})
+		return
+	}
+	if t, err := time.Parse(time.RFC3339, r.Header.Get("X-Antareja-Sent-At")); err == nil {
+		b.SentAt = t
+	}
+	if q, err := strconv.Atoi(r.Header.Get("X-Antareja-Queued")); err == nil && q >= 0 {
+		b.Queued = q
+	}
+	if v := r.Header.Get("X-Antareja-Version"); v != "" {
+		b.Version = v
+	}
+	s.ingestMu.Lock()
+	defer s.ingestMu.Unlock()
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Minute)
+	defer cancel()
+	res, err := sitecollector.Ingest(ctx, s.Poller, id, b)
+	if err != nil {
+		s.Log.Error("kiriman collector site gagal diterapkan", "collector", id, "galat", err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "gagal diterapkan, akan dicoba lagi"})
+		return
+	}
+	if res.Pings+res.SNMP > 0 || res.Skipped > 0 {
+		s.Log.Debug("kiriman collector site", "collector", id, "ping", res.Pings, "snmp", res.SNMP, "dilewati", res.Skipped)
+	}
+	writeJSON(w, http.StatusOK, res)
 }

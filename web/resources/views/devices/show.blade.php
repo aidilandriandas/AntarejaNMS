@@ -4,6 +4,7 @@
 <div class="crumbs"><a href="{{ route('devices.index') }}">Perangkat</a>@if($device->site) / <a href="{{ route('devices.index', ['site' => $device->site_id]) }}">{{ $device->site->code }}</a>@endif</div>
 <div class="page-head">
     <div><h1>{{ $device->name }} <x-status :device="$device"/></h1>
+        @if($device->collector)<p class="muted">Dipantau dari collector site @can('admin')<a href="{{ route('collectors.show', $device->collector) }}">{{ $device->collector->name }}</a>@else{{ $device->collector->name }}@endcan @if($device->collector->state() !== 'online'), <span class="txt-warn">collector {{ $device->collector->stateLabel() }}{{ $device->collector->last_seen_at ? ' sejak ' . $device->collector->last_seen_at->format('d/m H.i') : '' }}: status di bawah adalah hasil terakhir yang diterima</span>@endif</p>@endif
         <div class="meta" style="margin-top:6px"><span class="mono">{{ $device->host }}</span><span>{{ $device->categoryLabel() }}</span>@if($device->status === 'down' && $device->status_reason)<span style="color:var(--color-crit);white-space:normal">{{ $device->status_reason }}</span>@endif</div></div>
     @can('manage-devices')
         <div class="actions">

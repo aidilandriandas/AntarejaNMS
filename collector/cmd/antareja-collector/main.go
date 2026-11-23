@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"text/tabwriter"
 	"time"
@@ -42,6 +43,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/problems"
 	"github.com/aidilandriandas/antarejanms/collector/internal/report"
 	"github.com/aidilandriandas/antarejanms/collector/internal/secret"
+	"github.com/aidilandriandas/antarejanms/collector/internal/sitecollector"
 	"github.com/aidilandriandas/antarejanms/collector/internal/snmp"
 	"github.com/aidilandriandas/antarejanms/collector/internal/store"
 	"github.com/aidilandriandas/antarejanms/collector/internal/syslog"
@@ -49,7 +51,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/trap"
 )
 
-var version = "0.4.0"
+var version = "0.5.0"
 
 func main() {
 	args := os.Args[1:]
@@ -82,6 +84,35 @@ func main() {
 		fmt.Fprintln(os.Stderr, "galat:", err)
 		os.Exit(1)
 	}
+}
+
+// runSite: collector site. Tanpa database dan kunci aplikasi; mengukur perangkat lokal lalu mengirim ke pusat.
+func runSite(log *slog.Logger) error {
+	cfg := mustCfg()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	p := poller.New(cfg, store.Store{}, nil, log)
+	agent, err := sitecollector.NewAgent(cfg, p, version, log)
+	if err != nil {
+		return err
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		ok, msg := agent.Healthy()
+		if !ok {
+			w.WriteHeader(http.StatusServiceUnavailable)
+		}
+		fmt.Fprintln(w, msg)
+	})
+	srv := &http.Server{Addr: cfg.HealthAddr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Error("server health gagal", "galat", err)
+		}
+	}()
+	defer srv.Close()
+	log.Info("collector site mulai", "versi", version, "pusat", cfg.CentralURL, "antrean", cfg.SpoolDir)
+	return agent.Run(ctx)
 }
 
 func mustCfg() config.Config {
@@ -127,6 +158,9 @@ func connect(ctx context.Context, url string) (*pgxpool.Pool, error) {
 
 func run() error {
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level()}))
+	if os.Getenv("ANTAREJA_MODE") == "site" {
+		return runSite(log)
+	}
 	return withDB(func(ctx context.Context, cfg config.Config, db *pgxpool.Pool) error {
 		box, err := secret.New(cfg.AppKey)
 		if err != nil {
@@ -148,7 +182,10 @@ func run() error {
 		// Tombol ACK di pesan Telegram (hanya bot kanal yang mengaktifkannya)
 		go (&notify.AckBot{Disp: disp, API: cfg.TelegramAPI, Log: log}).Run(ctx)
 		inc := &incidents.Runner{DB: db, Log: log}
+		var afterMu sync.Mutex // dipanggil putaran ping pusat dan kiriman collector site: jangan bersamaan
 		p.AfterPing = func(ctx context.Context) {
+			afterMu.Lock()
+			defer afterMu.Unlock()
 			out, err := engine.Run(ctx)
 			if err != nil {
 				log.Error("penilaian problem gagal", "galat", err)

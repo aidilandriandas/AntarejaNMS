@@ -1,0 +1,32 @@
+# ANTAREJA collector site: dipasang di VM / mini PC di site tambang yang menjangkau perangkat lokal.
+# Mengukur ping & SNMP perangkat site lalu mengirim ke server pusat lewat HTTPS. Saat jalur ke pusat putus,
+# hasil diantrekan di volume "spool" dan dikirim otomatis begitu jalur pulih.
+#
+#   1. Buat collector di web pusat (Administrasi, Collector site) dan salin tokennya.
+#   2. Salin .env.example menjadi .env lalu isi ANTAREJA_CENTRAL_URL dan ANTAREJA_SITE_TOKEN.
+#   3. docker compose up -d   (cek: docker compose logs -f)
+services:
+  collector:
+    image: antareja-collector:${ANTAREJA_TAG:-0.5.0}
+    restart: unless-stopped
+    sysctls:
+      net.ipv4.ping_group_range: "0 2147483647"   # ping ICMP tanpa hak root
+    volumes:
+      - spool:/var/lib/antareja/spool
+      - ${CENTRAL_CA_FILE:-/dev/null}:/certs/ca.pem:ro   # opsional: CA internal kantor bila sertifikat pusat bukan dari CA publik
+    environment:
+      ANTAREJA_MODE: site
+      ANTAREJA_CENTRAL_URL: ${ANTAREJA_CENTRAL_URL:?isi ANTAREJA_CENTRAL_URL di .env}
+      ANTAREJA_SITE_TOKEN: ${ANTAREJA_SITE_TOKEN:?isi ANTAREJA_SITE_TOKEN di .env}
+      ANTAREJA_CENTRAL_CA: ${CENTRAL_CA_FILE:+/certs/ca.pem}
+      ANTAREJA_SPOOL_DIR: /var/lib/antareja/spool
+      ANTAREJA_SPOOL_MAX_MB: ${SPOOL_MAX_MB:-512}
+      ANTAREJA_PING_INTERVAL: ${PING_INTERVAL:-60s}
+      ANTAREJA_SNMP_INTERVAL: ${SNMP_INTERVAL:-5m}
+      TZ: ${TZ:-Asia/Jakarta}
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+volumes:
+  spool:

@@ -69,6 +69,7 @@ class AuthorizationAuditTest extends TestCase
             'anomaly' => DB::table('anomalies')->insertGetId(['device_id' => $dev, 'metric' => 'latency', 'direction' => 'up', 'value' => 9, 'baseline' => 1, 'spread' => 1, 'score' => 8]),
             'slot' => DB::table('oncall_slots')->insertGetId(['user_id' => $other->id, 'starts_at' => now(), 'ends_at' => now()->addHour()]),
             'token' => DB::table('api_tokens')->insertGetId(['name' => 'QA', 'token_hash' => str_repeat('a', 64), 'prefix' => 'ant_qa']),
+            'collector' => DB::table('site_collectors')->insertGetId(['name' => 'QA collector', 'token_hash' => str_repeat('c', 64), 'token_hint' => 'acs_qa']),
             'link' => DB::table('device_links')->insertGetId(['a_device_id' => $dev, 'b_device_id' => DB::table('devices')->insertGetId(['name' => 'QA b', 'host' => '10.99.0.2'])]),
             'subnet' => DB::table('subnets')->insertGetId(['cidr' => '10.99.0.0/24']),
             'camera' => DB::table('cameras')->insertGetId(['name' => 'QA cam', 'host' => '10.99.0.3']),

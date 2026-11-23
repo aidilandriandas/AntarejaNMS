@@ -63,6 +63,7 @@
                 <a href="{{ route('backups.index') }}" class="{{ $nav('backups.*') }}"><x-icon name="database"/>Backup</a>
                 <a href="{{ route('transfer.index') }}" class="{{ $nav('transfer.*') }}"><x-icon name="download"/>Ekspor & impor</a>
                 <a href="{{ route('status.links') }}" class="{{ $nav('status.*') }}"><x-icon name="share"/>Tautan status</a>
+                <a href="{{ route('collectors.index') }}" class="{{ $nav('collectors.*') }}"><x-icon name="server"/>Collector site</a>
                 <a href="{{ route('apitokens.index') }}" class="{{ $nav('apitokens.*') }}"><x-icon name="key"/>Token API</a>
                 <a href="{{ route('audit.index') }}" class="{{ $nav('audit.*') }}"><x-icon name="audit"/>Jejak audit</a>
                 <a href="{{ route('system.index') }}" class="{{ $nav('system.*') }}"><x-icon name="pulse"/>Kesehatan sistem

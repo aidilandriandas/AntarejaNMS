@@ -130,4 +130,20 @@ class Collector
 
         return $res->json();
     }
+
+    /**
+     * Teruskan kiriman collector site ke collector pusat. @return array{0:int,1:array} status HTTP dan isi jawaban.
+     * Galat 4xx dari collector diteruskan (kiriman ditolak permanen); galat jaringan dilempar.
+     */
+    public function siteIngest(int $collectorId, string $body, array $headers): array
+    {
+        $res = $this->http()->timeout(300)->withHeaders(array_filter($headers, fn ($v) => $v !== ''))
+            ->withBody($body, 'application/json')->post("/v1/site-collectors/{$collectorId}/ingest");
+        $status = $res->status();
+        if ($status >= 500) {
+            $status = 503;
+        }
+
+        return [$status, (array) ($res->json() ?? ['error' => 'jawaban collector tidak terbaca'])];
+    }
 }

@@ -36,13 +36,15 @@ class DeviceController extends Controller
             'devices' => $q->paginate(100)->withQueryString(),
             'sites' => Site::orderBy('code')->get(),
             'parents' => $request->user()->can('manage-devices') ? Device::orderBy('name')->get(['id', 'name', 'host']) : collect(),
+            'collectors' => \App\Models\SiteCollector::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
     public function create()
     {
         return view('devices.form', ['device' => new Device(['enabled' => true, 'ping_enabled' => true, 'snmp_version' => '2c', 'snmp_port' => 161, 'category' => 'other']),
-            'sites' => Site::orderBy('code')->get(), 'parents' => Device::orderBy('name')->get(['id', 'name', 'host'])]);
+            'sites' => Site::orderBy('code')->get(), 'parents' => Device::orderBy('name')->get(['id', 'name', 'host']),
+            'collectors' => \App\Models\SiteCollector::with('site')->orderBy('name')->get()]);
     }
 
     public function store(Request $request, Collector $collector)
@@ -91,7 +93,8 @@ class DeviceController extends Controller
     public function edit(Device $device)
     {
         return view('devices.form', ['device' => $device, 'sites' => Site::orderBy('code')->get(),
-            'parents' => Device::whereKeyNot($device->id)->orderBy('name')->get(['id', 'name', 'host'])]);
+            'parents' => Device::whereKeyNot($device->id)->orderBy('name')->get(['id', 'name', 'host']),
+            'collectors' => \App\Models\SiteCollector::with('site')->orderBy('name')->get()]);
     }
 
     public function update(Request $request, Device $device, Collector $collector)
@@ -115,6 +118,9 @@ class DeviceController extends Controller
 
     public function poll(Device $device, Collector $collector)
     {
+        if ($device->collector_id) {
+            return back()->with('error', 'Perangkat ini dipantau collector site, jadi pemeriksaan berjalan dari site sesuai jadwalnya (ping tiap menit).');
+        }
         $ok = $collector->pollNow($device->id);
 
         return back()->with($ok ? 'ok' : 'error', $ok ? "Pemeriksaan {$device->name} dijalankan. Muat ulang halaman dalam beberapa detik." : 'Collector tidak dapat dihubungi.');
@@ -313,6 +319,7 @@ class DeviceController extends Controller
             'host' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9.:_-]+$/'],
             'site_id' => ['nullable', 'integer', 'exists:sites,id'],
             'parent_id' => ['nullable', 'integer', 'exists:devices,id', Rule::notIn(array_filter([$device->id]))],
+            'collector_id' => ['nullable', 'integer', 'exists:site_collectors,id'],
             'category' => ['required', Rule::in(array_keys(Device::CATEGORIES))],
             'notes' => ['nullable', 'string', 'max:2000'],
             'enabled' => ['boolean'],

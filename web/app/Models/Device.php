@@ -48,7 +48,7 @@ class Device extends Model
     ];
 
     protected $fillable = [
-        'name', 'host', 'site_id', 'parent_id', 'category', 'enabled', 'notes', 'ping_enabled', 'snmp_enabled', 'snmp_version', 'snmp_port',
+        'name', 'host', 'site_id', 'parent_id', 'collector_id', 'category', 'enabled', 'notes', 'ping_enabled', 'snmp_enabled', 'snmp_version', 'snmp_port',
         'snmp_v3_user', 'snmp_v3_level', 'snmp_v3_auth_proto', 'snmp_v3_priv_proto', 'cfg_type', 'ssh_port', 'ssh_user',
     ];
 
@@ -146,6 +146,11 @@ class Device extends Model
     public function hasSecret(string $column): bool
     {
         return (bool) $this->getAttribute($column);
+    }
+
+    public function collector(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(SiteCollector::class, 'collector_id');
     }
 
     public function categoryLabel(): string

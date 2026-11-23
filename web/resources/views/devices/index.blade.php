@@ -36,6 +36,8 @@
                 @foreach($sites as $s)<option value="{{ $s->id }}">{{ $s->code }} ({{ $s->name }})</option>@endforeach</select>
             <select class="input" name="parent_id" aria-label="Perangkat induk" data-show-if="action=parent"><option value="">Tanpa induk</option>
                 @foreach($parents as $p)<option value="{{ $p->id }}">{{ $p->name }} ({{ $p->host }})</option>@endforeach</select>
+            <select class="input" name="collector_id" aria-label="Dipantau dari" data-show-if="action=collector"><option value="">Server pusat</option>
+                @foreach($collectors as $col)<option value="{{ $col->id }}">Collector site {{ $col->name }}</option>@endforeach</select>
             <select class="input" name="category" aria-label="Kategori" data-show-if="action=category">
                 @foreach(\App\Models\Device::CATEGORIES as $k => $v)<option value="{{ $k }}">{{ $v }}</option>@endforeach</select>
             <input class="input @error('confirm') is-err @enderror" name="confirm" placeholder="ketik HAPUS" aria-label="Konfirmasi hapus" autocomplete="off" data-show-if="action=delete">

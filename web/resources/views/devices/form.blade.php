@@ -20,7 +20,7 @@
         <div class="row">
             <div class="field"><label for="site_id">Site</label>
                 <select class="input" id="site_id" name="site_id">
-                    <option value="">— Tanpa site —</option>
+                    <option value="">Tanpa site</option>
                     @foreach($sites as $s)<option value="{{ $s->id }}" @selected(old('site_id', $device->site_id) == $s->id)>{{ $s->code }} ({{ $s->name }})</option>@endforeach
                 </select>
                 <div class="hint">Belum ada? <a href="{{ route('sites.index') }}">Kelola site</a></div></div>
@@ -31,13 +31,22 @@
         </div>
         <div class="field"><label for="parent_id">Perangkat induk (uplink) <span class="muted">(opsional)</span></label>
             <select class="input @error('parent_id') is-err @enderror" id="parent_id" name="parent_id">
-                <option value="">— Tanpa induk —</option>
+                <option value="">Tanpa induk</option>
                 @foreach($parents as $pd)<option value="{{ $pd->id }}" @selected(old('parent_id', $device->parent_id) == $pd->id)>{{ $pd->name }} ({{ $pd->host }})</option>@endforeach
             </select>
             <div class="hint">Perangkat yang dilewati untuk menjangkau perangkat ini (mis. radio PTP atau switch distribusi). Bila induk down, problem perangkat ini ditandai <em>terdampak</em> dan tidak membanjiri notifikasi.</div>
             <x-field-error name="parent_id"/></div>
+        @if($collectors->isNotEmpty())
+        <div class="field"><label for="collector_id">Dipantau dari</label>
+            <select class="input @error('collector_id') is-err @enderror" id="collector_id" name="collector_id">
+                <option value="">Server pusat</option>
+                @foreach($collectors as $col)<option value="{{ $col->id }}" @selected(old('collector_id', $device->collector_id) == $col->id)>Collector site {{ $col->name }}{{ $col->site ? ' (' . $col->site->code . ')' : '' }}</option>@endforeach
+            </select>
+            <div class="hint">Pilih collector site bila perangkat ada di site dengan jalur ke pusat yang bisa putus. Status tetap tercatat saat jalur putus dan dikirim begitu pulih.</div>
+            <x-field-error name="collector_id"/></div>
+        @endif
         <div class="field"><label for="notes">Catatan <span class="muted">(opsional)</span></label>
-            <textarea class="input" id="notes" name="notes" rows="2" placeholder="Lokasi rak, PIC, nomor sirkuit…">{{ old('notes', $device->notes) }}</textarea></div>
+            <textarea class="input" id="notes" name="notes" rows="2" placeholder="Lokasi rak, PIC, nomor sirkuit">{{ old('notes', $device->notes) }}</textarea></div>
 
         <div class="section-title">Pemantauan</div>
         <label class="check"><input type="checkbox" name="ping_enabled" value="1" @checked(old('ping_enabled', $device->ping_enabled))>
@@ -96,7 +105,7 @@
             <p class="hint muted" style="margin:10px 0">Konfigurasi diambil harian dan saat diminta; perubahan dicatat sebagai versi dengan diff. Hanya perintah tampil/ekspor yang dijalankan, tidak ada yang mengubah perangkat. Disarankan user khusus dengan hak <em>read</em>.</p>
             <div class="row r3">
                 <div class="field"><label for="cfg_type">Jenis</label><select class="input @error('cfg_type') is-err @enderror" id="cfg_type" name="cfg_type">
-                    <option value="">— tidak di-backup —</option>
+                    <option value="">Tidak di-backup</option>
                     @foreach(\App\Models\Device::CFG_TYPES as $k => $v)<option value="{{ $k }}" @selected(old('cfg_type', $device->cfg_type) === $k)>{{ $v }}</option>@endforeach</select></div>
                 <div class="field"><label for="ssh_user">User SSH</label><input class="input @error('ssh_user') is-err @enderror" id="ssh_user" name="ssh_user" value="{{ old('ssh_user', $device->ssh_user) }}" autocomplete="off"><x-field-error name="ssh_user"/></div>
                 <div class="field"><label for="ssh_port">Port</label><input class="input" type="number" id="ssh_port" name="ssh_port" value="{{ old('ssh_port', $device->ssh_port ?? 22) }}"></div>

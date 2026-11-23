@@ -28,6 +28,7 @@ berlisensi tertutup milik perusahaan. Lihat [`LICENSE`](LICENSE), [`docs/CLEAN-R
 - [10. Pemakaian sehari-hari](#10-pemakaian-sehari-hari)
 - [Operasional server](#operasional-server)
 - [Pengaturan `.env`](#pengaturan-env)
+- [Collector site](#collector-site)
 - [Peran pengguna](#peran-pengguna)
 - [Pemecahan masalah](#pemecahan-masalah)
 - [Perintah collector (diagnosa)](#perintah-collector-diagnosa)
@@ -96,6 +97,10 @@ berlisensi tertutup milik perusahaan. Lihat [`LICENSE`](LICENSE), [`docs/CLEAN-R
 | Port naik-turun | Perubahan status port (up/down) dicatat dari polling dan dari trap linkDown/linkUp (yang menangkap putus-sambung cepat di antara dua putaran). Port infrastruktur (dipantau, punya tetangga LLDP/CDP, atau sambungan manual) yang berubah ≥ 4 kali dalam 15 menit menjadi problem Average *Port naik-turun*, tertutup sendiri setelah stabil (ambang di halaman Notifikasi). Halaman port menampilkan riwayat putus-sambung 7 hari |
 | **Down bulanan** | *Laporan → Down bulanan*: persentase down tiap perangkat per bulan (3 sampai 24 bulan), total per site, warna merah bila melewati batas target SLA, CSV, API `/api/v1/downtime`. Rekap disimpan collector tiap jam ke tabel tersendiri (bulan lalu dikunci), jadi riwayat tetap ada walau perangkat dihapus atau data problem lama dibersihkan |
 | Alat diagnosa | Di halaman perangkat (engineer/admin): ping 10 paket dengan RTT per paket, traceroute, dan cek port TCP, dijalankan dari collector ke host perangkat itu saja. Tercatat di jejak audit |
+| **Collector site** | Collector kecil (image yang sama) di VM / mini PC site tambang: ping dan SNMP perangkat lokal, hasil dikirim ke pusat lewat HTTPS dengan token per collector. Jalur ke pusat putus: hasil diantrekan di disk site (bawaan 512 MB) dan dikirim berurutan saat pulih, kejadian tetap memakai jam pengukuran, jam site yang meleset dikoreksi. Pusat tidak memeriksa perangkat itu sendiri, jadi putusnya jalur tidak membuat semua perangkat site down; yang muncul satu peringatan *Collector site tidak melapor*. Lihat [Collector site](#collector-site) |
+| Verifikasi dua langkah | Kode 6 digit dari aplikasi autentikator (Google/Microsoft Authenticator, Aegis, FreeOTP) diaktifkan di Profil lewat kode QR; 10 kode cadangan sekali pakai. Admin bisa mewajibkan untuk admin atau semua akun dan mereset 2FA pengguna yang kehilangan HP |
+| Login LDAP / AD | Opsional (*Pengguna → Kebijakan login*): akun kantor login dengan password direktori, akun dibuat otomatis, peran dari grup (admin/engineer/viewer), diperbarui tiap login. LDAPS atau StartTLS, tombol *Uji koneksi*. Akun lokal (termasuk admin) tetap bisa masuk walau server direktori mati |
+| Ubah perangkat massal | Centang perangkat di daftar Perangkat: pindah site, atur induk, kategori, kredensial SNMP, dipantau dari collector mana, aktif/nonaktif, hapus (ketik HAPUS). Satu catatan audit per perangkat |
 | Backup ke luar server | *Administrasi → Backup*: setiap backup yang berhasil disalin collector ke **SFTP** (NAS, server lain; host key dikunci saat koneksi pertama) atau **S3/MinIO** (SigV4, isi diverifikasi MD5/ETag), dengan retensi di tujuan, coba ulang otomatis, status per backup, tombol *Uji koneksi*, dan peringatan di Kesehatan sistem bila gagal. Kredensial terenkripsi |
 | **Backup** | Backup database harian otomatis (jam & jumlah simpanan diatur dari web) + tombol *Backup sekarang*, unduh dari web, pemulihan dengan `./antareja.sh restore`. Arahkan `BACKUP_DIR` ke NAS agar aman bila VM rusak |
 | **SLA bulanan** | Ketersediaan per perangkat & per site, downtime, jumlah gangguan, rata-rata waktu pulih; jam maintenance tidak dihitung; target SLA; ekspor CSV (Excel) & cetak/PDF |
@@ -121,6 +126,13 @@ Keamanan: lihat [`docs/KEAMANAN.md`](docs/KEAMANAN.md) — kontrol yang diterapk
 
 Semua berjalan sebagai satu Docker Compose (proyek `antareja-core`) di satu VM. Collector **hanya membaca** perangkat:
 tidak ada SNMP SET maupun perintah yang mengubah konfigurasi.
+
+Untuk site yang jalurnya ke pusat bisa putus, pasang **collector site** di site itu (opsional):
+
+```
+ Perangkat site ──ICMP/SNMP──► collector site ──HTTPS (token)──► web pusat ──► collector pusat ──► PostgreSQL
+                               (antrean disk saat putus)
+```
 
 ## Kebutuhan
 
@@ -456,7 +468,7 @@ Apa yang berubah tiap versi, termasuk port baru yang perlu dibuka: [`CHANGELOG.m
 | `METRICS_RETENTION` | `400d` | Lama data grafik disimpan |
 | `TZ` | `Asia/Jakarta` | Zona waktu |
 | `BACKUP_DIR` | `./backups` | Folder backup (disarankan NAS) |
-| `ANTAREJA_TAG` | `0.4.0` | Label versi image |
+| `ANTAREJA_TAG` | `0.5.0` | Label versi image |
 
 Ambang problem, retensi syslog, jadwal backup, target SLA, dan sumber peta diatur dari web (admin).
 
@@ -480,11 +492,43 @@ cd /opt/antareja/deploy && ./antareja.sh up
 Akses menjadi `http://IP-VM:8080` (dialihkan ke `https://IP-VM:8443`). Sesuaikan juga aturan firewall. Port syslog
 diganti dengan `SYSLOG_PORT` dengan cara yang sama (perangkat lalu mengirim ke port tersebut).
 
+## Collector site
+
+Dipakai bila sebuah site (pit, jetty, camp) terhubung ke server pusat lewat jalur yang bisa putus (radio, VSAT).
+Tanpa collector site, putusnya jalur membuat semua perangkat site itu tampak down. Dengan collector site, perangkat
+diukur dari site, hasilnya diantrekan saat jalur putus, dan pusat hanya menampilkan satu peringatan.
+
+1. Di web pusat: *Administrasi → Collector site → Tambah collector*. Salin token yang tampil (hanya sekali).
+2. Pindahkan perangkat: tombol *Pindahkan ke collector ini* (semua perangkat site-nya), kolom *Dipantau dari* di form
+   perangkat, atau ubah massal di daftar Perangkat.
+3. Di VM atau mini PC Linux di site (Docker terpasang, bisa menjangkau perangkat lokal dan web pusat lewat HTTPS):
+   salin folder `deploy/site` dan image collector, lalu:
+
+```bash
+cp .env.example .env
+```
+
+   Isi `ANTAREJA_CENTRAL_URL` dan `ANTAREJA_SITE_TOKEN`. Bila sertifikat pusat dari CA internal kantor, isi
+   `CENTRAL_CA_FILE` dengan path berkas CA (PEM). Verifikasi sertifikat tidak bisa dimatikan.
+
+```bash
+docker compose up -d
+```
+
+4. Dalam satu menit status di halaman collector menjadi *terhubung*. Log: `docker compose logs -f`.
+
+Catatan:
+- Mesin site tidak perlu database. Kredensial SNMP diterima dari pusat dan hanya disimpan di memori; daftar perangkat
+  di disk (untuk tetap ping setelah restart saat jalur putus) tanpa kredensial.
+- Backup konfigurasi SSH, cek gambar CCTV, alat diagnosa, dan discovery tetap berjalan dari server pusat.
+- Jam site sebaiknya disinkronkan NTP; selisih lebih dari 30 detik dikoreksi otomatis dan ditampilkan di halaman collector.
+- Hapus collector: perangkatnya kembali dipantau server pusat.
+
 ## Peran pengguna
 
 | Peran | Hak |
 |---|---|
-| **Admin** | Semua: pengguna, notifikasi, laporan terjadwal, backup, tautan status, ekspor/impor, pengaturan, jejak audit |
+| **Admin** | Semua: pengguna, kebijakan login (2FA, LDAP), collector site, notifikasi, laporan terjadwal, backup, tautan status, ekspor/impor, pengaturan, jejak audit |
 | **Engineer** | Kelola perangkat & site, uji koneksi, discovery, impor CSV, backup konfigurasi, CCTV, IPAM, maintenance, ACK problem, posisi peta |
 | **Viewer** | Lihat saja (layar NOC, manajemen, pemantau) |
 
@@ -500,6 +544,9 @@ diganti dengan `SYSLOG_PORT` dengan cara yang sama (perangkat lalu mengirim ke p
 | Notifikasi tidak terkirim | *Notifikasi → Kirim uji*; VM bisa keluar ke `api.telegram.org` / server SMTP? |
 | Peta abu-abu tanpa gambar | Browser bisa akses `tile.openstreetmap.org`? Bila tidak ada internet, isi server tile internal di *Atur posisi → Peta dasar* |
 | CCTV tidak tampil | User/password RTSP benar? Port 554 dari VM ke NVR terbuka? Lihat status kamera di *CCTV* |
+| Collector site *tidak melapor* | Di site: `docker compose logs collector`. "token salah": ganti token di pusat lalu pasang di `.env` site. "x509": isi `CENTRAL_CA_FILE`. Jaringan putus: hasil tetap diantrekan dan dikirim saat pulih |
+| HP hilang (2FA) | Pakai salah satu kode cadangan. Bila habis, admin membuka akun di *Pengguna* lalu *Reset 2FA* |
+| Login LDAP gagal | *Pengguna → Kebijakan login → Uji koneksi* dengan akun uji; akun bukan anggota grup mana pun ditolak (lihat jejak audit) |
 | Lupa password admin | Admin lain mereset di *Pengguna*. Bila tidak ada admin lain: hubungi pengembang (reset lewat database) |
 | Disk penuh | `df -h`; kurangi retensi syslog (*Log → Pengaturan*), `METRICS_RETENTION`, jumlah backup disimpan |
 

@@ -1,5 +1,22 @@
 # Catatan perubahan ANTAREJA NMS
 
+## 0.5.0
+
+Pembaruan dari 0.4.0: ganti image lalu jalankan ulang; migrasi 0030 sampai 0032 otomatis. Tidak ada port baru di
+server pusat. Collector site memakai image collector yang sama (lihat `deploy/site`).
+
+- **Collector site**: collector kecil di site tambang mengukur ping dan SNMP perangkat lokal lalu mengirim ke pusat
+  lewat HTTPS. Saat jalur ke pusat putus, hasil diantrekan di disk site dan dikirim berurutan saat pulih, jadi
+  kejadian down/up tetap tercatat dengan jam aslinya dan perangkat site tidak ikut dinyatakan down karena jalurnya.
+  Peringatan sistem bila collector site diam lebih dari 5 menit. Menu *Administrasi, Collector site*.
+- **Verifikasi dua langkah (TOTP)** lewat aplikasi autentikator, 10 kode cadangan sekali pakai, kebijakan wajib untuk
+  admin atau semua akun, reset oleh admin.
+- **Login LDAP / Active Directory** (opsional): akun dibuat otomatis, peran dari grup direktori; akun lokal tetap bisa
+  masuk walau server direktori mati.
+- **Ubah perangkat massal** di daftar Perangkat: site, induk, kategori, kredensial SNMP, collector, aktif/nonaktif, hapus.
+- **Backup ke luar server**: SFTP atau S3/MinIO, retensi di tujuan, peringatan bila gagal.
+- Perbaikan: login akun dengan password tersimpan bukan bcrypt (data impor) ditolak biasa, bukan error 500.
+
 ## 0.4.0
 
 Pembaruan dari 0.3.0: ganti image lalu jalankan ulang; migrasi 0029 otomatis. Rekap 12 bulan ke belakang diisi

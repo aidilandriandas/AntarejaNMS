@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log/slog"
 	"math/big"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -132,7 +131,7 @@ func (p *Poller) PingCycle(ctx context.Context) error {
 	seen := map[string]bool{}
 	var hosts []string
 	for _, d := range devs {
-		if !d.PingEnabled {
+		if !d.PingEnabled || d.CollectorID != nil { // perangkat collector site diukur di site
 			continue
 		}
 		targets = append(targets, d)
@@ -146,47 +145,17 @@ func (p *Poller) PingCycle(ctx context.Context) error {
 	if ctx.Err() != nil {
 		return ctx.Err() // putaran terpotong: jangan menilai status dari hasil parsial
 	}
-
 	// Pengaman: bila SEMUA ping gagal karena galat lokal (mis. izin raw socket), jangan tandai semuanya down.
-	localErr := len(results) > 0
-	for _, r := range results {
-		if r.OK() || r.Err == "" {
-			localErr = false
-			break
-		}
+	if bad, msg := LocalPingFailure(results); bad {
+		return fmt.Errorf("semua ping gagal dijalankan, status tidak diubah: %s", msg)
 	}
-	if localErr {
-		for _, r := range results {
-			return fmt.Errorf("semua ping gagal dijalankan, status tidak diubah: %s", r.Err)
-		}
-	}
-
-	var batch metrics.Batch
-	ups := make([]store.PingUpdate, 0, len(targets))
-	down := 0
+	byID := make(map[int64]ping.Result, len(targets))
 	for _, d := range targets {
-		r := results[d.Host]
-		u := p.judgePing(ctx, d, r, now)
-		p.Stats.AddPing(d.ID, r.OK(), r.AvgMS, r.LossPct)
-		ups = append(ups, u)
-		if u.Status == "down" {
-			down++
-		}
-		l := map[string]string{"device_id": strconv.FormatInt(d.ID, 10)}
-		batch.Add("antareja_ping_up", l, b2f(r.OK()), now)
-		batch.Add("antareja_ping_loss_pct", l, r.LossPct, now)
-		if r.OK() {
-			batch.Add("antareja_ping_rtt_ms", l, r.AvgMS, now)
-			batch.Add("antareja_ping_rtt_min_ms", l, r.MinMS, now)
-			batch.Add("antareja_ping_rtt_max_ms", l, r.MaxMS, now)
-			batch.Add("antareja_ping_jitter_ms", l, r.Jitter, now)
-		}
+		byID[d.ID] = results[d.Host]
 	}
-	if err := p.Store.SavePing(ctx, ups); err != nil {
+	down, err := p.ApplyPing(ctx, targets, byID, now)
+	if err != nil {
 		return err
-	}
-	if err := p.Writer.Write(ctx, &batch); err != nil {
-		p.Log.Warn("metrik ping tidak terkirim", "galat", err)
 	}
 	p.lastPing.Store(time.Now().Unix())
 	p.Log.Info("putaran ping", "perangkat", len(targets), "down", down)
@@ -252,30 +221,22 @@ func (p *Poller) transition(ctx context.Context, d store.Device, status, reason 
 }
 
 // PollNow menjalankan ping & SNMP untuk satu perangkat segera (dipanggil web setelah perangkat ditambah/diubah).
+// ErrSiteDevice: perangkat dipantau collector site, pusat tidak bisa memeriksanya langsung.
+var ErrSiteDevice = errors.New("perangkat ini dipantau collector site; hasil berikutnya datang dari site")
+
 func (p *Poller) PollNow(ctx context.Context, id int64) error {
 	d, err := p.Store.Device(ctx, id)
 	if err != nil {
 		return err
 	}
+	if d.CollectorID != nil {
+		return ErrSiteDevice
+	}
 	now := time.Now().Truncate(time.Second)
 	if d.PingEnabled {
 		r := p.Ping.One(ctx, d.Host)
-		u := p.judgePing(ctx, d, r, now)
-		if err := p.Store.SavePing(ctx, []store.PingUpdate{u}); err != nil {
+		if _, err := p.ApplyPing(ctx, []store.Device{d}, map[int64]ping.Result{d.ID: r}, now); err != nil {
 			return err
-		}
-		var batch metrics.Batch
-		l := map[string]string{"device_id": strconv.FormatInt(d.ID, 10)}
-		batch.Add("antareja_ping_up", l, b2f(r.OK()), now)
-		batch.Add("antareja_ping_loss_pct", l, r.LossPct, now)
-		if r.OK() {
-			batch.Add("antareja_ping_rtt_ms", l, r.AvgMS, now)
-			batch.Add("antareja_ping_rtt_min_ms", l, r.MinMS, now)
-			batch.Add("antareja_ping_rtt_max_ms", l, r.MaxMS, now)
-			batch.Add("antareja_ping_jitter_ms", l, r.Jitter, now)
-		}
-		if err := p.Writer.Write(ctx, &batch); err != nil {
-			p.Log.Warn("metrik ping tidak terkirim", "galat", err)
 		}
 		if d, err = p.Store.Device(ctx, id); err != nil {
 			return err
@@ -344,7 +305,7 @@ func (p *Poller) snmpCycle(ctx context.Context) error {
 		}()
 	}
 	for _, d := range devs {
-		if !d.SNMPEnabled {
+		if !d.SNMPEnabled || d.CollectorID != nil {
 			continue
 		}
 		select {
@@ -386,114 +347,8 @@ func (p *Poller) Credentials(d store.Device) (snmp.Credentials, error) {
 }
 
 func (p *Poller) pollSNMP(ctx context.Context, d store.Device) bool {
-	now := time.Now().Truncate(time.Second)
-	u := store.SNMPUpdate{ID: d.ID, At: now}
 	cr, err := p.Credentials(d)
-	var sys snmp.System
-	if err == nil {
-		sys, err = p.SNMP.System(d.Host, cr)
-	}
-	if err != nil {
-		msg := snmp.Friendly(err)
-		u.Error = &msg
-		if d.SNMPOK == nil || *d.SNMPOK {
-			p.event(ctx, d.ID, "snmp_fail", d.Name+": SNMP tidak terbaca: "+msg, nil, now)
-		}
-		if !d.PingEnabled { // status hanya dari SNMP
-			streak := d.FailStreak + 1
-			u.FailStreak = &streak
-			if streak >= p.Cfg.DownAfter {
-				st := "down"
-				u.Status, u.Reason = &st, &msg
-				u.Changed = d.Status != "down"
-				if u.Changed {
-					p.transition(ctx, d, "down", msg, now)
-				}
-			}
-		}
-		if err := p.Store.SaveSNMP(ctx, u); err != nil {
-			p.Log.Error("simpan SNMP gagal", "perangkat", d.ID, "galat", err)
-		}
-		p.Stats.SNMPResult(d.ID, false)
-		return false
-	}
-
-	p.Stats.SNMPResult(d.ID, true)
-	u.OK = true
-	up := sys.UptimeSeconds()
-	u.SysName, u.SysDescr, u.SysObjectID, u.SysLoc, u.Uptime = &sys.Name, &sys.Descr, &sys.ObjectID, &sys.Location, &up
-	if d.SNMPOK != nil && !*d.SNMPOK {
-		p.event(ctx, d.ID, "snmp_ok", d.Name+": SNMP kembali terbaca", nil, now)
-	}
-	if d.UptimeSeconds != nil && d.LastSNMPAt != nil &&
-		snmp.Rebooted(uint32(*d.UptimeSeconds*100), sys.UptimeTicks, now.Sub(*d.LastSNMPAt)) {
-		p.event(ctx, d.ID, "reboot", fmt.Sprintf("%s restart (uptime sebelumnya %s, sekarang %s)", d.Name,
-			Human(time.Duration(*d.UptimeSeconds)*time.Second), Human(time.Duration(up)*time.Second)), nil, now)
-	}
-	if !d.PingEnabled {
-		zero, st := 0, "up"
-		u.FailStreak, u.Status = &zero, &st
-		u.Changed = d.Status != "up"
-		if u.Changed {
-			p.transition(ctx, d, "up", "", now)
-		}
-	}
-	if err := p.Store.SaveSNMP(ctx, u); err != nil {
-		p.Log.Error("simpan SNMP gagal", "perangkat", d.ID, "galat", err)
-	}
-
-	var batch metrics.Batch
-	dl := map[string]string{"device_id": strconv.FormatInt(d.ID, 10)}
-	batch.Add("antareja_snmp_uptime_seconds", dl, float64(up), now)
-
-	ifs, err := p.SNMP.Interfaces(d.Host, cr)
-	if err != nil {
-		p.Log.Warn("baca port gagal", "perangkat", d.ID, "galat", snmp.Friendly(err))
-	} else {
-		rows := make([]store.InterfaceRow, 0, len(ifs))
-		for _, it := range ifs {
-			inBps, outBps, util := p.Stats.Rate(d.ID, it.Index, it.InOctets, it.OutOctets, it.SpeedBps, now)
-			errRate, discRate := p.Stats.ErrRate(d.ID, it.Index, it.InErrors, it.OutErrors, it.InDiscards, it.OutDiscards, now)
-			rows = append(rows, store.InterfaceRow{Index: it.Index, Name: it.Name, Alias: it.Alias, Descr: it.Descr, MAC: it.MAC,
-				Type: it.Type, SpeedBps: int64(it.SpeedBps), AdminUp: it.AdminUp, OperUp: it.OperUp, InBps: inBps, OutBps: outBps, Util: util,
-				ErrRate: errRate, DiscardRate: discRate})
-			l := map[string]string{"device_id": dl["device_id"], "if_index": strconv.Itoa(it.Index), "if_name": it.Name}
-			batch.Add("antareja_if_oper_up", l, b2f(it.OperUp), now)
-			batch.Add("antareja_if_speed_bps", l, float64(it.SpeedBps), now)
-			addCounter(&batch, "antareja_if_in_octets_total", l, it.InOctets, now)
-			addCounter(&batch, "antareja_if_out_octets_total", l, it.OutOctets, now)
-			addCounter(&batch, "antareja_if_in_errors_total", l, it.InErrors, now)
-			addCounter(&batch, "antareja_if_out_errors_total", l, it.OutErrors, now)
-			addCounter(&batch, "antareja_if_in_ucast_pkts_total", l, it.InUcast, now)
-			addCounter(&batch, "antareja_if_out_ucast_pkts_total", l, it.OutUcast, now)
-			addCounter(&batch, "antareja_if_in_mcast_pkts_total", l, it.InMcast, now)
-			addCounter(&batch, "antareja_if_out_mcast_pkts_total", l, it.OutMcast, now)
-			addCounter(&batch, "antareja_if_in_bcast_pkts_total", l, it.InBcast, now)
-			addCounter(&batch, "antareja_if_out_bcast_pkts_total", l, it.OutBcast, now)
-			addCounter(&batch, "antareja_if_in_discards_total", l, it.InDiscards, now)
-			addCounter(&batch, "antareja_if_out_discards_total", l, it.OutDiscards, now)
-		}
-		if err := p.Store.SaveInterfaces(ctx, d.ID, rows); err != nil {
-			p.Log.Error("simpan port gagal", "perangkat", d.ID, "galat", err)
-		}
-		// Tetangga LLDP/CDP untuk peta topologi
-		if nbs, err := p.SNMP.Neighbors(d.Host, cr, ifs); err == nil {
-			nrows := make([]store.NeighborRow, 0, len(nbs))
-			for _, n := range nbs {
-				nrows = append(nrows, store.NeighborRow{LocalIfIndex: n.LocalIfIndex, LocalPort: n.LocalPortName, Protocol: n.Protocol,
-					Name: n.RemoteName, Port: n.RemotePort, Chassis: n.RemoteChassis, IP: n.RemoteIP, Platform: n.RemotePlatform})
-			}
-			if err := p.Store.SaveNeighbors(ctx, d.ID, nrows); err != nil {
-				p.Log.Error("simpan tetangga gagal", "perangkat", d.ID, "galat", err)
-			}
-		}
-	}
-	p.collectSensors(ctx, d, cr, sys.ObjectID, &batch, now)
-	p.collectIPAM(ctx, d, cr, sys.ObjectID)
-	if err := p.Writer.Write(ctx, &batch); err != nil {
-		p.Log.Warn("metrik SNMP tidak terkirim", "perangkat", d.ID, "galat", err)
-	}
-	return true
+	return p.ApplySNMP(ctx, d, p.MeasureSNMP(d, cr, err, p.storeProfiles(ctx, d)))
 }
 
 func (p *Poller) event(ctx context.Context, id int64, kind, msg string, dur *int64, at time.Time) {

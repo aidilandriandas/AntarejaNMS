@@ -9,7 +9,8 @@ ARG VERSION=0.4.0
 RUN CGO_ENABLED=0 go build -trimpath -tags timetzdata -ldflags "-s -w -X main.version=${VERSION}" -o /out/antareja-collector ./cmd/antareja-collector
 
 FROM alpine:3.22
-RUN adduser -D -H -u 10001 antareja
+RUN adduser -D -H -u 10001 antareja \
+    && mkdir -p /var/lib/antareja/spool && chown -R antareja /var/lib/antareja && chmod 700 /var/lib/antareja/spool
 COPY --from=build /out/antareja-collector /usr/local/bin/antareja-collector
 COPY db/migrations /app/migrations
 USER antareja

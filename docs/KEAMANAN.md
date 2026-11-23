@@ -21,6 +21,8 @@ Perbarui dokumen ini setiap ada fitur yang menyentuh kredensial, perangkat, atau
 | Peran | `admin` (semua), `engineer` (kelola perangkat, site, maintenance, CCTV, IPAM, discovery, backup konfigurasi), `viewer` (lihat saja). Dicek per rute (`can:manage-devices`, `can:admin`), bukan hanya disembunyikan di menu |
 | Setup awal | Hanya bila belum ada akun; diperiksa ulang di dalam transaksi |
 | Login | Maks. 5 percobaan / menit per username+IP; login gagal dicatat di jejak audit |
+| Verifikasi dua langkah | TOTP (RFC 6238, 30 detik, toleransi 1 langkah); rahasia terenkripsi kunci aplikasi; kode yang sudah dipakai ditolak (langkah terakhir disimpan, baris dikunci saat cek); 5 percobaan salah per 5 menit; 10 kode cadangan disimpan sebagai hash bcrypt, sekali pakai. Langkah kedua kedaluwarsa 5 menit setelah password benar, dan belum ada sesi login sebelum kode benar. Kebijakan wajib (admin/semua) ditegakkan di setiap permintaan; admin hanya bisa mewajibkan bila dirinya sudah memakai 2FA |
+| LDAP / AD | Opsional. LDAPS atau StartTLS dengan verifikasi sertifikat (bisa dimatikan untuk CA internal yang belum dipasang); tanpa enkripsi harus dikonfirmasi eksplisit. Username di-escape (`ldap_escape`) sebelum masuk filter. Password akun layanan terenkripsi. Akun lokal tidak pernah dicek ke LDAP dan sebaliknya, jadi admin lokal tetap bisa masuk saat direktori mati. Akun yang dinonaktifkan di ANTAREJA tetap ditolak walau aktif di direktori |
 | Password | Min. 10 karakter, huruf + angka; ganti password wajib password lama |
 | Akun nonaktif | Langsung keluar pada permintaan berikutnya, termasuk sesi "Ingat saya" |
 | Ganti password | Semua sesi lain akun itu otomatis keluar (`AuthenticateSession`); juga saat admin mereset password pengguna |
@@ -43,6 +45,7 @@ dibatasi ke server sendiri, `object-src 'none'`, `frame-ancestors 'self'`), `X-F
 | 80/443 (bisa diganti di `.env`) | Web (HTTPS; HTTP dialihkan) | Satu-satunya pintu untuk pengguna |
 | 514 UDP/TCP | Penerima syslog | Hanya menerima & menyimpan teks; batas laju per IP |
 | 162 UDP | Penerima SNMP trap v1/v2c | Hanya menerima & menyimpan; tidak menjawab (inform dan v3 diabaikan); batas 50 trap per 10 detik per IP; community tidak disimpan |
+| 443 (keluar dari site) | Collector site ke web pusat | Hanya koneksi keluar dari site; site tidak membuka port apa pun |
 | — | API collector `:9274`, PostgreSQL, VictoriaMetrics, go2rtc | **Tidak** dipublikasikan; hanya jaringan Docker. Token API = HMAC dari `ANTAREJA_APP_KEY` |
 
 Video CCTV: nginx hanya membuka `/live/ws` & `/live/frame.jpeg` setelah login dicek Laravel; API go2rtc lain
@@ -69,6 +72,19 @@ tidak dicatat di access log nginx. Siapa pun yang memegang tautan bisa membukany
 - S3: tanda tangan AWS SigV4; isi diverifikasi Content-MD5 (oleh server) dan ETag (oleh collector).
 - Collector hanya membaca folder backup (mount read-only). Akun tujuan cukup diberi hak tulis dan hapus di satu folder.
 - Berkas backup berisi seluruh database, termasuk kredensial perangkat yang terenkripsi; perlakukan tujuan salinan sebagai rahasia.
+
+## 5c. Collector site
+
+- Token `acs_` acak 48 karakter per collector, disimpan sebagai hash SHA-256, tampil sekali; bisa diganti (token lama
+  langsung ditolak) dan collector bisa dinonaktifkan. Pembuatan, ganti token, dan hapus tercatat di jejak audit.
+- `/api/site/v1` hanya `GET config` dan `POST results`; batas 600 permintaan/menit; jawaban `no-store`.
+- Konfigurasi hanya berisi perangkat aktif milik collector itu, termasuk kredensial SNMP-nya (dikirim lewat HTTPS,
+  disimpan di memori site saja; salinan daftar perangkat di disk tanpa kredensial, folder antrean `0700`, berkas `0600`).
+- Hasil diteruskan web ke collector pusat lewat jaringan Docker internal. Collector pusat hanya menerapkan sampel untuk
+  perangkat aktif yang memang milik collector itu; sampel ganda atau lebih lama dari yang tersimpan dilewati.
+- Collector site memverifikasi sertifikat pusat (CA sistem atau berkas CA kantor); tidak ada opsi untuk mematikannya.
+- Mesin site yang dicuri membawa token dan (selama berjalan) kredensial SNMP perangkat site itu: ganti token dan
+  kredensial SNMP perangkat site tersebut.
 
 ## 6. Ekspor konfigurasi
 
@@ -97,6 +113,7 @@ terpisah dari berkasnya. Impor & ekspor khusus admin dan tercatat di jejak audit
    (tanpa kunci ini semua kredensial terenkripsi tidak bisa dibuka).
 2. Ganti sertifikat HTTPS dengan sertifikat kantor.
 3. Firewall VM: buka port web (bawaan 80/443) hanya untuk jaringan kantor/NOC, 514 dan 162/UDP hanya dari subnet manajemen perangkat.
-4. Buat akun per orang (bukan akun bersama); viewer untuk layar NOC & pemantau.
+4. Buat akun per orang (bukan akun bersama); viewer untuk layar NOC & pemantau. Wajibkan verifikasi dua langkah
+   minimal untuk admin (*Pengguna → Kebijakan login*).
 5. Arahkan `BACKUP_DIR` ke NAS; uji `./antareja.sh restore` sekali.
 6. Community SNMP read-only khusus NMS (bukan `public`), user SSH backup dengan hak baca saja.

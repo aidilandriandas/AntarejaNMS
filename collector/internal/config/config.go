@@ -35,6 +35,13 @@ type Config struct {
 	Workers        int
 	DownAfter      int     // putaran gagal berturut-turut sebelum dinyatakan down
 	LatencyHighMS  float64 // ambang kejadian "latensi tinggi"
+
+	// Mode collector site (perintah "site")
+	CentralURL string // alamat web pusat, mis. https://nms.kantor.local
+	SiteToken  string // token collector site dari halaman Collector site
+	CentralCA  string // berkas CA (PEM) bila sertifikat pusat dari CA internal; kosong = CA sistem
+	SpoolDir   string // folder antrean hasil saat jalur ke pusat putus
+	SpoolMaxMB int
 }
 
 func Load() (Config, error) {
@@ -64,6 +71,14 @@ func Load() (Config, error) {
 		DownAfter:      num("ANTAREJA_DOWN_AFTER", 2),
 		LatencyHighMS:  float64(num("ANTAREJA_LATENCY_HIGH_MS", 150)),
 	}
+	c.CentralURL = strings.TrimRight(os.Getenv("ANTAREJA_CENTRAL_URL"), "/")
+	c.SiteToken = os.Getenv("ANTAREJA_SITE_TOKEN")
+	c.CentralCA = os.Getenv("ANTAREJA_CENTRAL_CA")
+	c.SpoolDir = env("ANTAREJA_SPOOL_DIR", "/var/lib/antareja/spool")
+	c.SpoolMaxMB = num("ANTAREJA_SPOOL_MAX_MB", 512)
+	if os.Getenv("ANTAREJA_MODE") == "site" {
+		return c, c.checkSite()
+	}
 	if c.DatabaseURL == "" {
 		return c, fmt.Errorf("ANTAREJA_DATABASE_URL belum diisi")
 	}
@@ -74,6 +89,20 @@ func Load() (Config, error) {
 		return c, fmt.Errorf("ANTAREJA_PING_COUNT, ANTAREJA_WORKERS dan ANTAREJA_DOWN_AFTER minimal 1")
 	}
 	return c, nil
+}
+
+// checkSite memeriksa setelan collector site (tanpa database dan tanpa kunci aplikasi).
+func (c Config) checkSite() error {
+	if !strings.HasPrefix(c.CentralURL, "https://") {
+		return fmt.Errorf("ANTAREJA_CENTRAL_URL wajib diisi dengan alamat https web pusat")
+	}
+	if len(c.SiteToken) < 32 {
+		return fmt.Errorf("ANTAREJA_SITE_TOKEN belum diisi (buat di menu Collector site di web pusat)")
+	}
+	if c.PingCount < 1 || c.Workers < 1 || c.SpoolMaxMB < 16 {
+		return fmt.Errorf("ANTAREJA_PING_COUNT dan ANTAREJA_WORKERS minimal 1, ANTAREJA_SPOOL_MAX_MB minimal 16")
+	}
+	return nil
 }
 
 func env(k, def string) string {
