@@ -303,6 +303,29 @@ if (document.querySelector('[data-port-graphs]')) {
     import('./portgraphs.js').then(({ initPortGraphs }) => initPortGraphs());
 }
 
+// ---------- Ubah perangkat massal: centang semua, hitung yang dipilih, konfirmasi ----------
+const bulk = $('form[data-bulk]');
+if (bulk) {
+    const boxes = () => $$('input[name="ids[]"][form="massal"]');
+    const all = $('[data-check-all]');
+    const btn = bulk.querySelector('[data-bulk-submit]');
+    const count = bulk.querySelector('[data-bulk-count]');
+    const picked = () => boxes().filter((b) => b.checked).length;
+    const sync = () => {
+        const n = picked();
+        btn.disabled = n === 0;
+        count.textContent = n ? n + ' perangkat dipilih' : 'Centang perangkat untuk mengubah beberapa sekaligus.';
+        if (all) { all.checked = n > 0 && n === boxes().length; all.indeterminate = n > 0 && n < boxes().length; }
+    };
+    all?.addEventListener('change', () => { boxes().forEach((b) => { b.checked = all.checked; }); sync(); });
+    boxes().forEach((b) => b.addEventListener('change', sync));
+    bulk.addEventListener('submit', (e) => {
+        const act = bulk.querySelector('[name=action]');
+        if (!window.confirm(act.selectedOptions[0].textContent + ' untuk ' + picked() + ' perangkat. Lanjutkan?')) e.preventDefault();
+    });
+    sync();
+}
+
 // ---------- Kode QR aktivasi 2FA (dibuat di browser dari URI otpauth; rahasia tidak dikirim ke layanan luar) ----------
 const qrBox = $('[data-otpauth]');
 if (qrBox) {

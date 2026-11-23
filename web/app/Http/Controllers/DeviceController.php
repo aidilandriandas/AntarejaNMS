@@ -35,6 +35,7 @@ class DeviceController extends Controller
         return view('devices.index', [
             'devices' => $q->paginate(100)->withQueryString(),
             'sites' => Site::orderBy('code')->get(),
+            'parents' => $request->user()->can('manage-devices') ? Device::orderBy('name')->get(['id', 'name', 'host']) : collect(),
         ]);
     }
 
@@ -276,7 +277,7 @@ class DeviceController extends Controller
     }
 
     /** Apakah menjadikan $parentId induk dari $deviceId membuat rantai melingkar? */
-    private function wouldLoop(int $deviceId, int $parentId): bool
+    public static function wouldLoop(int $deviceId, int $parentId): bool
     {
         $cur = $parentId;
         for ($i = 0; $i < 32 && $cur; $i++) {
@@ -337,7 +338,7 @@ class DeviceController extends Controller
             'snmp_v3_auth_pass.min' => 'Password SNMPv3 minimal 8 karakter (aturan SNMPv3).',
             'snmp_v3_priv_pass.min' => 'Password SNMPv3 minimal 8 karakter (aturan SNMPv3).',
         ]);
-        if (! empty($d['parent_id']) && $device->exists && $this->wouldLoop($device->id, (int) $d['parent_id'])) {
+        if (! empty($d['parent_id']) && $device->exists && self::wouldLoop($device->id, (int) $d['parent_id'])) {
             throw \Illuminate\Validation\ValidationException::withMessages(['parent_id' => 'Perangkat induk tidak boleh berada di bawah perangkat ini (rantai melingkar).']);
         }
         $device->thresholds = $this->thresholds($request);

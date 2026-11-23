@@ -424,6 +424,10 @@ table.t.logs td:nth-child(4) { font-size: var(--text-xs); white-space: nowrap; }
 .t .chk { width: 34px; }
 .bulkbar { display: flex; gap: var(--space-xs); align-items: center; flex-wrap: wrap; padding: 0 0 var(--space-sm); }
 .bulkbar .input { height: 32px; width: 260px; max-width: 100%; }
+.bulk-edit .bulkbar .input { width: auto; min-width: 180px; }
+.bulk-snmp { padding: 0 0 var(--space-md); max-width: 880px; }
+.t th.pick, .t td.pick { width: 36px; padding-right: 0; }
+.t .pick input { width: 16px; height: 16px; accent-color: var(--color-accent); }
 .inc-tag { font-weight: 600; color: var(--color-crit); }
 
 /* ---------- SLA layanan & kapasitas ---------- */

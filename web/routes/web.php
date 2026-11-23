@@ -12,6 +12,7 @@ use App\Http\Controllers\ChannelController;
 use App\Http\Controllers\ConfigTransferController;
 use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DeviceBulkController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\DeviceImportController;
 use App\Http\Controllers\DiscoveryController;
@@ -80,6 +81,7 @@ Route::middleware('auth')->group(function () {
         Route::post('perangkat/impor', [DeviceImportController::class, 'store'])->name('devices.import.store');
         Route::post('perangkat', [DeviceController::class, 'store'])->name('devices.store');
         Route::post('perangkat/uji', [DeviceController::class, 'test'])->name('devices.test')->middleware('throttle:20,1');
+        Route::post('perangkat/massal', [DeviceBulkController::class, 'apply'])->name('devices.bulk')->middleware('throttle:20,1');
         Route::get('perangkat/{device}/ubah', [DeviceController::class, 'edit'])->name('devices.edit');
         Route::put('perangkat/{device}', [DeviceController::class, 'update'])->name('devices.update');
         Route::delete('perangkat/{device}', [DeviceController::class, 'destroy'])->name('devices.destroy');
