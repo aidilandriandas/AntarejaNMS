@@ -93,4 +93,19 @@ class TopologyController extends Controller
 
         return response()->json(['ok' => true]);
     }
+
+    /** Tombol "Sinkron LLDP sekarang": baca ulang tetangga LLDP/CDP semua perangkat SNMP tanpa menunggu jadwal. */
+    public function sync(\App\Services\Collector $collector)
+    {
+        $r = $collector->syncTopology();
+        if ($r === 'started') {
+            \App\Services\Audit::log('updated', 'Sinkron topologi LLDP/CDP dijalankan manual');
+        }
+
+        return back()->with($r === 'down' ? 'error' : 'ok', match ($r) {
+            'started' => 'Sinkron dimulai. Semua perangkat SNMP dibaca ulang; peta diperbarui sendiri dalam 1 sampai 2 menit.',
+            'busy' => 'Putaran SNMP sedang berjalan. Hasilnya muncul di peta begitu selesai, tidak perlu menekan lagi.',
+            default => 'Collector tidak dapat dihubungi, sinkron tidak dijalankan.',
+        });
+    }
 }

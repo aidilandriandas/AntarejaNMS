@@ -459,6 +459,33 @@ func (s *Session) Walk(base string) (map[string]any, error) {
 	return out, err
 }
 
+var errEnough = errors.New("cukup")
+
+// WalkRaw membaca subtree apa pun sampai limit baris. Hasil: OID lengkap dan nilai, urut seperti dijawab perangkat.
+// truncated = true bila masih ada baris yang tidak dibaca.
+func (s *Session) WalkRaw(base string, limit int) (rows [][2]string, truncated bool, err error) {
+	fn := func(v gosnmp.SnmpPDU) error {
+		if missing(v) {
+			return nil
+		}
+		if len(rows) >= limit {
+			truncated = true
+			return errEnough
+		}
+		rows = append(rows, [2]string{v.Name, fmt.Sprint(pduValue(v))})
+		return nil
+	}
+	if s.version == "1" {
+		err = s.g.Walk(base, fn)
+	} else {
+		err = s.g.BulkWalk(base, fn)
+	}
+	if errors.Is(err, errEnough) {
+		err = nil
+	}
+	return rows, truncated, err
+}
+
 // pduValue mengubah nilai SNMP menjadi float64 (angka) atau string (teks/OID/MAC).
 func pduValue(v gosnmp.SnmpPDU) any {
 	switch v.Type {

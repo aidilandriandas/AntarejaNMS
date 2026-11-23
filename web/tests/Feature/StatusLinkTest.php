@@ -23,11 +23,14 @@ class StatusLinkTest extends TestCase
     public function test_tautan_sah_tanpa_login_tanpa_ip(): void
     {
         $site = DB::table('sites')->insertGetId(['code' => 'PIT-A', 'name' => 'Pit A']);
-        DB::table('devices')->insert(['name' => 'Router Pit A', 'host' => '10.20.30.40', 'site_id' => $site, 'category' => 'core', 'status' => 'down']);
+        $dev = DB::table('devices')->insertGetId(['name' => 'Router Pit A', 'host' => '10.20.30.40', 'site_id' => $site, 'category' => 'core', 'status' => 'down']);
+        $sv = DB::table('services')->insertGetId(['name' => 'CCTV Pit A', 'site_id' => $site, 'target_pct' => 99]);
+        $c = DB::table('service_components')->insertGetId(['service_id' => $sv, 'name' => 'Uplink', 'min_up' => 1]);
+        DB::table('service_component_devices')->insert(['component_id' => $c, 'device_id' => $dev]);
         $t = $this->token();
         $this->assertSame(40, strlen($t));
         $this->assertSame(0, DB::table('status_links')->where('token_hash', $t)->count(), 'token tidak boleh disimpan polos');
-        $r = $this->get('/status/' . $t)->assertOk()->assertSee('Router Pit A')->assertSee('PIT-A');
+        $r = $this->get('/status/' . $t)->assertOk()->assertSee('Router Pit A')->assertSee('PIT-A')->assertSee('CCTV Pit A')->assertSee('Terganggu');
         $r->assertDontSee('10.20.30.40')->assertHeader('X-Robots-Tag', 'noindex, nofollow')->assertHeader('Referrer-Policy', 'no-referrer');
         $this->assertSame(1, (int) DB::table('status_links')->value('use_count'));
     }

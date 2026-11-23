@@ -46,6 +46,8 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /v1/test", s.auth(s.test))
 	mux.HandleFunc("POST /v1/devices/{id}/poll", s.auth(s.poll))
+	mux.HandleFunc("POST /v1/topology/sync", s.auth(s.syncTopology))
+	mux.HandleFunc("GET /v1/devices/{id}/diagnose", s.auth(s.diagnose))
 	mux.HandleFunc("POST /v1/channels/{id}/test", s.auth(s.testChannel))
 	mux.HandleFunc("POST /v1/live", s.auth(s.live))
 	mux.HandleFunc("GET /v1/reports/{id}/preview", s.auth(s.reportPreview))
@@ -148,6 +150,43 @@ func (s *Server) poll(w http.ResponseWriter, r *http.Request) {
 		if err := s.Poller.PollNow(ctx, id); err != nil {
 			s.Log.Warn("polling segera gagal", "perangkat", id, "galat", err)
 		}
+	}()
+	writeJSON(w, http.StatusAccepted, map[string]string{"status": "dijadwalkan"})
+}
+
+// diagnose membaca perangkat sekarang untuk berkas diagnosa SNMP (hanya baca, tanpa kredensial).
+func (s *Server) diagnose(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "perangkat tidak ditemukan"})
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 50*time.Second)
+	defer cancel()
+	d, err := s.Poller.Diagnose(ctx, id)
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "perangkat tidak ditemukan"})
+		return
+	}
+	writeJSON(w, http.StatusOK, d)
+}
+
+// syncTopology menjalankan putaran SNMP penuh sekarang (LLDP/CDP dan pencocokan tetangga) di latar.
+// 409 bila putaran lain masih berjalan, supaya web bisa memberi tahu tanpa menumpuk putaran.
+func (s *Server) syncTopology(w http.ResponseWriter, r *http.Request) {
+	if s.Poller.SNMPBusy() {
+		writeJSON(w, http.StatusConflict, map[string]string{"status": "sedang berjalan"})
+		return
+	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+		start := time.Now()
+		if err := s.Poller.SyncNow(ctx); err != nil {
+			s.Log.Warn("sinkron topologi gagal", "galat", err)
+			return
+		}
+		s.Log.Info("sinkron topologi selesai", "durasi", time.Since(start).Round(time.Second))
 	}()
 	writeJSON(w, http.StatusAccepted, map[string]string{"status": "dijadwalkan"})
 }

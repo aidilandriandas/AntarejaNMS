@@ -76,6 +76,54 @@ class ConfigTransferTest extends TestCase
         $this->assertSame($core, (int) DB::table('devices')->where('name', 'Radio')->value('parent_id'));
     }
 
+    public function test_layanan_trigger_dan_kanal_piket_ikut(): void
+    {
+        $core = $this->isiData();
+        $radio = (int) DB::table('devices')->where('name', 'Radio')->value('id');
+        $sid = DB::table('services')->insertGetId(['name' => 'CCTV Pit A', 'target_pct' => 99.0, 'site_id' => DB::table('sites')->value('id')]);
+        $c1 = DB::table('service_components')->insertGetId(['service_id' => $sid, 'name' => 'Uplink', 'min_up' => 1, 'position' => 0]);
+        $c2 = DB::table('service_components')->insertGetId(['service_id' => $sid, 'name' => 'Radio', 'min_up' => 1, 'position' => 1]);
+        DB::table('service_component_devices')->insert([['component_id' => $c1, 'device_id' => $core], ['component_id' => $c2, 'device_id' => $radio]]);
+        $tid = DB::table('triggers')->insertGetId(['name' => 'Radio lambat', 'severity' => 'high', 'metric' => 'latency', 'op' => '>', 'threshold' => 80,
+            'duration_min' => 10, 'scope' => 'devices', 'start_min' => 1080, 'end_min' => 360]);
+        DB::table('trigger_devices')->insert(['trigger_id' => $tid, 'device_id' => $radio]);
+        DB::table('notify_channels')->insert(['name' => 'Email piket', 'type' => 'email', 'to_oncall' => true,
+            'config_enc' => Crypt::encryptString(json_encode(['host' => 'smtp', 'port' => 587, 'security' => 'starttls', 'from' => 'a@b.id', 'to' => 'noc@b.id']))]);
+        DB::table('settings')->updateOrInsert(['key' => 'anomaly.problem_severity'], ['value' => '"average"']);
+
+        $t = new ConfigTransfer;
+        $file = $t->parse(json_encode($t->export(false, null)));
+        $this->assertSame('CCTV Pit A', $file['services'][0]['name']);
+        $this->assertSame([['name' => 'Radio', 'host' => '10.0.0.2']], $file['triggers'][0]['devices']);
+
+        // Hapus lalu pulihkan
+        DB::table('services')->delete();
+        DB::table('triggers')->delete();
+        DB::table('notify_channels')->where('name', 'Email piket')->update(['to_oncall' => false]);
+        DB::table('settings')->where('key', 'anomaly.problem_severity')->update(['value' => '"off"']);
+        $plan = $t->plan($file);
+        $this->assertSame(['total' => 1, 'new' => 1, 'update' => 0], $plan['services']);
+        $res = $t->apply($file, null);
+        $this->assertSame(1, $res['services']);
+        $this->assertSame(1, $res['triggers']);
+
+        $sv = DB::table('services')->where('name', 'CCTV Pit A')->first();
+        $this->assertEquals(99.0, (float) $sv->target_pct);
+        $comps = DB::table('service_components')->where('service_id', $sv->id)->orderBy('position')->get();
+        $this->assertSame(['Uplink', 'Radio'], $comps->pluck('name')->all());
+        $this->assertSame([$radio], DB::table('service_component_devices')->where('component_id', $comps[1]->id)->pluck('device_id')->map(fn ($v) => (int) $v)->all());
+        $tr = DB::table('triggers')->where('name', 'Radio lambat')->first();
+        $this->assertSame(['high', 'latency', 1080, 360], [$tr->severity, $tr->metric, $tr->start_min, $tr->end_min]);
+        $this->assertSame([$radio], DB::table('trigger_devices')->where('trigger_id', $tr->id)->pluck('device_id')->map(fn ($v) => (int) $v)->all());
+        $this->assertTrue((bool) DB::table('notify_channels')->where('name', 'Email piket')->value('to_oncall'));
+        $this->assertSame('"average"', DB::table('settings')->where('key', 'anomaly.problem_severity')->value('value'));
+
+        // Impor kedua tidak menggandakan komponen
+        $t->apply($file, null);
+        $this->assertSame(2, DB::table('service_components')->where('service_id', $sv->id)->count());
+        $this->assertSame(1, DB::table('triggers')->where('name', 'Radio lambat')->count());
+    }
+
     public function test_frasa_salah_tidak_mengubah_apa_pun(): void
     {
         $this->isiData();

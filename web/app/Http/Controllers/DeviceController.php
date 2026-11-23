@@ -119,6 +119,22 @@ class DeviceController extends Controller
         return back()->with($ok ? 'ok' : 'error', $ok ? "Pemeriksaan {$device->name} dijalankan. Muat ulang halaman dalam beberapa detik." : 'Collector tidak dapat dihubungi.');
     }
 
+    /** Unduh berkas diagnosa SNMP (JSON) untuk membuat atau memperbaiki profil perangkat yang belum dikenal. */
+    public function diagnose(Device $device, Collector $collector)
+    {
+        abort_unless($device->snmp_enabled, 422, 'SNMP tidak aktif untuk perangkat ini.');
+        try {
+            $data = $collector->diagnose($device->id);
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Diagnosa gagal: ' . $e->getMessage());
+        }
+        Audit::log('viewed', "Diagnosa SNMP {$device->name} diunduh", $device);
+        $file = 'diagnosa-snmp-' . \Illuminate\Support\Str::slug($device->name) . '-' . now()->format('Ymd-His') . '.json';
+
+        return response()->streamDownload(fn () => print(json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)), $file,
+            ['Content-Type' => 'application/json; charset=UTF-8']);
+    }
+
     /** Uji koneksi dari form. Kredensial kosong pada perangkat yang sudah ada = pakai yang tersimpan. */
     public function test(Request $request, Collector $collector): JsonResponse
     {

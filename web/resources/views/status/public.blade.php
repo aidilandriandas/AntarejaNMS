@@ -49,6 +49,29 @@
         </table></div></div>
     </section>
 
+    @if($services->isNotEmpty())
+    <section class="card" style="margin-top:16px">
+        <div class="hd"><h2>Layanan</h2><span class="sub">ketersediaan dihitung sejak awal bulan</span></div>
+        <div class="bd flush"><div class="table-wrap"><table class="t">
+            <thead><tr><th>Layanan</th><th>Status sekarang</th><th class="num">Gangguan</th><th class="num">Target</th><th class="num">Ketersediaan</th></tr></thead>
+            <tbody>
+            @foreach($services as $sv)
+                @php([$st] = \App\Services\ServiceSla::liveStatus($sv))
+                @php([$stLabel, $stTone] = \App\Services\ServiceSla::STATES[$st])
+                @php($r = $svcSla[$sv->id] ?? null)
+                <tr>
+                    <td class="name"><b>{{ $sv->name }}</b>@if($sv->description)<small>{{ $sv->description }}</small>@endif</td>
+                    <td><span class="badge {{ $stTone }}">{{ $stLabel }}</span></td>
+                    <td class="num">{{ $r['count'] ?? 0 }}</td>
+                    <td class="num">{{ $pct($sv->target()) }}</td>
+                    <td class="num" style="font-weight:600;color:var(--{{ ($r['availability'] ?? 100) >= $sv->target() ? 'ok' : 'crit' }})">{{ $pct($r['availability'] ?? null) }}</td>
+                </tr>
+            @endforeach
+            </tbody>
+        </table></div></div>
+    </section>
+    @endif
+
     @if($link->show_devices && $down->isNotEmpty())
     <section class="card" style="margin-top:16px">
         <div class="hd"><h2>Perangkat down</h2></div>

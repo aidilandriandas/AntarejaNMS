@@ -114,6 +114,12 @@ var tpl = template.Must(template.New("r").Funcs(template.FuncMap{
   <tr style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.06em"><td>Site</td><td align="right">Perangkat</td><td align="right">Gangguan</td><td align="right">Downtime</td><td align="right">Ketersediaan</td></tr>
   {{range .D.Sites}}<tr style="border-top:1px solid #f3f4f6"><td><b>{{.Site}}</b></td><td align="right">{{.Devices}}</td><td align="right">{{.Incidents}}</td><td align="right">{{dur .Down}}</td><td align="right" style="font-weight:600;color:{{tone .Avail $.D.Target}}">{{pct .Avail}}</td></tr>{{end}}
   </table></td></tr>{{end}}
+{{if .D.Services}}<tr><td style="padding:18px 24px 0">
+  <div style="font:600 14px Segoe UI,Arial,sans-serif;margin-bottom:6px">Layanan</div>
+  <table role="presentation" width="100%" cellpadding="6" cellspacing="0" style="font-size:13px;border-collapse:collapse">
+  <tr style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.06em"><td>Layanan</td><td align="right">Gangguan</td><td align="right">Downtime</td><td align="right">Target</td><td align="right">Ketersediaan</td></tr>
+  {{range .D.Services}}<tr style="border-top:1px solid #f3f4f6"><td><b>{{.Name}}</b>{{if gt .Degraded 0.0}}<br><span style="color:#6b7280;font-size:12px">tanpa cadangan {{dur .Degraded}}</span>{{end}}</td><td align="right">{{.Outages}}</td><td align="right">{{dur .Down}}</td><td align="right" style="color:#6b7280">{{pct .Target}}</td><td align="right" style="font-weight:600;color:{{tone .Avail .Target}}">{{pct .Avail}}</td></tr>{{end}}
+  </table></td></tr>{{end}}
 <tr><td style="padding:18px 24px 0">
   <div style="font:600 14px Segoe UI,Arial,sans-serif;margin-bottom:6px">Perangkat dengan downtime terbesar</div>
   {{if .D.Worst}}<table role="presentation" width="100%" cellpadding="6" cellspacing="0" style="font-size:13px;border-collapse:collapse">
@@ -176,6 +182,12 @@ func Text(freq string, d Data) string {
 			fmt.Fprintf(&b, "- %s: %s, %d gangguan, downtime %s\n", s.Site, pct(s.Avail), s.Incidents, durText(s.Down))
 		}
 	}
+	if len(d.Services) > 0 {
+		b.WriteString("\nLayanan:\n")
+		for _, x := range d.Services {
+			fmt.Fprintf(&b, "- %s: %s (target %s), %d gangguan, downtime %s\n", x.Name, pct(x.Avail), pct(x.Target), x.Outages, durText(x.Down))
+		}
+	}
 	if d.IncN > 0 {
 		fmt.Fprintf(&b, "Insiden: %d dibuka (%d masih berlangsung), MTTA %s, MTTR %s\n", d.IncN, d.IncActive, durText(d.IncMTTA), durText(d.IncMTTR))
 	}
@@ -208,6 +220,19 @@ func Telegram(freq string, d Data) string {
 	fmt.Fprintf(&b, "Sekarang: <b>%d down</b> · %d problem terbuka\n", len(d.DownNow), d.OpenNow)
 	if d.IncN > 0 {
 		fmt.Fprintf(&b, "Insiden %d (%d berlangsung) · MTTR %s\n", d.IncN, d.IncActive, durText(d.IncMTTR))
+	}
+	if len(d.Services) > 0 {
+		b.WriteString("\n<b>Layanan</b>\n")
+		for i, x := range d.Services {
+			if i >= 8 {
+				break
+			}
+			mark := ""
+			if x.Avail >= 0 && x.Avail < x.Target {
+				mark = " ⚠"
+			}
+			fmt.Fprintf(&b, "• %s: %s%s\n", html.EscapeString(x.Name), pct(x.Avail), mark)
+		}
 	}
 	if len(d.Worst) > 0 {
 		b.WriteString("\n<b>Downtime terbesar</b>\n")

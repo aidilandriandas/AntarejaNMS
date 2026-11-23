@@ -41,6 +41,7 @@ type Poller struct {
 
 	lastPing atomic.Int64 // unix detik putaran ping terakhir selesai
 	lastSNMP atomic.Int64
+	snmpMu   sync.Mutex // satu putaran SNMP pada satu waktu (terjadwal atau sinkron manual)
 }
 
 func New(cfg config.Config, st store.Store, box *secret.Box, log *slog.Logger) *Poller {
@@ -285,7 +286,39 @@ func (p *Poller) PollNow(ctx context.Context, id int64) error {
 
 // ---------- SNMP ----------
 
+// ErrBusy: putaran SNMP lain sedang berjalan.
+var ErrBusy = errors.New("putaran SNMP sedang berjalan")
+
+// SNMPBusy: putaran SNMP sedang berjalan.
+func (p *Poller) SNMPBusy() bool {
+	if p.snmpMu.TryLock() {
+		p.snmpMu.Unlock()
+		return false
+	}
+	return true
+}
+
+// SyncNow menjalankan satu putaran SNMP penuh di luar jadwal (antarmuka, LLDP/CDP, pencocokan tetangga).
+// Mengembalikan ErrBusy tanpa menunggu bila putaran lain sedang berjalan.
+func (p *Poller) SyncNow(ctx context.Context) error {
+	if !p.snmpMu.TryLock() {
+		return ErrBusy
+	}
+	defer p.snmpMu.Unlock()
+	return p.snmpCycle(ctx)
+}
+
+// SNMPCycle putaran terjadwal; dilewati bila sinkron manual masih berjalan.
 func (p *Poller) SNMPCycle(ctx context.Context) error {
+	if !p.snmpMu.TryLock() {
+		p.Log.Info("putaran SNMP dilewati, sinkron manual masih berjalan")
+		return nil
+	}
+	defer p.snmpMu.Unlock()
+	return p.snmpCycle(ctx)
+}
+
+func (p *Poller) snmpCycle(ctx context.Context) error {
 	devs, err := p.Store.Devices(ctx)
 	if err != nil {
 		return err

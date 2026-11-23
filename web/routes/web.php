@@ -78,6 +78,7 @@ Route::middleware('auth')->group(function () {
         Route::put('perangkat/{device}', [DeviceController::class, 'update'])->name('devices.update');
         Route::delete('perangkat/{device}', [DeviceController::class, 'destroy'])->name('devices.destroy');
         Route::post('perangkat/{device}/periksa', [DeviceController::class, 'poll'])->name('devices.poll')->middleware('throttle:10,1');
+        Route::get('perangkat/{device}/diagnosa', [DeviceController::class, 'diagnose'])->name('devices.diagnose')->middleware('throttle:6,1');
 
         Route::post('perangkat/{device}/port/{ifIndex}/pantau', [DeviceController::class, 'toggleMonitor'])->name('devices.monitor')->whereNumber('ifIndex');
 
@@ -114,6 +115,7 @@ Route::middleware('auth')->group(function () {
         Route::post('topologi/sambungan', [TopologyController::class, 'storeLink'])->name('topology.links.store');
         Route::delete('topologi/sambungan/{link}', [TopologyController::class, 'destroyLink'])->name('topology.links.destroy')->whereNumber('link');
         Route::post('topologi/posisi', [TopologyController::class, 'savePositions'])->name('topology.positions');
+        Route::post('topologi/sinkron', [TopologyController::class, 'sync'])->name('topology.sync')->middleware('throttle:4,1');
 
         Route::get('perangkat/{device}/konfigurasi/{version}', [ConfigController::class, 'show'])->name('devices.config')->whereNumber('version');
         Route::get('perangkat/{device}/konfigurasi/{version}/unduh', [ConfigController::class, 'download'])->name('devices.config.download')->whereNumber('version');

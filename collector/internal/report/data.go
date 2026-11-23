@@ -72,6 +72,8 @@ type Data struct {
 	IncMTTA   float64 // detik rata-rata sampai ditangani (0 = tidak ada data)
 	IncMTTR   float64 // detik rata-rata sampai pulih
 	IncTop    []IncRow
+	// Layanan (SLA layanan), urut dari ketersediaan terendah
+	Services []SvcRow
 }
 
 const availSQL = `
@@ -220,6 +222,7 @@ func Build(ctx context.Context, db *pgxpool.Pool, p Period, siteID int64) (Data,
 	_ = db.QueryRow(ctx, `SELECT count(*) FROM syslog sl LEFT JOIN devices dv ON dv.id = sl.device_id
 		WHERE sl.received_at >= $1 AND sl.received_at < $2 AND sl.severity <= 3 AND ($3::bigint = 0 OR dv.site_id = $3)`, p.Start, p.End, siteID).Scan(&d.SyslogErr)
 	buildIncidents(ctx, db, p, siteID, &d)
+	buildServices(ctx, db, p, siteID, &d)
 	return d, nil
 }
 

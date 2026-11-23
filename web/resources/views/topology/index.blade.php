@@ -23,6 +23,7 @@
             <button type="button" class="btn sm" data-topo-fit><x-icon name="expand"/>Pas layar</button>
             <button type="button" class="btn sm" data-topo-legend aria-expanded="false"><x-icon name="list"/>Legenda</button>
             @can('manage-devices')
+                <form method="post" action="{{ route('topology.sync') }}" class="inline-form">@csrf<button class="btn sm" title="Baca ulang tetangga LLDP/CDP semua perangkat SNMP sekarang, tanpa menunggu putaran berikutnya"><x-icon name="rotate"/>Sinkron LLDP sekarang</button></form>
                 <button type="button" class="btn sm" data-topo-unlock title="Lepas semua posisi dan biarkan peta menyusun ulang"><x-icon name="refresh"/>Atur ulang tata letak</button>
                 <a class="btn sm" href="#sambung"><x-icon name="share"/>Sambungkan</a>
                 <a class="btn sm" href="{{ route('devices.create') }}"><x-icon name="plus"/>Tambah perangkat</a>

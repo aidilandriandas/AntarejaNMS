@@ -81,6 +81,10 @@ class StatusLinkController extends Controller
         $problems = Problem::open()->whereNull('suppressed')->whereHas('device', fn ($q) => $q->where('enabled', true)->when($siteId, fn ($qq) => $qq->where('site_id', $siteId)))
             ->selectRaw('severity, count(*) n')->groupBy('severity')->pluck('n', 'severity');
 
+        // Layanan (SLA layanan): status sekarang dan ketersediaan bulan ini; nama layanan saja, tanpa perangkat/IP
+        $services = \App\Models\Service::with(['components.devices:id,status,created_at'])->when($siteId, fn ($q) => $q->where('site_id', $siteId))->orderBy('name')->get();
+        $svcSla = $services->isEmpty() ? [] : (new \App\Services\ServiceSla)->compute($services, now()->startOfMonth(), now()->startOfMonth()->addMonthNoOverflow());
+
         return response()->view('status.public', [
             'link' => $link,
             'scope' => $siteId ? Site::find($siteId) : null,
@@ -89,6 +93,7 @@ class StatusLinkController extends Controller
             'sla' => $sla,
             'target' => (float) Setting::get('sla.target_pct', 99.5),
             'problems' => $problems,
+            'services' => $services, 'svcSla' => $svcSla,
             'down' => $link->show_devices ? (clone $devices)->where('status', 'down')->with('site:id,code')->orderBy('name')->limit(30)->get(['id', 'name', 'site_id', 'category', 'updated_at']) : collect(),
         ], 200, $headers);
     }

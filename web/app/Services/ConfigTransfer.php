@@ -25,7 +25,10 @@ class ConfigTransfer
     private const KDF_ITER = 200000;
 
     /** Pengaturan yang ikut (awalan kunci). */
-    private const SETTING_PREFIX = ['threshold.', 'sla.', 'syslog.', 'backup.', 'map.', 'ipam.'];
+    private const SETTING_PREFIX = ['threshold.', 'sla.', 'syslog.', 'backup.', 'map.', 'ipam.', 'anomaly.'];
+
+    private const TRIGGER_OK = ['severity' => ['info', 'warning', 'average', 'high', 'disaster'], 'metric' => ['latency', 'loss', 'sensor', 'port_in', 'port_out', 'port_util'],
+        'op' => ['>', '>=', '<', '<='], 'scope' => ['all', 'site', 'category', 'devices']];
 
     private const CHANNEL_SECRET = ['telegram' => ['bot_token'], 'email' => ['password'], 'webhook' => ['url', 'secret']];
 
@@ -93,12 +96,23 @@ class ConfigTransfer
 
                 return ['name' => $c->name, 'type' => $c->type, 'config' => array_diff_key($cfg, array_flip($secretKeys)),
                     'min_severity' => $c->min_severity, 'delay_minutes' => $c->delay_minutes, 'notify_resolve' => (bool) $c->notify_resolve,
-                    'site' => $siteCode[$c->site_id] ?? null, 'enabled' => (bool) $c->enabled];
+                    'to_oncall' => (bool) ($c->to_oncall ?? false), 'site' => $siteCode[$c->site_id] ?? null, 'enabled' => (bool) $c->enabled];
             })->values(),
             'report_schedules' => DB::table('report_schedules as r')->join('notify_channels as c', 'c.id', '=', 'r.channel_id')->orderBy('r.name')
                 ->get(['r.*', 'c.name as ch_name', 'c.type as ch_type'])->map(fn ($r) => ['name' => $r->name, 'frequency' => $r->frequency,
                     'send_hour' => $r->send_hour, 'channel' => ['name' => $r->ch_name, 'type' => $r->ch_type], 'site' => $siteCode[$r->site_id] ?? null,
                     'enabled' => (bool) $r->enabled])->values(),
+            'services' => DB::table('services')->orderBy('name')->get()->map(fn ($sv) => ['name' => $sv->name, 'description' => $sv->description,
+                'site' => $siteCode[$sv->site_id] ?? null, 'target_pct' => $sv->target_pct !== null ? (float) $sv->target_pct : null,
+                'components' => DB::table('service_components')->where('service_id', $sv->id)->orderBy('position')->get()->map(fn ($c) => [
+                    'name' => $c->name, 'min_up' => $c->min_up,
+                    'devices' => DB::table('service_component_devices')->where('component_id', $c->id)->pluck('device_id')->map(fn ($id) => $devKey[$id] ?? null)->filter()->values(),
+                ])->values()])->values(),
+            'triggers' => DB::table('triggers')->orderBy('id')->get()->map(fn ($t) => ['name' => $t->name, 'enabled' => (bool) $t->enabled, 'severity' => $t->severity,
+                'metric' => $t->metric, 'sensor_class' => $t->sensor_class, 'match_text' => $t->match_text, 'op' => $t->op, 'threshold' => (float) $t->threshold,
+                'duration_min' => $t->duration_min, 'scope' => $t->scope, 'site' => $siteCode[$t->site_id] ?? null, 'category' => $t->category,
+                'days' => $t->days, 'start_min' => $t->start_min, 'end_min' => $t->end_min, 'note' => $t->note,
+                'devices' => DB::table('trigger_devices')->where('trigger_id', $t->id)->pluck('device_id')->map(fn ($id) => $devKey[$id] ?? null)->filter()->values()])->values(),
             'settings' => DB::table('settings')->orderBy('key')->get()->filter(fn ($s) => collect(self::SETTING_PREFIX)->contains(fn ($p) => str_starts_with($s->key, $p)))
                 ->mapWithKeys(fn ($s) => [$s->key => json_decode($s->value, true)]),
         ];
@@ -150,7 +164,7 @@ class ConfigTransfer
         if ((int) ($d['version'] ?? 0) > self::VERSION) {
             throw new RuntimeException('Berkas dari versi ANTAREJA yang lebih baru, perbarui aplikasi dulu.');
         }
-        foreach (['sites', 'devices', 'links', 'subnets', 'cameras', 'channels', 'report_schedules'] as $k) {
+        foreach (['sites', 'devices', 'links', 'subnets', 'cameras', 'channels', 'report_schedules', 'services', 'triggers'] as $k) {
             $d[$k] = array_values(array_filter((array) ($d[$k] ?? []), 'is_array'));
         }
         $d['settings'] = is_array($d['settings'] ?? null) ? $d['settings'] : [];
@@ -175,6 +189,10 @@ class ConfigTransfer
         $p['channels'] = $this->count($d['channels'], fn ($c) => isset($chs[($c['name'] ?? '') . '|' . ($c['type'] ?? '')]));
         $rs = DB::table('report_schedules')->pluck('id', 'name');
         $p['report_schedules'] = $this->count($d['report_schedules'], fn ($r) => isset($rs[$r['name'] ?? '']));
+        $sv = DB::table('services')->pluck('id', 'name');
+        $p['services'] = $this->count($d['services'], fn ($x) => isset($sv[$x['name'] ?? '']));
+        $tr = DB::table('triggers')->pluck('id', 'name');
+        $p['triggers'] = $this->count($d['triggers'], fn ($x) => isset($tr[$x['name'] ?? '']));
         $p['settings'] = ['total' => count($this->allowedSettings($d['settings']))];
         $p['has_secrets'] = isset($d['secrets']);
         $bad = collect($d['devices'])->filter(fn ($x) => ! $this->validDevice($x))->count();
@@ -239,7 +257,7 @@ class ConfigTransfer
             $sec = self::open($d['secrets'], $pass) + $sec;
         }
         $enc = fn (?string $v) => $v !== null && $v !== '' ? Crypt::encryptString($v) : null;
-        $res = ['sites' => 0, 'devices' => 0, 'links' => 0, 'subnets' => 0, 'cameras' => 0, 'channels' => 0, 'report_schedules' => 0, 'settings' => 0, 'skipped' => 0];
+        $res = ['sites' => 0, 'devices' => 0, 'links' => 0, 'subnets' => 0, 'cameras' => 0, 'channels' => 0, 'report_schedules' => 0, 'services' => 0, 'triggers' => 0, 'settings' => 0, 'skipped' => 0];
 
         DB::transaction(function () use ($d, $sec, $enc, &$res) {
             $now = now();
@@ -368,6 +386,7 @@ class ConfigTransfer
                 $row = ['config_enc' => Crypt::encryptString(json_encode($full)),
                     'min_severity' => in_array($c['min_severity'] ?? '', ['info', 'warning', 'average', 'high', 'disaster'], true) ? $c['min_severity'] : 'average',
                     'delay_minutes' => self::int($c['delay_minutes'] ?? 0, 0, 1440, 0), 'notify_resolve' => (bool) ($c['notify_resolve'] ?? true),
+                    'to_oncall' => in_array($type, ['email', 'telegram'], true) && (bool) ($c['to_oncall'] ?? false),
                     'site_id' => $siteId($c['site'] ?? null), 'enabled' => (bool) ($c['enabled'] ?? true) && $complete, 'updated_at' => $now];
                 $existing ? DB::table('notify_channels')->where('id', $existing->id)->update($row)
                     : DB::table('notify_channels')->insert($row + ['name' => $name, 'type' => $type, 'created_at' => $now]);
@@ -385,6 +404,65 @@ class ConfigTransfer
                 DB::table('report_schedules')->updateOrInsert(['name' => $name], ['frequency' => $r['frequency'], 'send_hour' => self::int($r['send_hour'] ?? 7, 0, 23, 7),
                     'channel_id' => $ch, 'site_id' => $siteId($r['site'] ?? null), 'enabled' => (bool) ($r['enabled'] ?? true), 'updated_at' => $now]);
                 $res['report_schedules']++;
+            }
+
+            // Layanan: komponen diganti seluruhnya dengan isi berkas; perangkat yang tidak ada di sini dilewati
+            foreach ($d['services'] as $x) {
+                $name = self::str($x['name'] ?? null, 120);
+                $comps = array_values(array_filter((array) ($x['components'] ?? []), 'is_array'));
+                if (! $name || ! $comps) {
+                    $res['skipped']++;
+                    continue;
+                }
+                $tp = is_numeric($x['target_pct'] ?? null) ? max(50, min(100, (float) $x['target_pct'])) : null;
+                DB::table('services')->updateOrInsert(['name' => $name], ['description' => self::str($x['description'] ?? null, 500),
+                    'site_id' => $siteId($x['site'] ?? null), 'target_pct' => $tp, 'updated_at' => $now]);
+                $sid = DB::table('services')->where('name', $name)->value('id');
+                DB::table('service_components')->where('service_id', $sid)->delete();
+                foreach ($comps as $i => $c) {
+                    $cid = DB::table('service_components')->insertGetId(['service_id' => $sid, 'name' => self::str($c['name'] ?? null, 120) ?? 'Komponen ' . ($i + 1),
+                        'min_up' => self::int($c['min_up'] ?? 1, 1, 1000, 1), 'position' => $i]);
+                    $ids = collect((array) ($c['devices'] ?? []))->filter(fn ($v) => is_array($v))->map(fn ($v) => $devId($v))->filter()->unique();
+                    DB::table('service_component_devices')->insert($ids->map(fn ($id) => ['component_id' => $cid, 'device_id' => $id])->values()->all());
+                }
+                $res['services']++;
+            }
+
+            // Trigger custom (dicocokkan lewat nama)
+            foreach ($d['triggers'] as $t) {
+                $name = self::str($t['name'] ?? null, 120);
+                $ok = $name && is_numeric($t['threshold'] ?? null);
+                foreach (self::TRIGGER_OK as $k => $allowed) {
+                    $ok = $ok && in_array($t[$k] ?? null, $allowed, true);
+                }
+                if ($ok && $t['metric'] === 'sensor' && ! self::str($t['sensor_class'] ?? null, 24)) {
+                    $ok = false;
+                }
+                $sm = is_numeric($t['start_min'] ?? null) ? self::int($t['start_min'], 0, 1439, 0) : null;
+                $em = is_numeric($t['end_min'] ?? null) ? self::int($t['end_min'], 1, 1440, 1440) : null;
+                if (! $ok) {
+                    $res['skipped']++;
+                    continue;
+                }
+                $row = ['enabled' => (bool) ($t['enabled'] ?? true), 'severity' => $t['severity'], 'metric' => $t['metric'],
+                    'sensor_class' => $t['metric'] === 'sensor' ? self::str($t['sensor_class'], 24) : null, 'match_text' => self::str($t['match_text'] ?? null, 120),
+                    'op' => $t['op'], 'threshold' => (float) $t['threshold'], 'duration_min' => self::int($t['duration_min'] ?? 5, 0, 1440, 5),
+                    'scope' => $t['scope'], 'site_id' => $t['scope'] === 'site' ? $siteId($t['site'] ?? null) : null,
+                    'category' => $t['scope'] === 'category' ? self::str($t['category'] ?? null, 24) : null,
+                    'days' => self::int($t['days'] ?? 127, 1, 127, 127), 'start_min' => $sm !== null && $em !== null ? $sm : null, 'end_min' => $sm !== null && $em !== null ? $em : null,
+                    'note' => self::str($t['note'] ?? null, 500), 'updated_at' => $now];
+                $tid = DB::table('triggers')->where('name', $name)->value('id');
+                if ($tid) {
+                    DB::table('triggers')->where('id', $tid)->update($row);
+                } else {
+                    $tid = DB::table('triggers')->insertGetId($row + ['name' => $name, 'created_at' => $now]);
+                }
+                DB::table('trigger_devices')->where('trigger_id', $tid)->delete();
+                if ($t['scope'] === 'devices') {
+                    $ids = collect((array) ($t['devices'] ?? []))->filter(fn ($v) => is_array($v))->map(fn ($v) => $devId($v))->filter()->unique();
+                    DB::table('trigger_devices')->insert($ids->map(fn ($id) => ['trigger_id' => $tid, 'device_id' => $id])->values()->all());
+                }
+                $res['triggers']++;
             }
 
             // Pengaturan (hanya kunci yang diizinkan)

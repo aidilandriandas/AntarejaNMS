@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Ekspor & impor')
-@php($labels = ['sites' => 'Site', 'devices' => 'Perangkat', 'links' => 'Sambungan manual', 'subnets' => 'Subnet (manual)', 'cameras' => 'Kamera', 'channels' => 'Kanal notifikasi', 'report_schedules' => 'Laporan terjadwal', 'settings' => 'Pengaturan'])
+@php($labels = ['sites' => 'Site', 'devices' => 'Perangkat', 'links' => 'Sambungan manual', 'subnets' => 'Subnet (manual)', 'cameras' => 'Kamera', 'channels' => 'Kanal notifikasi', 'report_schedules' => 'Laporan terjadwal', 'services' => 'Layanan (SLA)', 'triggers' => 'Trigger', 'settings' => 'Pengaturan'])
 @section('content')
 <div class="page-head">
     <div><h1>Ekspor & impor konfigurasi</h1><p>Satu berkas JSON berisi site, perangkat (termasuk ambang, induk, koordinat), sambungan manual, subnet, kamera, kanal notifikasi, laporan terjadwal, dan pengaturan, untuk pindah VM, membuat VM uji, atau cadangan yang bisa dibaca. Riwayat, metrik, log, dan akun pengguna tidak ikut (pakai <a href="{{ route('backups.index') }}">Backup</a> untuk itu).</p></div>

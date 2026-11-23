@@ -8,6 +8,7 @@
     @can('manage-devices')
         <div class="actions">
             <form method="post" action="{{ route('devices.poll', $device) }}">@csrf<button class="btn"><x-icon name="refresh"/>Periksa sekarang</button></form>
+            @if($device->snmp_enabled)<a class="btn" href="{{ route('devices.diagnose', $device) }}" title="Berkas JSON hasil baca SNMP (tanpa kredensial) untuk membuat profil perangkat yang belum dikenal. Butuh sampai 1 menit."><x-icon name="download"/>Diagnosa SNMP</a>@endif
             <a class="btn" href="{{ route('devices.edit', $device) }}"><x-icon name="edit"/>Ubah</a>
         </div>
     @endcan

@@ -81,4 +81,31 @@ class Collector
             return false;
         }
     }
+
+    /** Sinkron topologi sekarang: putaran SNMP penuh di collector. 'started', 'busy', atau 'down'. */
+    public function syncTopology(): string
+    {
+        try {
+            $res = $this->http()->timeout(5)->post('/v1/topology/sync');
+        } catch (\Throwable) {
+            return 'down';
+        }
+
+        return match (true) {
+            $res->status() === 409 => 'busy',
+            $res->successful() => 'started',
+            default => 'down',
+        };
+    }
+
+    /** Berkas diagnosa SNMP satu perangkat (hanya baca, tanpa kredensial). */
+    public function diagnose(int $deviceId): array
+    {
+        $res = $this->http()->timeout(60)->get("/v1/devices/{$deviceId}/diagnose");
+        if (! $res->successful()) {
+            throw new RuntimeException($res->json('error') ?? ('collector menjawab ' . $res->status()));
+        }
+
+        return $res->json();
+    }
 }
