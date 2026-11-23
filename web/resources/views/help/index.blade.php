@@ -20,6 +20,10 @@
     <a href="#maintenance">Maintenance & perangkat induk</a>
     <a href="#piket">Jadwal piket</a>
     <a href="#anomali">Anomali</a>
+    <a href="#port">Error & naik-turun port</a>
+    <a href="#trap">SNMP trap</a>
+    <a href="#topologi">Sinkron LLDP & diagnosa SNMP</a>
+    <a href="#api">Integrasi lewat API</a>
     <a href="#noc">Layar NOC</a>
     <a href="#sensor">Ambang sensor bawaan</a>
     <a href="#istilah">Istilah</a>
@@ -53,6 +57,9 @@
         <tr><td>Sensor</td><td>Di luar ambang (lihat <a href="#sensor">tabel</a>)</td><td><span class="badge warn plain">Warning</span>; <span class="badge crit plain">High</span> bila kritis</td></tr>
         <tr><td>Kamera CCTV</td><td>Gambar gelap / tertutup / beku / tanpa sinyal</td><td><span class="badge warn plain">Warning</span>; <span class="badge warn plain">Average</span> untuk tanpa sinyal</td></tr>
         <tr><td>Konflik IP</td><td>Satu IP bergantian di 2 MAC ≥ 3× dalam 6 jam</td><td><span class="badge warn plain">Average</span></td></tr>
+        <tr><td>Port naik-turun</td><td>Port infrastruktur berubah status ≥ 4 kali dalam 15 menit (lihat <a href="#port">Port</a>)</td><td><span class="badge warn plain">Average</span></td></tr>
+        <tr><td>Anomali</td><td>Latensi atau trafik menyimpang jauh dari jam yang sama 14 hari terakhir (lihat <a href="#anomali">Anomali</a>)</td><td><span class="badge warn plain">Warning</span> (bisa diubah admin)</td></tr>
+        <tr><td>Trigger custom</td><td>Aturan buatan engineer (lihat <a href="#trigger">Trigger</a>)</td><td>sesuai trigger</td></tr>
         </tbody>
     </table>
     <p class="muted" style="margin-bottom:0">Urutan severity: Info &lt; Warning &lt; Average &lt; High &lt; Disaster. Alarm merah Layar NOC & bunyi hanya untuk High/Disaster yang belum di-ACK.</p>
@@ -140,6 +147,37 @@
         <li>Yang paling berguna di tambang: <b>trafik anjlok</b> di port kamera atau NVR (streaming berhenti padahal perangkat masih bisa di-ping), dan <b>latensi naik</b> di radio PTP sebelum link benar-benar putus.</li>
         <li>Bila anomali memang wajar (backup malam, pindah tiang kamera), tekan <b>Wajar</b> dan pilih berapa lama diabaikan. Untuk pola yang selalu berulang, lebih tepat pakai Maintenance.</li>
         <li>Perangkat baru belum dinilai sampai punya data 7 hari di jam yang sama.</li>
+    </ul>
+</div></section>
+
+<section class="card" id="port"><div class="hd"><h2>Error & naik-turun port</h2></div><div class="bd">
+    <ul class="help-list">
+        <li>Kolom <b>Error / discard</b> di daftar port perangkat menunjukkan laju per menit (masuk + keluar) dari putaran SNMP terakhir. Error yang terus naik di port radio atau fiber biasanya tanda konektor kotor, kabel rusak, atau sinyal radio melemah, sebelum link benar-benar putus.</li>
+        <li>Untuk menjadikannya problem, buat <b>Trigger</b> dengan metrik <i>Error port</i> atau <i>Discard port</i>, mis. error &gt; 30 per menit selama 10 menit, saring nama port <code>wlan</code>.</li>
+        <li><b>Port naik-turun</b>: port yang dipantau, punya tetangga LLDP/CDP, atau punya sambungan manual dan berubah status berkali-kali dalam waktu singkat. Riwayatnya ada di halaman port, bagian <i>Riwayat putus-sambung</i>. Ambangnya diubah admin di halaman Notifikasi.</li>
+        <li>Supaya putus-sambung cepat (lebih singkat dari satu putaran polling) ikut terhitung, arahkan <b>SNMP trap</b> perangkat ke ANTAREJA.</li>
+    </ul>
+</div></section>
+
+<section class="card" id="trap"><div class="hd"><h2>SNMP trap</h2></div><div class="bd">
+    <ul class="help-list">
+        <li>Perangkat mengirim trap ke IP server ANTAREJA port UDP 162 (v1 atau v2c). Contoh perintah MikroTik dan Cisco ada di halaman <i>Trap</i>.</li>
+        <li>Trap port putus/tersambung, restart, dan UPS pindah ke baterai membuat ANTAREJA langsung membaca ulang perangkat itu, jadi status di NMS tidak menunggu putaran polling. Trap tidak membuat problem sendiri; problem tetap dari hasil pembacaan.</li>
+        <li>Trap dari IP yang belum terdaftar tetap disimpan dan ditandai <i>belum terdaftar</i>. Bila banyak, daftarkan perangkatnya atau tutup port 162 di firewall untuk subnet itu.</li>
+    </ul>
+</div></section>
+
+<section class="card" id="topologi"><div class="hd"><h2>Sinkron LLDP & diagnosa SNMP</h2></div><div class="bd">
+    <ul class="help-list">
+        <li><b>Sinkron LLDP sekarang</b> (halaman Topologi) membaca ulang port dan tetangga LLDP/CDP semua perangkat SNMP tanpa menunggu putaran berikutnya. Pakai setelah memasang atau memindah kabel.</li>
+        <li><b>Diagnosa SNMP</b> (halaman perangkat) mengunduh berkas JSON hasil baca SNMP, tanpa kredensial. Kirimkan berkas itu bila sensor perangkat belum terbaca (mis. NVR atau kamera), supaya profilnya bisa dibuat dari data asli. Periksa isinya sebelum dikirim ke luar perusahaan.</li>
+    </ul>
+</div></section>
+
+<section class="card" id="api"><div class="hd"><h2>Integrasi lewat API</h2></div><div class="bd">
+    <ul class="help-list">
+        <li>Sistem lain (SOC, dashboard manajemen) bisa membaca data ANTAREJA lewat <code>/api/v1</code> dengan token dari menu <i>Token API</i> (admin). API ini hanya membaca dan tidak pernah mengirim kredensial.</li>
+        <li>Batasi token ke IP server pemakainya, beri masa berlaku, dan cabut bila tidak dipakai lagi. Daftar token menunjukkan kapan dan dari IP mana token terakhir dipakai.</li>
     </ul>
 </div></section>
 

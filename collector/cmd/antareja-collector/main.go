@@ -48,7 +48,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/trap"
 )
 
-var version = "0.2.0-dev"
+var version = "0.3.0"
 
 func main() {
 	args := os.Args[1:]

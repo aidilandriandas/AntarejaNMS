@@ -378,6 +378,9 @@ snmpwalk -v2c -c COMMUNITY -On IP-PERANGKAT .1.3.6.1.2.1.25 > MODEL-host.txt
 Untuk UPS tambahkan `.1.3.6.1.2.1.33`; untuk NVR Hikvision jalankan ketiganya (profil Hikvision dibuat dari hasil ini).
 Hapus community dari nama berkas/isi sebelum dikirim. Detail: [`docs/PROFIL-PERANGKAT.md`](docs/PROFIL-PERANGKAT.md).
 
+Cara yang lebih mudah dari web: buka halaman perangkat, tekan **Diagnosa SNMP**, kirim berkas JSON-nya (sudah tanpa
+kredensial). Daftar uji lengkap per jenis perangkat ada di [`docs/UJI-LAPANGAN.md`](docs/UJI-LAPANGAN.md).
+
 ## 10. Pemakaian sehari-hari
 
 | Tugas | Di mana |
@@ -414,6 +417,7 @@ Semua dari folder `deploy`:
 | `./antareja.sh restore <berkas>` | Pulihkan database (minta ketik `PULIHKAN`) |
 
 **Update:** sebelum update, jalankan `./antareja.sh backup`. Lalu `./antareja.sh update` dan `./antareja.sh cek`.
+Apa yang berubah tiap versi, termasuk port baru yang perlu dibuka: [`CHANGELOG.md`](CHANGELOG.md).
 
 **Pindah / pulihkan ke VM baru:** pasang seperti langkah 1–5 memakai **`.env` lama** (kunci yang sama), salin berkas
 `.dump` ke folder backup, lalu `./antareja.sh restore <berkas>`. Alternatif tanpa riwayat: *Ekspor & impor*.
@@ -435,7 +439,7 @@ Semua dari folder `deploy`:
 | `METRICS_RETENTION` | `400d` | Lama data grafik disimpan |
 | `TZ` | `Asia/Jakarta` | Zona waktu |
 | `BACKUP_DIR` | `./backups` | Folder backup (disarankan NAS) |
-| `ANTAREJA_TAG` | `0.2.0-dev` | Label versi image |
+| `ANTAREJA_TAG` | `0.3.0` | Label versi image |
 
 Ambang problem, retensi syslog, jadwal backup, target SLA, dan sumber peta diatur dari web (admin).
 
