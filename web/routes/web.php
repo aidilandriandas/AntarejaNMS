@@ -35,6 +35,7 @@ use App\Http\Controllers\SiteController;
 use App\Http\Controllers\StatusLinkController;
 use App\Http\Controllers\SystemController;
 use App\Http\Controllers\TopologyController;
+use App\Http\Controllers\TrapController;
 use App\Http\Controllers\TriggerController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -156,6 +157,7 @@ Route::middleware('auth')->group(function () {
     Route::get('maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
     Route::get('piket', [OncallController::class, 'index'])->name('oncall.index');
     Route::get('anomali', [AnomalyController::class, 'index'])->name('anomalies.index');
+    Route::get('trap', [TrapController::class, 'index'])->name('traps.index');
     Route::get('sensor', [SensorController::class, 'index'])->name('sensors.index');
     Route::get('kualitas', [QualityController::class, 'index'])->name('quality.index');
     Route::get('cctv', [CctvController::class, 'index'])->name('cctv.index');
@@ -186,6 +188,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('can:admin')->group(function () {
         Route::post('log/pengaturan', [LogController::class, 'settings'])->name('logs.settings');
+        Route::post('trap/pengaturan', [TrapController::class, 'settings'])->name('traps.settings');
         Route::post('peta/pengaturan', [MapController::class, 'settings'])->name('map.settings');
         Route::get('tautan-status', [StatusLinkController::class, 'index'])->name('status.links');
         Route::get('sistem', [SystemController::class, 'index'])->name('system.index');

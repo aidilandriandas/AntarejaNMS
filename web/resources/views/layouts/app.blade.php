@@ -43,6 +43,7 @@
             <a href="{{ route('events.index') }}" class="{{ $nav('events.*') }}"><x-icon name="pulse"/>Kejadian</a>
             <a href="{{ route('anomalies.index') }}" class="{{ $nav('anomalies.*') }}"><x-icon name="wave"/>Anomali</a>
             <a href="{{ route('logs.index') }}" class="{{ $nav('logs.*') }}"><x-icon name="terminal"/>Log</a>
+            <a href="{{ route('traps.index') }}" class="{{ $nav('traps.*') }}"><x-icon name="bell"/>Trap</a>
             <a href="{{ route('sites.index') }}" class="{{ $nav('sites.*') }}"><x-icon name="map-pin"/>Site</a>
             <a href="{{ route('triggers.index') }}" class="{{ $nav('triggers.*') }}"><x-icon name="bell"/>Trigger</a>
             <a href="{{ route('maintenance.index') }}" class="{{ $nav('maintenance.*') }}"><x-icon name="wrench"/>Maintenance</a>

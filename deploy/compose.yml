@@ -45,6 +45,8 @@ services:
     ports:
       - "${SYSLOG_PORT:-514}:5514/udp"
       - "${SYSLOG_PORT:-514}:5514/tcp"
+      # SNMP trap v1/v2c dari perangkat: arahkan trap ke IP VM port 162/UDP
+      - "${TRAP_PORT:-162}:5162/udp"
     environment:
       ANTAREJA_DATABASE_URL: postgres://antareja:${DB_PASSWORD}@db:5432/antareja?sslmode=disable
       ANTAREJA_APP_KEY: ${ANTAREJA_APP_KEY:?isi ANTAREJA_APP_KEY di .env}
@@ -58,6 +60,7 @@ services:
       ANTAREJA_CCTV_INTERVAL: ${CCTV_INTERVAL:-15m}
       ANTAREJA_SYSLOG_UDP: ":5514"   # penerima syslog (port tinggi di dalam container; collector bukan root)
       ANTAREJA_SYSLOG_TCP: ":5514"
+      ANTAREJA_TRAP_UDP: ":5162"     # penerima SNMP trap (port tinggi di dalam container)
       TZ: ${TZ:-Asia/Jakarta}
 
   web:
@@ -84,6 +87,7 @@ services:
       APP_FORCE_HTTPS: "true"
       APP_HTTPS_PORT: ${HTTPS_PORT:-443}
       ANTAREJA_SYSLOG_PORT: ${SYSLOG_PORT:-514}
+      ANTAREJA_TRAP_PORT: ${TRAP_PORT:-162}
       DB_CONNECTION: pgsql
       DB_HOST: db
       DB_PORT: "5432"

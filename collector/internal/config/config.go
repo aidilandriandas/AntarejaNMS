@@ -23,6 +23,7 @@ type Config struct {
 	CCTVInterval   time.Duration
 	SyslogUDP      string // mis. ":5514"; kosong = penerima syslog UDP mati
 	SyslogTCP      string
+	TrapUDP        string // mis. ":5162"; kosong = penerima SNMP trap mati
 	PingInterval   time.Duration
 	PingCount      int
 	PingTimeout    time.Duration
@@ -49,6 +50,7 @@ func Load() (Config, error) {
 		CCTVInterval:   dur("ANTAREJA_CCTV_INTERVAL", 15*time.Minute),
 		SyslogUDP:      os.Getenv("ANTAREJA_SYSLOG_UDP"),
 		SyslogTCP:      os.Getenv("ANTAREJA_SYSLOG_TCP"),
+		TrapUDP:        os.Getenv("ANTAREJA_TRAP_UDP"),
 		PingInterval:   dur("ANTAREJA_PING_INTERVAL", 60*time.Second),
 		PingCount:      num("ANTAREJA_PING_COUNT", 3),
 		PingTimeout:    dur("ANTAREJA_PING_TIMEOUT", 2*time.Second),

@@ -91,6 +91,7 @@ berlisensi tertutup milik perusahaan. Lihat [`LICENSE`](LICENSE), [`docs/CLEAN-R
 | **Ambang per perangkat** | Latensi, loss, port penuh, sinyal radio, CCQ, suhu, CPU, baterai & waktu cadangan UPS bisa diatur khusus per perangkat (mis. radio PTP jarak jauh lebih longgar) |
 | **Backup konfigurasi** | MikroTik (`/export hide-sensitive`) & Cisco IOS (`show running-config`) via SSH tiap 24 jam atau tombol *Backup sekarang*. **Hanya baca**: perintah dipatok, tidak bisa diisi pengguna. Versi terenkripsi (50 terakhir), **diff** berwarna, kejadian *konfigurasi berubah*, unduh `.rsc`/`.txt`. Host key dicatat saat pertama; bila berubah backup ditolak sampai engineer mereset. Hanya admin/engineer |
 | **Log (syslog)** | Penerima syslog UDP/TCP port 514 (RFC 3164 & 5424, format MikroTik & Cisco). Log dicocokkan ke perangkat lewat IP pengirim (IP manajemen atau IP interface dari IPAM); pengirim belum terdaftar tetap tercatat. Cari teks, filter tingkat/site/program/IP, mode *Live*, perangkat paling banyak error, log terbaru di detail perangkat. Log Critical ke atas → kejadian perangkat. Batas laju per pengirim agar banjir log tidak membebani server. Retensi diatur dari web (bawaan 14 hari) |
+| **SNMP trap** | Penerima trap v1/v2c UDP 162. Dikenali: linkDown/linkUp (dengan nama port), coldStart/warmStart, authenticationFailure, trap UPS-MIB (pindah ke baterai, alarm). Trap link, restart, dan UPS memicu pembacaan SNMP perangkat itu saat itu juga, jadi status port dan sensor tidak menunggu putaran polling. Trap vendor lain tetap disimpan dengan OID dan isinya. Halaman *Pemantauan → Trap*, masuk Kejadian, retensi bawaan 30 hari |
 | **Backup** | Backup database harian otomatis (jam & jumlah simpanan diatur dari web) + tombol *Backup sekarang*, unduh dari web, pemulihan dengan `./antareja.sh restore`. Arahkan `BACKUP_DIR` ke NAS agar aman bila VM rusak |
 | **SLA bulanan** | Ketersediaan per perangkat & per site, downtime, jumlah gangguan, rata-rata waktu pulih; jam maintenance tidak dihitung; target SLA; ekspor CSV (Excel) & cetak/PDF |
 | **Laporan terjadwal** | Ringkasan harian (kemarin), mingguan (Senin–Minggu) atau bulanan otomatis ke kanal notifikasi: ketersediaan vs target, per site, perangkat dengan downtime terbesar, yang sedang down, problem baru per severity, reboot, perubahan konfigurasi, syslog error. Email tampil rapi (HTML + teks), Telegram ringkas. Pratinjau & *Kirim sekarang* dari web (admin) |
@@ -269,6 +270,7 @@ DNS sertifikat bila ada.
 |---|---|---|
 | 80/TCP & 443/TCP (80 dialihkan ke 443) | Jaringan kantor/NOC | Web |
 | 514/UDP & TCP | Subnet manajemen perangkat | Syslog |
+| 162/UDP | Subnet manajemen perangkat | SNMP trap |
 | 22/TCP | Admin server saja | SSH ke VM |
 
 Keluar dari VM: ke semua perangkat (ICMP, UDP 161, TCP 22, TCP 554), DNS, NTP, `api.telegram.org`/server SMTP bila dipakai.
@@ -302,6 +304,19 @@ Syslog ke ANTAREJA:
 /system logging add action=antareja topics=error
 /system logging add action=antareja topics=critical
 ```
+
+SNMP trap ke ANTAREJA (port putus/tersambung dan restart langsung tercatat, perangkat dibaca ulang saat itu juga):
+
+```
+# MikroTik RouterOS
+/snmp set enabled=yes trap-version=2 trap-target=10.10.0.50 trap-generators=interfaces,start-trap trap-interfaces=all
+
+# Cisco IOS
+snmp-server host 10.10.0.50 version 2c <community>
+snmp-server enable traps snmp linkdown linkup coldstart warmstart
+```
+
+Parameter persisnya bisa berbeda antarversi firmware; periksa dokumentasi perangkat. Trap v1 dan v2c diterima; inform dan v3 belum.
 
 User SSH untuk **backup konfigurasi** (hanya baca):
 

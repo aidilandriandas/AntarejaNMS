@@ -23,6 +23,7 @@ class DeviceEvent extends Model
         'config_change' => ['Konfigurasi berubah', 'info', 'edit'],
         'syslog' => ['Syslog kritis', 'crit', 'terminal'],
         'anomaly' => ['Anomali', 'warn', 'wave'],
+        'trap' => ['SNMP trap', 'info', 'bell'],
     ];
 
     protected function casts(): array

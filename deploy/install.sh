@@ -100,5 +100,5 @@ cat <<SELESAI
 Selesai. Buka $URL di browser:
   1. Sertifikat bawaan self-signed → pilih "lanjutkan" (ganti dengan sertifikat kantor: README langkah 7)
   2. Buat akun admin di halaman Setup Awal
-  3. Atur firewall Proxmox: port web hanya untuk jaringan kantor/NOC, 514 hanya dari jaringan perangkat
+  3. Atur firewall Proxmox: port web hanya untuk jaringan kantor/NOC, 514 dan 162/UDP hanya dari jaringan perangkat
 SELESAI

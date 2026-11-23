@@ -45,6 +45,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/store"
 	"github.com/aidilandriandas/antarejanms/collector/internal/syslog"
 	"github.com/aidilandriandas/antarejanms/collector/internal/system"
+	"github.com/aidilandriandas/antarejanms/collector/internal/trap"
 )
 
 var version = "0.2.0-dev"
@@ -294,6 +295,20 @@ func run() error {
 			go func() {
 				if err := sl.Run(ctx); err != nil {
 					log.Error("penerima syslog gagal", "galat", err)
+				}
+			}()
+		}
+		if cfg.TrapUDP != "" {
+			ts := &trap.Server{DB: db, Log: log, Addr: cfg.TrapUDP, Poll: func(id int64) {
+				pctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+				defer cancel()
+				if err := p.PollNow(pctx, id); err != nil {
+					log.Warn("pembacaan setelah trap gagal", "perangkat", id, "galat", err)
+				}
+			}}
+			go func() {
+				if err := ts.Run(ctx); err != nil {
+					log.Error("penerima SNMP trap gagal", "galat", err)
 				}
 			}()
 		}
