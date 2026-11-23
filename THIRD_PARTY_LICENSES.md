@@ -26,6 +26,7 @@ Setiap dependensi baru wajib dicatat di sini **sebelum** di-commit (lihat `docs/
 | Hallmark (skill desain, Nutlope) | 2.0.0 | MIT | Sebagian aturan dasar `web/resources/css/base.css` diadaptasi dari output scaffold-nya; kode skill tidak disertakan |
 | vis-network, vis-data | 9.1 / 7.1 | Lisensi ganda Apache-2.0 **atau** MIT — dipakai di bawah **MIT** | Peta topologi |
 | leaflet | 1.9.4 | BSD-2-Clause | Peta lokasi (gambar peta dari server tile yang diatur admin; bawaan OpenStreetMap — data © kontributor OpenStreetMap, ODbL; lapisan topografi OpenTopoMap, CC-BY-SA — atribusi ditampilkan di peta) |
+| qrcode-generator (Kazuhiko Arase) | 1.4.4 | MIT | Kode QR aktivasi verifikasi dua langkah, dibuat di browser |
 | IBM Plex Sans / IBM Plex Mono (@fontsource) | 5.x | SIL Open Font License 1.1 | Huruf antarmuka |
 | Vite, laravel-vite-plugin | 7.x / 2.x | MIT | Alat build aset (tidak ikut terpasang di server) |
 

@@ -14,7 +14,7 @@ class User extends Authenticatable
 
     protected $fillable = ['name', 'username', 'email', 'telegram_chat_id', 'phone', 'password', 'role', 'active'];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = ['password', 'remember_token', 'totp_secret_enc', 'totp_recovery', 'totp_last_step', 'ldap_dn'];
 
     protected function casts(): array
     {
@@ -23,7 +23,23 @@ class User extends Authenticatable
             'active' => 'boolean',
             'last_login_at' => 'datetime',
             'dashboard' => 'array',
+            'totp_enabled_at' => 'datetime',
+            'totp_recovery' => 'array',
         ];
+    }
+
+    /** Kebijakan auth.require_2fa mewajibkan 2FA untuk akun ini tetapi belum diaktifkan. */
+    public function mustEnroll2fa(): bool
+    {
+        if ($this->totp_enabled_at) {
+            return false;
+        }
+
+        return match ((string) Setting::get('auth.require_2fa', 'none')) {
+            'all' => true,
+            'admin' => $this->role === 'admin',
+            default => false,
+        };
     }
 
     public function isAdmin(): bool

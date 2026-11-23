@@ -3,6 +3,7 @@
 use App\Http\Controllers\AnomalyController;
 use App\Http\Controllers\ApiTokenController;
 use App\Http\Controllers\AuditController;
+use App\Http\Controllers\AuthSettingsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CapacityController;
@@ -53,6 +54,8 @@ Route::get('status/{token}', [StatusLinkController::class, 'show'])->name('statu
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('login', [AuthController::class, 'login'])->name('login.store');
+    Route::get('login/verifikasi', [AuthController::class, 'showTwoFactor'])->name('login.2fa');
+    Route::post('login/verifikasi', [AuthController::class, 'twoFactor'])->name('login.2fa.store')->middleware('throttle:20,1');
 });
 
 Route::middleware('auth')->group(function () {
@@ -189,6 +192,10 @@ Route::middleware('auth')->group(function () {
     Route::get('profil', [ProfileController::class, 'edit'])->name('profile');
     Route::put('profil/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
     Route::put('profil/kontak', [ProfileController::class, 'updateContact'])->name('profile.contact');
+    Route::post('profil/2fa/mulai', [ProfileController::class, 'twoFactorStart'])->name('profile.2fa.start');
+    Route::post('profil/2fa/aktifkan', [ProfileController::class, 'twoFactorEnable'])->name('profile.2fa.enable')->middleware('throttle:10,1');
+    Route::delete('profil/2fa', [ProfileController::class, 'twoFactorDisable'])->name('profile.2fa.disable')->middleware('throttle:10,1');
+    Route::post('profil/2fa/cadangan', [ProfileController::class, 'twoFactorRecovery'])->name('profile.2fa.recovery')->middleware('throttle:10,1');
 
     Route::middleware('can:admin')->group(function () {
         Route::post('log/pengaturan', [LogController::class, 'settings'])->name('logs.settings');
@@ -214,6 +221,11 @@ Route::middleware('auth')->group(function () {
         Route::post('pengguna', [UserController::class, 'store'])->name('users.store');
         Route::get('pengguna/{user}/ubah', [UserController::class, 'edit'])->name('users.edit');
         Route::put('pengguna/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::post('pengguna/{user}/reset-2fa', [AuthSettingsController::class, 'resetTwoFactor'])->name('users.2fa.reset')->middleware('throttle:10,1');
+        Route::get('pengguna/kebijakan-login', [AuthSettingsController::class, 'index'])->name('auth.settings');
+        Route::put('pengguna/kebijakan-login/2fa', [AuthSettingsController::class, 'policy'])->name('auth.settings.policy');
+        Route::put('pengguna/kebijakan-login/ldap', [AuthSettingsController::class, 'ldap'])->name('auth.settings.ldap');
+        Route::post('pengguna/kebijakan-login/ldap/uji', [AuthSettingsController::class, 'ldapTest'])->name('auth.settings.ldap.test')->middleware('throttle:10,1');
         Route::get('audit', [AuditController::class, 'index'])->name('audit.index');
 
         Route::get('notifikasi', [ChannelController::class, 'index'])->name('channels.index');

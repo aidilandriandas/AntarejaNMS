@@ -37,7 +37,7 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $data = $this->validated($request, $user);
-        if (($data['password'] ?? '') === '') {
+        if (($data['password'] ?? '') === '' || $user->auth_source === 'ldap') {
             unset($data['password']);
         }
         DB::transaction(function () use ($user, $data) {

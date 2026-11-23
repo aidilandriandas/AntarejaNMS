@@ -20,7 +20,7 @@ class AuthorizationAuditTest extends TestCase
     use DatabaseTransactions;
 
     /** Rute pengubah yang sah untuk semua pengguna login (atau tamu): akun sendiri, tampilan sendiri, baca trafik live. */
-    private const OPEN_WRITE = ['login', 'logout', 'setup', 'profil/password', 'profil/kontak', 'ringkasan/susunan',
+    private const OPEN_WRITE = ['login', 'login/verifikasi', 'profil/2fa', 'profil/2fa/mulai', 'profil/2fa/aktifkan', 'profil/2fa/cadangan', 'logout', 'setup', 'profil/password', 'profil/kontak', 'ringkasan/susunan',
         'perangkat/{device}/live', 'topologi/live', 'cctv/{camera}/live'];
 
     private function gated(): array

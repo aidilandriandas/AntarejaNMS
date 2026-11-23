@@ -18,6 +18,7 @@
 
   /* kertas & tinta: abu netral sedikit dingin */
   --color-paper: #f7f8f9;      /* latar halaman */
+  --color-qr-bg: #ffffff;      /* latar kode QR: tetap putih di tema gelap supaya bisa dipindai */
   --color-paper-2: #eef1f3;    /* baris disorot, sumur */
   --color-paper-3: #e3e8ec;    /* tombol saat ditekan */
   --color-surface: #ffffff;    /* lapisan mengambang: popover, modal, menu */

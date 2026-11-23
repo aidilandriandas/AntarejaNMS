@@ -303,6 +303,17 @@ if (document.querySelector('[data-port-graphs]')) {
     import('./portgraphs.js').then(({ initPortGraphs }) => initPortGraphs());
 }
 
+// ---------- Kode QR aktivasi 2FA (dibuat di browser dari URI otpauth; rahasia tidak dikirim ke layanan luar) ----------
+const qrBox = $('[data-otpauth]');
+if (qrBox) {
+    import('qrcode-generator').then(({ default: qrcode }) => {
+        const qr = qrcode(0, 'M');
+        qr.addData(qrBox.dataset.otpauth);
+        qr.make();
+        qrBox.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+    });
+}
+
 // ---------- Alat diagnosa di halaman perangkat ----------
 const toolsCard = $('[data-tools]');
 if (toolsCard) {
