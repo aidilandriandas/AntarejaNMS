@@ -34,7 +34,8 @@ type PortVal struct {
 	Name, Alias   string
 	InBps, OutBps *float64
 	Util          *float64
-	Fresh         bool // diperbarui ≤ 20 menit
+	Errs, Discs   *float64 // per menit
+	Fresh         bool     // diperbarui ≤ 20 menit
 }
 
 // TriggerState menyimpan sejak kapan kondisi trigger terpenuhi (untuk syarat "bertahan N menit").
@@ -83,8 +84,9 @@ func (t Trigger) hit(v float64) bool {
 	return false
 }
 
-var metricUnit = map[string]string{"latency": " ms", "loss": "%", "port_in": " Mbps", "port_out": " Mbps", "port_util": "%"}
-var metricName = map[string]string{"latency": "latensi", "loss": "packet loss", "port_in": "trafik masuk", "port_out": "trafik keluar", "port_util": "pemakaian"}
+var metricUnit = map[string]string{"latency": " ms", "loss": "%", "port_in": " Mbps", "port_out": " Mbps", "port_util": "%", "port_errors": "/menit", "port_discards": "/menit"}
+var metricName = map[string]string{"latency": "latensi", "loss": "packet loss", "port_in": "trafik masuk", "port_out": "trafik keluar", "port_util": "pemakaian",
+	"port_errors": "error", "port_discards": "discard"}
 
 func num(v float64) string {
 	format := "%.2f"
@@ -166,7 +168,7 @@ func EvaluateTriggers(trs []Trigger, devs []Device, ports map[int64][]PortVal, n
 					}
 					samples = append(samples, sample{key: k, val: *s.Value, what: s.Label, unit: u, sensor: true})
 				}
-			case "port_in", "port_out", "port_util":
+			case "port_in", "port_out", "port_util", "port_errors", "port_discards":
 				for _, p := range ports[d.ID] {
 					if t.Match != "" && !strings.Contains(strings.ToLower(p.Name+" "+p.Alias), t.Match) {
 						continue
@@ -179,6 +181,10 @@ func EvaluateTriggers(trs []Trigger, devs []Device, ports map[int64][]PortVal, n
 						v = mbps(p.InBps)
 					case "port_out":
 						v = mbps(p.OutBps)
+					case "port_errors":
+						v = p.Errs
+					case "port_discards":
+						v = p.Discs
 					default:
 						v = p.Util
 					}
@@ -291,8 +297,8 @@ func (e *Engine) loadTriggers(ctx context.Context) ([]Trigger, map[int64][]PortV
 		return trs, nil, err
 	}
 	prow, err := e.DB.Query(ctx, `SELECT device_id, if_index, COALESCE(NULLIF(name, ''), 'if' || if_index), COALESCE(alias, ''), in_bps, out_bps, util_pct,
-			updated_at > now() - interval '20 minutes'
-		FROM interfaces WHERE oper_up AND (in_bps IS NOT NULL OR util_pct IS NOT NULL)`)
+			updated_at > now() - interval '20 minutes', err_rate, discard_rate
+		FROM interfaces WHERE oper_up AND (in_bps IS NOT NULL OR util_pct IS NOT NULL OR err_rate IS NOT NULL OR discard_rate IS NOT NULL)`)
 	if err != nil {
 		return trs, nil, err
 	}
@@ -301,7 +307,7 @@ func (e *Engine) loadTriggers(ctx context.Context) ([]Trigger, map[int64][]PortV
 	for prow.Next() {
 		var dev int64
 		var p PortVal
-		if err := prow.Scan(&dev, &p.Index, &p.Name, &p.Alias, &p.InBps, &p.OutBps, &p.Util, &p.Fresh); err != nil {
+		if err := prow.Scan(&dev, &p.Index, &p.Name, &p.Alias, &p.InBps, &p.OutBps, &p.Util, &p.Fresh, &p.Errs, &p.Discs); err != nil {
 			return trs, nil, err
 		}
 		ports[dev] = append(ports[dev], p)

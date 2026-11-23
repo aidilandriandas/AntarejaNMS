@@ -96,12 +96,14 @@ class ApiController extends Controller
             return response()->json(['error' => 'perangkat tidak ditemukan'], 404);
         }
         $ports = DB::table('interfaces')->where('device_id', $id)->orderBy('if_index')
-            ->get(['if_index', 'name', 'alias', 'speed_bps', 'admin_up', 'oper_up', 'last_change_at']);
+            ->get(['if_index', 'name', 'alias', 'speed_bps', 'admin_up', 'oper_up', 'last_change_at', 'in_bps', 'out_bps', 'err_rate', 'discard_rate']);
         $problems = DB::table('problems')->where('device_id', $id)->whereNull('resolved_at')->orderBy('id')->get(['id', 'kind', 'severity', 'title', 'started_at', 'acked_at']);
 
         return response()->json(['data' => self::deviceRow($d) + [
             'ports' => $ports->map(fn ($p) => ['if_index' => $p->if_index, 'name' => $p->name, 'alias' => $p->alias, 'speed_bps' => $p->speed_bps !== null ? (int) $p->speed_bps : null,
-                'admin_up' => $p->admin_up, 'oper_up' => $p->oper_up, 'last_change_at' => self::ts($p->last_change_at)]),
+                'admin_up' => $p->admin_up, 'oper_up' => $p->oper_up, 'last_change_at' => self::ts($p->last_change_at),
+                'in_bps' => $p->in_bps !== null ? (float) $p->in_bps : null, 'out_bps' => $p->out_bps !== null ? (float) $p->out_bps : null,
+                'errors_per_min' => $p->err_rate !== null ? (float) $p->err_rate : null, 'discards_per_min' => $p->discard_rate !== null ? (float) $p->discard_rate : null]),
             'open_problems' => $problems->map(fn ($p) => ['id' => $p->id, 'kind' => $p->kind, 'severity' => $p->severity, 'title' => $p->title,
                 'started_at' => self::ts($p->started_at), 'acked' => $p->acked_at !== null]),
         ]]);

@@ -55,3 +55,25 @@ func TestSNMPFails(t *testing.T) {
 		t.Fatal(n)
 	}
 }
+
+func TestErrRate(t *testing.T) {
+	s := NewStats()
+	t0 := time.Now()
+	b := func(v int64) *big.Int { return big.NewInt(v) }
+	if e, d := s.ErrRate(1, 2, b(100), b(0), b(5), nil, t0); e != nil || d != nil {
+		t.Fatal("sampel pertama harus nil")
+	}
+	e, d := s.ErrRate(1, 2, b(160), b(0), b(25), nil, t0.Add(2*time.Minute))
+	if e == nil || *e != 30 || d == nil || *d != 10 {
+		t.Fatalf("e=%v d=%v", e, d)
+	}
+	// counter reset (reboot): nil, bukan angka negatif
+	if e, _ := s.ErrRate(1, 2, b(3), b(0), b(0), nil, t0.Add(4*time.Minute)); e != nil {
+		t.Fatal("counter mundur harus nil")
+	}
+	// perangkat tidak melaporkan counter
+	s.ErrRate(1, 3, nil, nil, nil, nil, t0)
+	if e, d := s.ErrRate(1, 3, nil, nil, nil, nil, t0.Add(time.Minute)); e != nil || d != nil {
+		t.Fatal("tanpa counter harus nil")
+	}
+}

@@ -19,6 +19,7 @@ class Dashboard
         'maintenance' => ['Maintenance', 'half', 'Yang sedang berjalan & 7 hari ke depan', true],
         'map' => ['Peta lokasi', 'full', 'Status site di peta', true],
         'services' => ['Layanan', 'half', 'Status & ketersediaan bulan ini per layanan (SLA layanan)', true],
+        'porterrors' => ['Port dengan error', 'half', 'Error dan discard per menit tertinggi (CRC, kabel, radio memburuk)', true],
         'oncall' => ['Piket', 'half', 'Siapa yang sedang piket dan siapa berikutnya', true],
     ];
 

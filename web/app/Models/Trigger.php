@@ -20,6 +20,8 @@ class Trigger extends Model
         'port_in' => ['Trafik masuk port', 'Mbps'],
         'port_out' => ['Trafik keluar port', 'Mbps'],
         'port_util' => ['Pemakaian port', '%'],
+        'port_errors' => ['Error port (masuk + keluar)', 'per menit'],
+        'port_discards' => ['Discard port (masuk + keluar)', 'per menit'],
     ];
 
     public const SENSOR_CLASSES = [

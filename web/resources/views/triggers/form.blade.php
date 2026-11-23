@@ -25,7 +25,7 @@
             <option value="">Pilih kelas sensor</option>
             @foreach(\App\Models\Trigger::SENSOR_CLASSES as $k => $lbl)<option value="{{ $k }}" @selected(old('sensor_class', $t->sensor_class) === $k)>{{ $lbl }}</option>@endforeach</select><x-field-error name="sensor_class"/></div>
     </div>
-    <div class="field" data-show-if="metric=sensor,port_in,port_out,port_util"><label for="match_text">Saring nama <span class="muted">(opsional)</span></label>
+    <div class="field" data-show-if="metric=sensor,port_in,port_out,port_util,port_errors,port_discards"><label for="match_text">Saring nama <span class="muted">(opsional)</span></label>
         <input class="input" id="match_text" name="match_text" value="{{ old('match_text', $t->match_text) }}" maxlength="120" placeholder="mis. sfp, uplink, PTP-HAULING">
         <div class="hint">Hanya port (nama atau keterangan) atau sensor (nama) yang berisi teks ini. Kosong berarti semua.</div></div>
     <div class="row r3">

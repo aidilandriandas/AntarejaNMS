@@ -450,8 +450,10 @@ func (p *Poller) pollSNMP(ctx context.Context, d store.Device) bool {
 		rows := make([]store.InterfaceRow, 0, len(ifs))
 		for _, it := range ifs {
 			inBps, outBps, util := p.Stats.Rate(d.ID, it.Index, it.InOctets, it.OutOctets, it.SpeedBps, now)
+			errRate, discRate := p.Stats.ErrRate(d.ID, it.Index, it.InErrors, it.OutErrors, it.InDiscards, it.OutDiscards, now)
 			rows = append(rows, store.InterfaceRow{Index: it.Index, Name: it.Name, Alias: it.Alias, Descr: it.Descr, MAC: it.MAC,
-				Type: it.Type, SpeedBps: int64(it.SpeedBps), AdminUp: it.AdminUp, OperUp: it.OperUp, InBps: inBps, OutBps: outBps, Util: util})
+				Type: it.Type, SpeedBps: int64(it.SpeedBps), AdminUp: it.AdminUp, OperUp: it.OperUp, InBps: inBps, OutBps: outBps, Util: util,
+				ErrRate: errRate, DiscardRate: discRate})
 			l := map[string]string{"device_id": dl["device_id"], "if_index": strconv.Itoa(it.Index), "if_name": it.Name}
 			batch.Add("antareja_if_oper_up", l, b2f(it.OperUp), now)
 			batch.Add("antareja_if_speed_bps", l, float64(it.SpeedBps), now)

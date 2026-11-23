@@ -49,7 +49,10 @@ type AckBot struct {
 	API     string // kosong = https://api.telegram.org
 	Log     *slog.Logger
 	offsets map[string]int64
+	failing map[string]time.Time // token -> kapan boleh dicoba lagi (Telegram tak terjangkau)
 }
+
+const ackRetry = 60 * time.Second
 
 type tgUpdate struct {
 	UpdateID int64 `json:"update_id"`
@@ -86,6 +89,7 @@ func (b *AckBot) Run(ctx context.Context) {
 func (b *AckBot) Once(ctx context.Context) {
 	if b.offsets == nil {
 		b.offsets = map[string]int64{}
+		b.failing = map[string]time.Time{}
 	}
 	chs, err := b.Disp.rawChannels(ctx, 0)
 	if err != nil {
@@ -98,9 +102,33 @@ func (b *AckBot) Once(ctx context.Context) {
 			continue
 		}
 		seen[tok] = true
-		if err := b.poll(ctx, tok); err != nil && ctx.Err() == nil {
-			b.Log.Warn("baca tombol Telegram gagal", "kanal", c.Name, "galat", strings.ReplaceAll(err.Error(), tok, "***"))
+		b.tryPoll(ctx, tok, c.Name)
+	}
+}
+
+// tryPoll: satu kali baca dengan jeda setelah gagal, supaya saat internet putus log dan jaringan tidak dibanjiri.
+// Log ditulis saat mulai gagal dan saat pulih saja.
+func (b *AckBot) tryPoll(ctx context.Context, tok, name string) {
+	if b.failing == nil {
+		b.failing = map[string]time.Time{}
+	}
+	if b.offsets == nil {
+		b.offsets = map[string]int64{}
+	}
+	next, wasFailing := b.failing[tok]
+	if wasFailing && time.Now().Before(next) {
+		return
+	}
+	err := b.poll(ctx, tok)
+	switch {
+	case err != nil && ctx.Err() == nil:
+		if !wasFailing {
+			b.Log.Warn("baca tombol Telegram gagal, dicoba lagi tiap menit", "kanal", name, "galat", strings.ReplaceAll(err.Error(), tok, "***"))
 		}
+		b.failing[tok] = time.Now().Add(ackRetry)
+	case err == nil && wasFailing:
+		b.Log.Info("baca tombol Telegram pulih", "kanal", name)
+		delete(b.failing, tok)
 	}
 }
 

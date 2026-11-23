@@ -51,6 +51,11 @@ class DashboardController extends Controller
                 ->where('m.ends_at', '>', now())->where('m.starts_at', '<', now()->addDays(7))->orderBy('m.starts_at')->limit(8)
                 ->get(['m.id', 'm.title', 'm.scope', 'm.starts_at', 'm.ends_at', 's.code as site'])],
             'map' => fn () => ['mapLayers' => MapController::layers()],
+            'porterrors' => fn () => ['portErrors' => DB::table('interfaces as i')->join('devices as d', 'd.id', '=', 'i.device_id')
+                ->where('d.enabled', true)->where('i.oper_up', true)->where('i.updated_at', '>', now()->subMinutes(20))
+                ->where(fn ($q) => $q->where('i.err_rate', '>', 0)->orWhere('i.discard_rate', '>', 0))
+                ->orderByRaw('COALESCE(i.err_rate, 0) + COALESCE(i.discard_rate, 0) DESC')->limit(8)
+                ->get(['i.device_id', 'i.if_index', 'd.name as device', DB::raw("COALESCE(NULLIF(i.name, ''), 'if' || i.if_index) AS port"), 'i.alias', 'i.err_rate', 'i.discard_rate'])],
             'oncall' => fn () => ['oncall' => \App\Models\OncallSlot::brief()],
             'services' => function () {
                 $svc = \App\Models\Service::with(['components.devices:id,status,created_at'])->orderBy('name')->get();

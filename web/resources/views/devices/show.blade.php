@@ -68,7 +68,7 @@
                     <div class="empty">{{ $device->snmp_ok === false ? 'SNMP gagal: ' . $device->snmp_error : 'Data port muncul setelah pembacaan SNMP pertama.' }}</div>
                 @else
                 <div class="table-wrap"><table class="t">
-                    <thead><tr><th>Port</th><th>Status</th><th class="num">Kecepatan</th><th class="num">Masuk</th><th class="num">Keluar</th><th>Pemakaian</th><th>24 jam</th><th></th><th title="Problem bila port putus atau penuh">Pantau</th></tr></thead>
+                    <thead><tr><th>Port</th><th>Status</th><th class="num">Kecepatan</th><th class="num">Masuk</th><th class="num">Keluar</th><th>Pemakaian</th><th class="num" title="Error dan discard per menit (masuk + keluar), dari putaran SNMP terakhir">Error / discard</th><th>24 jam</th><th></th><th title="Problem bila port putus atau penuh">Pantau</th></tr></thead>
                     <tbody>
                     @foreach($device->ports as $p)
                         @php
@@ -82,6 +82,7 @@
                             <td class="num" data-cell-in>{{ \App\Support\Fmt::bps($in) }}</td>
                             <td class="num" data-cell-out>{{ \App\Support\Fmt::bps($out) }}</td>
                             <td data-cell-util>@if($util !== null)<div class="bar {{ $util >= 90 ? 'crit' : ($util >= 70 ? 'warn' : '') }}" title="{{ number_format($util, 1, ',', '.') }}%"><span style="width:{{ max(1, $util) }}%"></span></div>@else<span class="muted"><span class="nil">tidak ada</span></span>@endif</td>
+                            <td class="num nowrap">@if($p->err_rate === null && $p->discard_rate === null)<span class="muted"><span class="nil">tidak ada</span></span>@else<span class="{{ $p->err_rate >= 1 ? 'txt-warn' : '' }}">{{ \App\Support\Fmt::perMin($p->err_rate) }}</span> / <span class="{{ $p->discard_rate >= 1 ? 'txt-warn' : '' }}">{{ \App\Support\Fmt::perMin($p->discard_rate) }}</span>@endif</td>
                             <td>@include('ports.spark', ['sp' => $traffic['spark'][$p->if_index] ?? []])</td>
                             <td><button type="button" class="btn sm live-btn" data-live-port="{{ $p->if_index }}" title="Trafik live port {{ $p->label() }}">Live</button></td>
                             <td>

@@ -66,7 +66,7 @@ class TriggerController extends Controller
         return [
             'name' => $d['name'], 'severity' => $d['severity'], 'metric' => $d['metric'],
             'sensor_class' => $d['metric'] === 'sensor' ? $d['sensor_class'] : null,
-            'match_text' => in_array($d['metric'], ['sensor', 'port_in', 'port_out', 'port_util'], true) ? (trim((string) ($d['match_text'] ?? '')) ?: null) : null,
+            'match_text' => in_array($d['metric'], ['sensor', 'port_in', 'port_out', 'port_util', 'port_errors', 'port_discards'], true) ? (trim((string) ($d['match_text'] ?? '')) ?: null) : null,
             'op' => $d['op'], 'threshold' => $d['threshold'], 'duration_min' => $d['duration_min'], 'scope' => $d['scope'],
             'site_id' => $d['scope'] === 'site' ? $d['site_id'] : null, 'category' => $d['scope'] === 'category' ? $d['category'] : null,
             'days' => array_sum(array_map(fn ($i) => 1 << (int) $i, array_unique($d['days']))),

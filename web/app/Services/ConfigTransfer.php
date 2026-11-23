@@ -27,7 +27,7 @@ class ConfigTransfer
     /** Pengaturan yang ikut (awalan kunci). */
     private const SETTING_PREFIX = ['threshold.', 'sla.', 'syslog.', 'backup.', 'map.', 'ipam.', 'anomaly.'];
 
-    private const TRIGGER_OK = ['severity' => ['info', 'warning', 'average', 'high', 'disaster'], 'metric' => ['latency', 'loss', 'sensor', 'port_in', 'port_out', 'port_util'],
+    private const TRIGGER_OK = ['severity' => ['info', 'warning', 'average', 'high', 'disaster'], 'metric' => ['latency', 'loss', 'sensor', 'port_in', 'port_out', 'port_util', 'port_errors', 'port_discards'],
         'op' => ['>', '>=', '<', '<='], 'scope' => ['all', 'site', 'category', 'devices']];
 
     private const CHANNEL_SECRET = ['telegram' => ['bot_token'], 'email' => ['password'], 'webhook' => ['url', 'secret']];

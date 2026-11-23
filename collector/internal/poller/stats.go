@@ -16,6 +16,7 @@ type Stats struct {
 	snmpFails map[int64]int
 	snmpSeen  map[int64]bool
 	counters  map[portKey]counterSample
+	errs      map[portKey]counterSample // in = error (masuk+keluar), out = discard (masuk+keluar)
 	util      map[portKey]float64
 }
 
@@ -38,7 +39,7 @@ const pingWindow = 5
 
 func NewStats() *Stats {
 	return &Stats{ping: map[int64][]pingSample{}, snmpFails: map[int64]int{}, snmpSeen: map[int64]bool{},
-		counters: map[portKey]counterSample{}, util: map[portKey]float64{}}
+		counters: map[portKey]counterSample{}, errs: map[portKey]counterSample{}, util: map[portKey]float64{}}
 }
 
 func (s *Stats) AddPing(dev int64, ok bool, rtt, loss float64) {
@@ -129,6 +130,50 @@ func (s *Stats) Rate(dev int64, idx int, in, out *big.Int, speed uint64, at time
 		s.util[k] = u
 	}
 	return inBps, outBps, util
+}
+
+// ErrRate menghitung error dan discard per menit (masuk + keluar) dari selisih counter.
+// Nilai nil bila counter tidak dilaporkan perangkat, sampel pertama, counter mundur, atau selang terlalu pendek.
+func (s *Stats) ErrRate(dev int64, idx int, inErr, outErr, inDisc, outDisc *big.Int, at time.Time) (errPerMin, discPerMin *float64) {
+	sum := func(a, b *big.Int) *big.Int {
+		if a == nil && b == nil {
+			return nil
+		}
+		t := new(big.Int)
+		if a != nil {
+			t.Add(t, a)
+		}
+		if b != nil {
+			t.Add(t, b)
+		}
+		return t
+	}
+	e, d := sum(inErr, outErr), sum(inDisc, outDisc)
+	k := portKey{dev, idx}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	prev, ok := s.errs[k]
+	s.errs[k] = counterSample{in: e, out: d, at: at}
+	if !ok {
+		return nil, nil
+	}
+	mins := at.Sub(prev.at).Minutes()
+	if mins < 10.0/60 {
+		return nil, nil
+	}
+	rate := func(now, before *big.Int) *float64 {
+		if now == nil || before == nil {
+			return nil
+		}
+		diff := new(big.Int).Sub(now, before)
+		if diff.Sign() < 0 {
+			return nil
+		}
+		f, _ := new(big.Float).SetInt(diff).Float64()
+		v := f / mins
+		return &v
+	}
+	return rate(e, prev.in), rate(d, prev.out)
 }
 
 // Util: pemakaian port terakhir yang dihitung; known=false bila belum ada.

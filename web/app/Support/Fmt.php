@@ -23,6 +23,16 @@ class Fmt
         return str_ends_with($s, ',0') ? substr($s, 0, -2) : $s;
     }
 
+    /** Laju per menit: "0", "0,4", "12", "1.250"; strip bila tidak ada data. */
+    public static function perMin(?float $v): string
+    {
+        if ($v === null) {
+            return 'tidak ada';
+        }
+
+        return $v > 0 && $v < 0.05 ? '<0,1' : self::num($v);
+    }
+
     public static function bps(?float $v): string
     {
         if ($v === null) {

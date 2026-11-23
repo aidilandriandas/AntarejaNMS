@@ -78,3 +78,17 @@ func TestTriggerSensorLingkupDanTekan(t *testing.T) {
 		t.Fatalf("judul: %q", r.Conds[0].Title)
 	}
 }
+
+func TestTriggerErrorPort(t *testing.T) {
+	t0 := time.Date(2026, 11, 23, 8, 0, 0, 0, time.Local)
+	tr := Trigger{ID: 9, Name: "CRC radio", Severity: "warning", Metric: "port_errors", Op: ">", Threshold: 30, Duration: 0, Scope: "all", Days: 127}
+	devs := []Device{{ID: 1, Name: "Radio", Status: "up"}}
+	ports := map[int64][]PortVal{1: {{Index: 2, Name: "wlan1", Errs: f(120), Fresh: true}, {Index: 3, Name: "ether1", Errs: f(2), Fresh: true}, {Index: 4, Name: "ether2", Fresh: true}}}
+	r := EvaluateTriggers([]Trigger{tr}, devs, ports, t0, TriggerState{})
+	if len(r.Conds) != 1 || r.Conds[0].Title != "Radio: CRC radio (120/menit)" || *r.Conds[0].IfIndex != 2 {
+		t.Fatalf("%+v", r.Conds)
+	}
+	if !r.Unknown[SensorKey(1, "trg:9:if4")] {
+		t.Fatal("port tanpa laju error harus dianggap belum diketahui")
+	}
+}

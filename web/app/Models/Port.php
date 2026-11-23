@@ -18,7 +18,7 @@ class Port extends Model
 
     protected function casts(): array
     {
-        return ['admin_up' => 'boolean', 'oper_up' => 'boolean', 'last_change_at' => 'datetime', 'updated_at' => 'datetime'];
+        return ['admin_up' => 'boolean', 'oper_up' => 'boolean', 'last_change_at' => 'datetime', 'updated_at' => 'datetime', 'err_rate' => 'float', 'discard_rate' => 'float'];
     }
 
     public function device(): BelongsTo

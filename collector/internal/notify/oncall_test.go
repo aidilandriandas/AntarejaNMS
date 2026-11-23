@@ -1,6 +1,14 @@
 package notify
 
-import "testing"
+import (
+	"context"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+)
 
 func TestApplyOncallEmail(t *testing.T) {
 	c := Channel{Type: "email", Config: map[string]string{"to": "noc@tambang.id", "host": "smtp"}}
@@ -63,5 +71,33 @@ func TestAckKeyboard(t *testing.T) {
 		if _, ok := ParseAck(s); ok {
 			t.Fatalf("%q diterima", s)
 		}
+	}
+}
+
+func TestAckBotJedaSaatGagal(t *testing.T) {
+	calls := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.WriteHeader(http.StatusBadGateway)
+	}))
+	defer srv.Close()
+	var logs strings.Builder
+	b := &AckBot{API: srv.URL, Log: slog.New(slog.NewTextHandler(&logs, nil))}
+	for i := 0; i < 5; i++ {
+		b.tryPoll(context.Background(), "1:x", "Grup NOC")
+	}
+	if calls != 1 {
+		t.Fatalf("setelah gagal harus menunggu, server dipanggil %d kali", calls)
+	}
+	if n := strings.Count(logs.String(), "gagal"); n != 1 {
+		t.Fatalf("log gagal %d kali:\n%s", n, logs.String())
+	}
+	if strings.Contains(logs.String(), "1:x") {
+		t.Fatal("token bocor ke log")
+	}
+	b.failing["1:x"] = time.Now().Add(-time.Second) // jeda habis
+	b.tryPoll(context.Background(), "1:x", "Grup NOC")
+	if calls != 2 {
+		t.Fatalf("setelah jeda harus dicoba lagi, calls=%d", calls)
 	}
 }

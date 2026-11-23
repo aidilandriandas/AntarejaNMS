@@ -33,7 +33,7 @@ Daftar memakai kursor: `limit` (1 sampai 500, bawaan 100), lalu `after_id` dari 
 | `GET /api/v1` | | nama, versi, waktu server, daftar endpoint |
 | `GET /api/v1/sites` | | kode, nama, jumlah perangkat aktif, up, down |
 | `GET /api/v1/devices` | `status` (up, down, unknown), `site` (kode), `category` | nama, host, site, kategori, status dan alasannya, RTT, loss, status SNMP, sysName, sysDescr, induk, koordinat |
-| `GET /api/v1/devices/{id}` | | seperti di atas, ditambah `ports` (indeks, nama, alias, kecepatan, admin/oper) dan `open_problems` |
+| `GET /api/v1/devices/{id}` | | seperti di atas, ditambah `ports` (indeks, nama, alias, kecepatan, admin/oper, bps masuk/keluar, error dan discard per menit) dan `open_problems` |
 | `GET /api/v1/problems` | `status` (open bawaan, resolved, all), `min_severity` (info, warning, average, high, disaster), `since`, `site` | jenis, severity, judul, detail, nilai, mulai, pulih, ACK dan oleh siapa, ditekan maintenance/induk |
 | `GET /api/v1/incidents` | `status` (open, handling, recovered, closed; boleh dipisah koma), `since` | judul, severity, status, site, penanggung jawab, penyebab, tindakan, waktu dibuka/ditangani/pulih/ditutup, ID problem |
 | `GET /api/v1/events` | `since` (bawaan 24 jam terakhir), `kind` (down, up, reboot, flapping, latency_high, snmp_fail, snmp_ok, config_change, syslog, anomaly) | perangkat, jenis, pesan, durasi, waktu |
