@@ -19,12 +19,13 @@ class Dashboard
         'maintenance' => ['Maintenance', 'half', 'Yang sedang berjalan & 7 hari ke depan', true],
         'map' => ['Peta lokasi', 'full', 'Status site di peta', true],
         'services' => ['Layanan', 'half', 'Status & ketersediaan bulan ini per layanan (SLA layanan)', true],
+        'oncall' => ['Piket', 'half', 'Siapa yang sedang piket dan siapa berikutnya', true],
     ];
 
     /** Susunan bawaan: antrean problem di depan, angka sesudahnya. */
     public const DEFAULT = [
         ['k' => 'problems', 'w' => 'full'], ['k' => 'kpi', 'w' => 'full'], ['k' => 'events', 'w' => 'half'],
-        ['k' => 'slow', 'w' => 'half'], ['k' => 'sensors', 'w' => 'half'], ['k' => 'sites', 'w' => 'full'],
+        ['k' => 'slow', 'w' => 'half'], ['k' => 'sensors', 'w' => 'half'], ['k' => 'oncall', 'w' => 'half'], ['k' => 'sites', 'w' => 'full'],
     ];
 
     /** Bersihkan susunan tersimpan: kunci dikenal, tanpa duplikat, ukuran valid. */

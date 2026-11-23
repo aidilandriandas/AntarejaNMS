@@ -19,13 +19,13 @@ class NotifyChannel extends Model
         'webhook' => ['url' => false, 'secret' => true],
     ];
 
-    protected $fillable = ['name', 'type', 'min_severity', 'delay_minutes', 'notify_resolve', 'site_id', 'enabled'];
+    protected $fillable = ['name', 'type', 'min_severity', 'delay_minutes', 'notify_resolve', 'to_oncall', 'site_id', 'enabled'];
 
     protected $hidden = ['config_enc'];
 
     protected function casts(): array
     {
-        return ['notify_resolve' => 'boolean', 'enabled' => 'boolean', 'delay_minutes' => 'integer'];
+        return ['notify_resolve' => 'boolean', 'to_oncall' => 'boolean', 'enabled' => 'boolean', 'delay_minutes' => 'integer'];
     }
 
     public function site(): BelongsTo

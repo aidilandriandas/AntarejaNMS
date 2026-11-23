@@ -20,7 +20,7 @@
                 <tbody>
                 @foreach($channels as $c)
                     <tr class="{{ $c->enabled ? '' : 'is-off' }}">
-                        <td class="name">{{ $c->name }}<small>{{ \App\Models\NotifyChannel::TYPES[$c->type] }}, {{ $c->target() }}{{ $c->enabled ? '' : ', nonaktif' }}</small></td>
+                        <td class="name">{{ $c->name }}<small>{{ \App\Models\NotifyChannel::TYPES[$c->type] }}, {{ $c->to_oncall ? 'yang sedang piket, cadangan ' : '' }}{{ $c->target() }}{{ $c->enabled ? '' : ', nonaktif' }}</small></td>
                         <td>≥ {{ \App\Models\Problem::SEVERITIES[$c->min_severity][0] }}</td>
                         <td>{!! $c->delay_minutes ? '<span class="badge warn plain">eskalasi ' . $c->delay_minutes . ' mnt</span>' : 'segera' !!}{{ $c->notify_resolve ? ', + pulih' : '' }}</td>
                         <td>{{ $c->site?->code ?? 'semua' }}</td>
@@ -42,7 +42,7 @@
                     <td class="nowrap mono">{{ $l->at->format('d/m H:i') }}</td>
                     <td>{{ $l->channel?->name }}</td>
                     <td><span class="tag">{{ ['open' => 'problem', 'resolve' => 'pulih', 'test' => 'uji', 'summary' => 'ringkasan'][$l->kind] ?? $l->kind }}</span></td>
-                    <td>{{ $l->problem?->title ?? '—' }}</td>
+                    <td>{{ $l->problem?->title ?? '' }}</td>
                     <td>@if($l->status === 'sent')<span class="badge ok plain">terkirim</span>@else<span class="badge crit plain" title="{{ $l->error }}">gagal</span><div class="muted" style="font-size:12px;max-width:280px">{{ $l->error }}</div>@endif</td>
                 </tr>
                 @endforeach

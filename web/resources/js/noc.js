@@ -134,6 +134,15 @@ function render(d) {
         : '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>'}</svg><span>${esc(al.text)}</span>`;
     document.title = `${al.level === 'crit' ? '⚠ ' : ''}Layar NOC · ANTAREJA NMS`;
 
+    // Siapa yang piket: nama dan jam selesai; kosong = beri tahu supaya ruang NOC tahu tidak ada yang dihubungi
+    const oc = $('[data-oncall]');
+    if (oc && d.oncall) {
+        oc.className = `n-oncall${d.oncall.length ? '' : ' none'}`;
+        oc.innerHTML = d.oncall.length
+            ? `<small>PIKET</small><b>${d.oncall.map((o) => esc(o.name)).join(', ')}</b><small>SAMPAI ${esc(d.oncall[0].until)}</small>`
+            : `<small>PIKET</small><b>TIDAK ADA</b>${d.oncall_next?.length ? `<small>BERIKUTNYA ${esc(d.oncall_next[0].name)} ${esc(d.oncall_next[0].from)}</small>` : ''}`;
+    }
+
     // Suara: problem High/Disaster baru yang belum di-ACK & tidak ditekan
     const ids = d.problems.map((p) => p.id);
     if (seen !== null && d.problems.some((p) => !seen.includes(p.id) && !p.acked && !p.suppressed && ['high', 'disaster'].includes(p.severity))) beep('crit');

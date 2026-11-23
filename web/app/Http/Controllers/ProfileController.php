@@ -13,6 +13,19 @@ class ProfileController extends Controller
         return view('profile');
     }
 
+    /** Kontak untuk notifikasi piket: email, chat ID Telegram, nomor HP. */
+    public function updateContact(Request $request)
+    {
+        $d = $request->validate(UserController::contactRules(), UserController::CONTACT_MESSAGES);
+        $u = $request->user();
+        $u->fill(['email' => $d['email'] ?? null, 'telegram_chat_id' => $d['telegram_chat_id'] ?? null, 'phone' => $d['phone'] ?? null]);
+        $changes = Audit::diff($u);
+        $u->save();
+        Audit::log('updated', $u->username . ' mengubah kontak', $u, $changes);
+
+        return back()->with('ok', 'Kontak disimpan.');
+    }
+
     public function updatePassword(Request $request)
     {
         $request->validate([

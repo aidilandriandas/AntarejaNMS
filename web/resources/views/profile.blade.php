@@ -11,4 +11,16 @@
     <div class="form-foot"><button class="btn primary"><x-icon name="key"/>Ganti password</button></div>
 </form>
 </div></section>
+<section class="card" style="max-width:560px;margin-top:var(--space-xl)"><div class="hd"><h2>Kontak untuk piket</h2></div><div class="bd">
+<p class="muted" style="margin-top:0">Saat Anda sedang piket, kanal notifikasi yang diset kirim ke yang sedang piket mengirim problem ke email dan Telegram di sini.</p>
+<form method="post" action="{{ route('profile.contact') }}" class="form">
+    @csrf @method('PUT')
+    @php($me = auth()->user())
+    <div class="field"><label for="email">Email</label><input class="input @error('email') is-err @enderror" type="email" id="email" name="email" value="{{ old('email', $me->email) }}" autocomplete="email"><x-field-error name="email"/></div>
+    <div class="field"><label for="telegram_chat_id">Chat ID Telegram</label><input class="input @error('telegram_chat_id') is-err @enderror" id="telegram_chat_id" name="telegram_chat_id" inputmode="numeric" value="{{ old('telegram_chat_id', $me->telegram_chat_id) }}">
+        <div class="hint">Kirim /start ke bot notifikasi kantor dulu (bot tidak bisa memulai obrolan), lalu buka @userinfobot untuk melihat angka ID Anda.</div><x-field-error name="telegram_chat_id"/></div>
+    <div class="field"><label for="phone">Nomor HP</label><input class="input @error('phone') is-err @enderror" type="tel" id="phone" name="phone" value="{{ old('phone', $me->phone) }}" autocomplete="tel" placeholder="0812 3456 7890"><x-field-error name="phone"/></div>
+    <div class="form-foot"><button class="btn primary">Simpan kontak</button></div>
+</form>
+</div></section>
 @endsection

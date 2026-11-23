@@ -12,6 +12,12 @@
 .n-head { grid-area: head; flex-direction: row; align-items: center; gap: 14px; padding: 0 14px; }
 .n-head .brand { padding: 0; border: 0; }
 .n-spacer { flex: 1; }
+.n-oncall { display: inline-flex; align-items: baseline; gap: 8px; font: 500 12px var(--mono); color: var(--muted); max-width: 30vw; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.n-oncall:empty { display: none; }
+.n-oncall b { color: var(--ink); font-weight: 600; letter-spacing: .02em; overflow: hidden; text-overflow: ellipsis; }
+.n-oncall small { font-size: 11px; letter-spacing: .1em; }
+.n-oncall.none b { color: var(--warn); }
+@media (max-width: 1100px) { .n-oncall { display: none; } }
 .n-alarm { display: inline-flex; align-items: center; gap: 10px; height: 38px; padding: 0 16px; border-radius: 6px; border: 1px solid;
     font: 600 15px var(--sans); letter-spacing: .03em; text-transform: uppercase; white-space: nowrap; max-width: 50vw; overflow: hidden; text-overflow: ellipsis; }
 .n-alarm svg { width: 18px; height: 18px; }

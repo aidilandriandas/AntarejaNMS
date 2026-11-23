@@ -136,7 +136,8 @@ class ChannelController extends Controller
             $cfg[$k] = ($secret && $v === '') ? ($existing[$k] ?? '') : $v; // rahasia kosong = pertahankan
         }
         $c->fill(['name' => $d['name'], 'min_severity' => $d['min_severity'], 'delay_minutes' => $d['delay_minutes'],
-            'site_id' => $d['site_id'] ?? null, 'notify_resolve' => $r->boolean('notify_resolve'), 'enabled' => $r->boolean('enabled')]);
+            'site_id' => $d['site_id'] ?? null, 'notify_resolve' => $r->boolean('notify_resolve'),
+            'to_oncall' => in_array($type, ['email', 'telegram'], true) && $r->boolean('to_oncall'), 'enabled' => $r->boolean('enabled')]);
         $c->setConfig($cfg);
     }
 }

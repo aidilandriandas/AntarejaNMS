@@ -12,7 +12,7 @@ class User extends Authenticatable
         'viewer' => 'Viewer (baca saja)',
     ];
 
-    protected $fillable = ['name', 'username', 'email', 'password', 'role', 'active'];
+    protected $fillable = ['name', 'username', 'email', 'telegram_chat_id', 'phone', 'password', 'role', 'active'];
 
     protected $hidden = ['password', 'remember_token'];
 

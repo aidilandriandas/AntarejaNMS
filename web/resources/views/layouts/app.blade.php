@@ -45,6 +45,7 @@
             <a href="{{ route('sites.index') }}" class="{{ $nav('sites.*') }}"><x-icon name="map-pin"/>Site</a>
             <a href="{{ route('triggers.index') }}" class="{{ $nav('triggers.*') }}"><x-icon name="bell"/>Trigger</a>
             <a href="{{ route('maintenance.index') }}" class="{{ $nav('maintenance.*') }}"><x-icon name="wrench"/>Maintenance</a>
+            <a href="{{ route('oncall.index') }}" class="{{ $nav('oncall.*') }}"><x-icon name="clock"/>Jadwal piket</a>
             <div class="grp">Laporan</div>
             <a href="{{ route('services.index') }}" class="{{ $nav('services.*') }}"><x-icon name="layers"/>SLA layanan</a>
             <a href="{{ route('reports.sla') }}" class="{{ $nav('reports.sla*') }}"><x-icon name="chart"/>SLA perangkat</a>

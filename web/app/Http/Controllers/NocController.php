@@ -69,6 +69,8 @@ class NocController extends Controller
         return response()->json([
             'time' => now()->toIso8601String(),
             'alarm' => $alarm,
+            'oncall' => ($oc = \App\Models\OncallSlot::brief())['now']->map(fn ($o) => ['name' => $o['name'], 'until' => $o['until']->format('H.i')])->values(),
+            'oncall_next' => $oc['next']->map(fn ($o) => ['name' => $o['name'], 'from' => $o['from']->format('H.i')])->values(),
             'kpi' => ['total' => $devices->count(), 'up' => $up, 'down' => $down, 'unknown' => $devices->where('status', 'unknown')->count(),
                 'availability' => ($up + $down) ? round($up / ($up + $down) * 100, 2) : null, 'problems' => $problems->count()],
             'severity' => $sev,

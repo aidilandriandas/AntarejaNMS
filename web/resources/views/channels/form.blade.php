@@ -49,6 +49,10 @@
         <div class="field"><label for="site_id">Site</label><select class="input" id="site_id" name="site_id"><option value="">Semua site</option>
             @foreach($sites as $s)<option value="{{ $s->id }}" @selected(old('site_id', $channel->site_id) == $s->id)>{{ $s->code }}</option>@endforeach</select></div>
     </div>
+    @if(in_array($channel->type, ['email', 'telegram'], true))
+    <label class="check"><input type="checkbox" name="to_oncall" value="1" @checked(old('to_oncall', $channel->to_oncall))><span>Kirim ke yang sedang piket
+        <small>{{ $channel->type === 'email' ? 'Penerima diganti email semua orang yang sedang piket.' : 'Chat ID diganti chat ID Telegram orang yang sedang piket.' }} Bila tidak ada yang piket atau kontaknya kosong, dikirim ke tujuan di atas. Atur di <a href="{{ route('oncall.index') }}">Jadwal piket</a>.</small></span></label>
+    @endif
     <label class="check"><input type="checkbox" name="notify_resolve" value="1" @checked(old('notify_resolve', $channel->notify_resolve))><span>Kirim juga saat problem pulih</span></label>
     <label class="check"><input type="checkbox" name="enabled" value="1" @checked(old('enabled', $channel->enabled))><span>Kanal aktif</span></label>
     <div class="form-foot"><a class="btn" href="{{ route('channels.index') }}">Batal</a><button class="btn primary">Simpan</button></div>

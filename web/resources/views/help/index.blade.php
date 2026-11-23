@@ -18,6 +18,7 @@
     <a href="#trigger">Trigger</a>
     <a href="#kapasitas">Kapasitas port</a>
     <a href="#maintenance">Maintenance & perangkat induk</a>
+    <a href="#piket">Jadwal piket</a>
     <a href="#noc">Layar NOC</a>
     <a href="#sensor">Ambang sensor bawaan</a>
     <a href="#istilah">Istilah</a>
@@ -119,6 +120,15 @@
     <ul class="help-list">
         <li><b>Maintenance</b> bisa untuk semua perangkat, satu site, atau perangkat terpilih, dengan jam mulai dan selesai. Selama itu problem tidak dinotifikasi dan downtime tidak dihitung di SLA. Akhiri lebih cepat dengan tombol <i>Akhiri</i>.</li>
         <li><b>Perangkat induk</b> (di form perangkat) = perangkat di atasnya pada jalur jaringan (mis. kamera → NVR → switch → radio PTP → core). Isi dengan benar agar korelasi bekerja: saat induk down, ratusan perangkat di bawahnya tidak masing-masing mengirim alarm.</li>
+    </ul>
+</div></section>
+
+<section class="card" id="piket"><div class="hd"><h2>Jadwal piket</h2></div><div class="bd">
+    <ul class="help-list">
+        <li>Setiap engineer mengisi <b>email</b> dan <b>chat ID Telegram</b> di <i>Profil</i>. Untuk Telegram: kirim /start ke bot notifikasi kantor dulu, karena bot tidak bisa memulai obrolan.</li>
+        <li>Di <i>Jadwal piket</i>, pakai <b>Buat rotasi</b> untuk mengisi seminggu atau sebulan sekaligus, mis. giliran 12 jam mulai 07.00 untuk Budi, Sari, Andi bergantian. Tukar giliran: tambah giliran pengganti, lalu hapus yang lama.</li>
+        <li>Admin mencentang <b>Kirim ke yang sedang piket</b> di kanal email atau Telegram. Email dikirim ke semua yang sedang piket; Telegram ke orang piket pertama yang punya chat ID. Tujuan yang diisi di kanal tetap dipakai sebagai cadangan bila tidak ada yang piket.</li>
+        <li>Supaya supervisor tetap tahu, biarkan kanal grup NOC atau kanal eskalasi (jeda 30 menit) seperti biasa; kanal piket berjalan di sampingnya.</li>
     </ul>
 </div></section>
 

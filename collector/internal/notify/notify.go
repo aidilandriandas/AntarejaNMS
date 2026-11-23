@@ -32,6 +32,8 @@ type Channel struct {
 	DelayMinutes  int
 	NotifyResolve bool
 	SiteID        int64
+	ToOncall      bool
+	Oncall        []string // nama engineer piket yang menerima (kosong = tujuan tetap kanal)
 }
 
 // Problem adalah data problem yang dikirim.
@@ -77,10 +79,10 @@ func NewDispatcher(db *pgxpool.Pool, box *secret.Box, log *slog.Logger, baseURL 
 }
 
 func (d *Dispatcher) channels(ctx context.Context, onlyID int64) ([]Channel, error) {
-	q := `SELECT id, name, type, config_enc, min_severity, delay_minutes, notify_resolve, COALESCE(site_id, 0) FROM notify_channels WHERE enabled`
+	q := `SELECT id, name, type, config_enc, min_severity, delay_minutes, notify_resolve, COALESCE(site_id, 0), to_oncall FROM notify_channels WHERE enabled`
 	args := []any{}
 	if onlyID > 0 {
-		q = `SELECT id, name, type, config_enc, min_severity, delay_minutes, notify_resolve, COALESCE(site_id, 0) FROM notify_channels WHERE id = $1`
+		q = `SELECT id, name, type, config_enc, min_severity, delay_minutes, notify_resolve, COALESCE(site_id, 0), to_oncall FROM notify_channels WHERE id = $1`
 		args = append(args, onlyID)
 	}
 	rows, err := d.DB.Query(ctx, q, args...)
@@ -92,7 +94,7 @@ func (d *Dispatcher) channels(ctx context.Context, onlyID int64) ([]Channel, err
 	for rows.Next() {
 		var c Channel
 		var enc string
-		if err := rows.Scan(&c.ID, &c.Name, &c.Type, &enc, &c.MinSeverity, &c.DelayMinutes, &c.NotifyResolve, &c.SiteID); err != nil {
+		if err := rows.Scan(&c.ID, &c.Name, &c.Type, &enc, &c.MinSeverity, &c.DelayMinutes, &c.NotifyResolve, &c.SiteID, &c.ToOncall); err != nil {
 			return nil, err
 		}
 		plain, err := d.Box.Decrypt(enc)
@@ -106,7 +108,28 @@ func (d *Dispatcher) channels(ctx context.Context, onlyID int64) ([]Channel, err
 		}
 		out = append(out, c)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	rows.Close()
+	var oc []OncallPerson
+	loaded := false
+	for i := range out {
+		if !out[i].ToOncall {
+			continue
+		}
+		if !loaded {
+			var lerr error
+			if oc, lerr = CurrentOncall(ctx, d.DB); lerr != nil {
+				d.Log.Warn("jadwal piket tidak bisa dibaca, pakai tujuan tetap kanal", "galat", lerr)
+			}
+			loaded = true
+		}
+		if ApplyOncall(&out[i], oc) == 0 {
+			d.Log.Info("tidak ada kontak piket untuk kanal ini, pakai tujuan tetap", "kanal", out[i].Name)
+		}
+	}
+	return out, nil
 }
 
 const problemCols = `p.id, p.severity, p.title, COALESCE(p.suppressed_note, p.detail, ''), d.name, d.host, COALESCE(s.code, ''), p.started_at, p.resolved_at, COALESCE(u.username, '')`

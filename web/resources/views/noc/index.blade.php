@@ -16,6 +16,7 @@
         <a class="brand" href="{{ route('dashboard') }}" title="Kembali ke aplikasi"><img class="mark" src="/brand/logo.png" alt="" width="34" height="34"><span><b>ANTAREJA NOC</b><small>NETWORK OPERATIONS CENTER</small></span></a>
         <div class="n-alarm ok" data-alarm role="status" aria-live="polite"><x-icon name="shield"/><span>Memuat…</span></div>
         <span class="n-spacer"></span>
+        <span class="n-oncall" data-oncall title="Yang sedang piket"></span>
         <span class="n-live" data-live title="Data diperbarui tiap 15 detik"><i></i><span>LIVE</span></span>
         <button type="button" class="n-btn" data-sound title="Bunyi saat ada problem High/Disaster baru"><x-icon name="volume-x"/><span>SUARA MATI</span></button>
         <select class="n-select" data-site aria-label="Filter site">

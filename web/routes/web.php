@@ -19,6 +19,7 @@ use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\IncidentReportController;
 use App\Http\Controllers\IpamController;
 use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\OncallController;
 use App\Http\Controllers\NocController;
 use App\Http\Controllers\PortController;
 use App\Http\Controllers\ProblemController;
@@ -103,6 +104,9 @@ Route::middleware('auth')->group(function () {
         Route::post('maintenance', [MaintenanceController::class, 'store'])->name('maintenance.store');
         Route::post('maintenance/{maintenance}/akhiri', [MaintenanceController::class, 'finish'])->name('maintenance.finish');
         Route::delete('maintenance/{maintenance}', [MaintenanceController::class, 'destroy'])->name('maintenance.destroy');
+        Route::post('piket', [OncallController::class, 'store'])->name('oncall.store');
+        Route::post('piket/rotasi', [OncallController::class, 'rotate'])->name('oncall.rotate');
+        Route::delete('piket/{slot}', [OncallController::class, 'destroy'])->name('oncall.destroy')->whereNumber('slot');
 
         Route::post('topologi/sambungan', [TopologyController::class, 'storeLink'])->name('topology.links.store');
         Route::delete('topologi/sambungan/{link}', [TopologyController::class, 'destroyLink'])->name('topology.links.destroy')->whereNumber('link');
@@ -144,6 +148,7 @@ Route::middleware('auth')->group(function () {
     Route::get('insiden.csv', [IncidentController::class, 'csv'])->name('incidents.csv');
     Route::get('insiden/{incident}', [IncidentController::class, 'show'])->name('incidents.show')->whereNumber('incident');
     Route::get('maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
+    Route::get('piket', [OncallController::class, 'index'])->name('oncall.index');
     Route::get('sensor', [SensorController::class, 'index'])->name('sensors.index');
     Route::get('kualitas', [QualityController::class, 'index'])->name('quality.index');
     Route::get('cctv', [CctvController::class, 'index'])->name('cctv.index');
@@ -170,6 +175,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('profil', [ProfileController::class, 'edit'])->name('profile');
     Route::put('profil/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::put('profil/kontak', [ProfileController::class, 'updateContact'])->name('profile.contact');
 
     Route::middleware('can:admin')->group(function () {
         Route::post('log/pengaturan', [LogController::class, 'settings'])->name('logs.settings');

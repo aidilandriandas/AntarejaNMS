@@ -17,6 +17,12 @@
             @foreach(\App\Models\User::ROLES as $k => $v)<option value="{{ $k }}" @selected(old('role', $user->role) === $k)>{{ $v }}</option>@endforeach</select></div>
     </div>
     <div class="row">
+        <div class="field"><label for="telegram_chat_id">Chat ID Telegram <span class="muted">(opsional)</span></label><input class="input @error('telegram_chat_id') is-err @enderror" id="telegram_chat_id" name="telegram_chat_id" inputmode="numeric" value="{{ old('telegram_chat_id', $user->telegram_chat_id) }}">
+            <div class="hint">Dipakai kanal Telegram yang dikirim ke yang sedang piket.</div><x-field-error name="telegram_chat_id"/></div>
+        <div class="field"><label for="phone">Nomor HP <span class="muted">(opsional)</span></label><input class="input @error('phone') is-err @enderror" type="tel" id="phone" name="phone" value="{{ old('phone', $user->phone) }}" placeholder="0812 3456 7890">
+            <div class="hint">Tampil di jadwal piket supaya bisa ditelepon.</div><x-field-error name="phone"/></div>
+    </div>
+    <div class="row">
         <div class="field"><label for="password">{{ $editing ? 'Password baru' : 'Password' }}</label>
             <input class="input @error('password') is-err @enderror" type="password" id="password" name="password" autocomplete="new-password" {{ $editing ? '' : 'required' }}>
             <div class="hint">{{ $editing ? 'Kosongkan bila tidak diganti. ' : '' }}Minimal 10 karakter, huruf dan angka.</div><x-field-error name="password"/></div>
