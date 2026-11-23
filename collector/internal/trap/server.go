@@ -155,6 +155,9 @@ func (s *Server) store(ctx context.Context, it item) error {
 	if dev == nil {
 		return nil
 	}
+	if (d.Name == "linkDown" || d.Name == "linkUp") && d.IfIndex != nil {
+		_, _ = s.DB.Exec(wctx, `INSERT INTO port_changes (device_id, if_index, up, source, at) VALUES ($1, $2, $3, 'trap', $4)`, *dev, *d.IfIndex, d.Name == "linkUp", it.at)
+	}
 	if d.Name != "" && d.Name != "warmStart" && d.Name != "upsTrapTestCompleted" {
 		_, _ = s.DB.Exec(wctx, `INSERT INTO events (device_id, kind, message, at) VALUES ($1, 'trap', $2, $3)`, *dev, d.Summary, it.at)
 	}

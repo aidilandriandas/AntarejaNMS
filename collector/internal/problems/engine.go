@@ -55,6 +55,11 @@ func (e *Engine) Run(ctx context.Context) (Outcome, error) {
 			res.Unknown[k] = true
 		}
 	}
+	if fl, limit, mins, err := e.loadFlaps(ctx); err != nil {
+		return out, err
+	} else {
+		res.Conds = append(res.Conds, FlapConds(fl, devs, limit, mins)...)
+	}
 	if sev, an, err := e.loadAnomalies(ctx); err != nil {
 		return out, err
 	} else if sev != "off" {

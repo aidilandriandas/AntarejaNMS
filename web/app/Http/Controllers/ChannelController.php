@@ -25,6 +25,8 @@ class ChannelController extends Controller
                 'loss_pct' => Setting::get('threshold.loss_pct', 20),
                 'util_pct' => Setting::get('threshold.util_pct', 90),
                 'snmp_fail_cycles' => Setting::get('threshold.snmp_fail_cycles', 2),
+                'flap_changes' => Setting::get('threshold.flap_changes', 4),
+                'flap_minutes' => Setting::get('threshold.flap_minutes', 15),
             ],
         ]);
     }
@@ -89,9 +91,11 @@ class ChannelController extends Controller
             'loss_pct' => ['required', 'numeric', 'between:1,100'],
             'util_pct' => ['required', 'numeric', 'between:10,100'],
             'snmp_fail_cycles' => ['required', 'integer', 'between:1,20'],
+            'flap_changes' => ['required', 'integer', 'between:2,100'],
+            'flap_minutes' => ['required', 'integer', 'between:5,240'],
         ]);
         foreach ($d as $k => $v) {
-            Setting::put("threshold.$k", $k === 'snmp_fail_cycles' ? (int) $v : (float) $v);
+            Setting::put("threshold.$k", in_array($k, ['snmp_fail_cycles', 'flap_changes', 'flap_minutes'], true) ? (int) $v : (float) $v);
         }
         Audit::log('updated', 'Ambang problem diubah: ' . collect($d)->map(fn ($v, $k) => "$k=$v")->implode(', '));
 

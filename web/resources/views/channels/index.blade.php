@@ -56,6 +56,11 @@
             <div class="field"><label for="loss_pct">Packet loss (%)</label><input class="input" type="number" step="1" min="1" max="100" id="loss_pct" name="loss_pct" value="{{ old('loss_pct', $thresholds['loss_pct']) }}"><div class="hint">Rata-rata 5 menit di atas nilai ini → Average (≥ 50% → High).</div></div>
             <div class="field"><label for="util_pct">Port penuh (%)</label><input class="input" type="number" step="1" min="10" max="100" id="util_pct" name="util_pct" value="{{ old('util_pct', $thresholds['util_pct']) }}"><div class="hint">Hanya port yang ditandai <em>Pantau</em> di halaman perangkat.</div></div>
             <div class="field"><label for="snmp_fail_cycles">SNMP gagal (putaran)</label><input class="input" type="number" step="1" min="1" max="20" id="snmp_fail_cycles" name="snmp_fail_cycles" value="{{ old('snmp_fail_cycles', $thresholds['snmp_fail_cycles']) }}"><div class="hint">1 putaran = 5 menit.</div></div>
+            <div class="row">
+                <div class="field"><label for="flap_changes">Port naik-turun (kali)</label><input class="input" type="number" step="1" min="2" max="100" id="flap_changes" name="flap_changes" value="{{ old('flap_changes', $thresholds['flap_changes']) }}"></div>
+                <div class="field"><label for="flap_minutes">dalam (menit)</label><input class="input" type="number" step="1" min="5" max="240" id="flap_minutes" name="flap_minutes" value="{{ old('flap_minutes', $thresholds['flap_minutes']) }}"></div>
+            </div>
+            <div class="hint" style="margin-top:-6px">Untuk port dipantau, port yang punya tetangga LLDP/CDP, dan sambungan manual. Trap linkDown/linkUp membuat hitungan lebih akurat.</div>
             <div class="form-foot"><button class="btn primary">Simpan ambang</button></div>
         </form>
         <p class="muted" style="font-size:12.5px;margin:12px 0 0">Down: perangkat tidak menjawab 2 putaran ping (±2 menit) → High; Core/Distribution/Firewall → Disaster. Perangkat yang induknya down ditandai <em>terdampak</em> dan tidak dinotifikasi.</p>

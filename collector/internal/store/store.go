@@ -136,8 +136,27 @@ func (s Store) SaveInterfaces(ctx context.Context, deviceID int64, rows []Interf
 		return err
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck
+	// status port sebelumnya, untuk mencatat perubahan up/down (riwayat & deteksi naik-turun)
+	prev := map[int]bool{}
+	if pr, err := tx.Query(ctx, `SELECT if_index, oper_up FROM interfaces WHERE device_id = $1 AND oper_up IS NOT NULL`, deviceID); err == nil {
+		for pr.Next() {
+			var i int
+			var up bool
+			if pr.Scan(&i, &up) == nil {
+				prev[i] = up
+			}
+		}
+		pr.Close()
+	} else {
+		return err
+	}
 	idx := make([]int32, 0, len(rows))
 	for _, r := range rows {
+		if was, ok := prev[r.Index]; ok && was != r.OperUp && r.AdminUp {
+			if _, err := tx.Exec(ctx, `INSERT INTO port_changes (device_id, if_index, up, source) VALUES ($1, $2, $3, 'poll')`, deviceID, r.Index, r.OperUp); err != nil {
+				return err
+			}
+		}
 		idx = append(idx, int32(r.Index))
 		if _, err := tx.Exec(ctx, `INSERT INTO interfaces (device_id, if_index, name, alias, descr, if_type, speed_bps, admin_up, oper_up, mac, in_bps, out_bps, util_pct, err_rate, discard_rate, last_change_at, updated_at)
 			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NULLIF($10,''),$11,$12,$13,$14,$15, now(), now())
@@ -169,6 +188,12 @@ func (s Store) RecentEvents(ctx context.Context, deviceID int64, kind string, si
 	var n int
 	err := s.DB.QueryRow(ctx, `SELECT count(*) FROM events WHERE device_id = $1 AND kind = $2 AND at >= $3`, deviceID, kind, since).Scan(&n)
 	return n, err
+}
+
+// PrunePortChanges menghapus riwayat status port lebih tua dari batas.
+func (s Store) PrunePortChanges(ctx context.Context, before time.Time) (int64, error) {
+	tag, err := s.DB.Exec(ctx, `DELETE FROM port_changes WHERE at < $1`, before)
+	return tag.RowsAffected(), err
 }
 
 // PruneEvents menghapus kejadian lebih tua dari batas retensi.

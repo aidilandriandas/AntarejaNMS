@@ -82,6 +82,15 @@
             @endforeach
         </ul>@endif
     </div></section>
+    <section class="card"><div class="hd"><h2>Riwayat putus-sambung</h2><span class="sub">7 hari, {{ ($changes24->t ?: $changes24->p) }} perubahan dalam 24 jam</span></div><div class="bd flush">
+        @if($changes->isEmpty())<div class="empty">Tidak ada perubahan status dalam 7 hari terakhir.</div>@else
+        <ul class="feed">@foreach($changes as $c)
+            <li><span class="ic {{ $c->up ? 'ok' : 'crit' }}"><x-icon :name="$c->up ? 'arrow-up' : 'arrow-down'"/></span>
+                <div class="msg"><b>{{ $c->up ? 'Tersambung' : 'Putus' }}</b><small>{{ $c->source === 'trap' ? 'dari trap perangkat' : 'terlihat saat polling' }}</small></div>
+                <time>{{ \Illuminate\Support\Carbon::parse($c->at)->format('d/m H:i:s') }}</time></li>
+        @endforeach</ul>
+        @endif
+    </div></section>
     <section class="card"><div class="hd"><h2>Alamat IP</h2></div><div class="bd flush">
         @if($ips->isEmpty())<div class="empty">Tidak ada alamat IP tercatat di port ini.</div>@else
         <ul class="feed">@foreach($ips as $ip)<li><span class="ic muted"><x-icon name="grid"/></span><div class="msg mono">{{ $ip->ip }}{{ $ip->prefix !== null ? '/' . $ip->prefix : '' }}</div></li>@endforeach</ul>@endif

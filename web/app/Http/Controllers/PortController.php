@@ -40,6 +40,10 @@ class PortController extends Controller
                     ->orWhere(fn ($q) => $q->where('l.b_device_id', $device->id)->where('l.b_if_index', $ifIndex)))
                 ->get(['d.id', 'd.name', 'l.note']),
             'ports' => $device->ports()->orderBy('if_index')->get(['if_index', 'name', 'descr', 'alias']),
+            'changes' => DB::table('port_changes')->where('device_id', $device->id)->where('if_index', $ifIndex)
+                ->where('at', '>=', now()->subDays(7))->orderByDesc('at')->limit(50)->get(['up', 'source', 'at']),
+            'changes24' => DB::table('port_changes')->where('device_id', $device->id)->where('if_index', $ifIndex)->where('at', '>=', now()->subDay())
+                ->selectRaw("count(*) filter (where source = 'trap') t, count(*) filter (where source = 'poll') p")->first(),
         ]);
     }
 

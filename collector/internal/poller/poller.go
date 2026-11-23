@@ -109,6 +109,9 @@ func (p *Poller) Run(ctx context.Context) {
 		if err := p.Store.PruneIPAM(ctx); err != nil {
 			p.Log.Warn("pembersihan IPAM gagal", "galat", err)
 		}
+		if _, err := p.Store.PrunePortChanges(ctx, time.Now().Add(-eventKeep)); err != nil {
+			p.Log.Warn("pembersihan riwayat port gagal", "galat", err)
+		}
 		n, err := p.Store.PruneEvents(ctx, time.Now().Add(-eventKeep))
 		if n > 0 {
 			p.Log.Info("kejadian lama dihapus", "jumlah", n)

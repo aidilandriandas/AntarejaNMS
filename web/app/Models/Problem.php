@@ -31,6 +31,7 @@ class Problem extends Model
         'camera' => 'Gambar kamera',
         'custom' => 'Trigger custom',
         'anomaly' => 'Anomali',
+        'port_flap' => 'Port naik-turun',
     ];
 
     protected function casts(): array

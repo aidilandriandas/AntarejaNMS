@@ -302,7 +302,7 @@ func Summary(r Result) string {
 		n[c.Kind]++
 	}
 	var parts []string
-	for _, k := range []string{"down", "loss", "latency", "snmp", "port_down", "port_util", "custom"} {
+	for _, k := range []string{"down", "loss", "latency", "snmp", "port_down", "port_util", "port_flap", "custom", "anomaly"} {
 		if n[k] > 0 {
 			parts = append(parts, fmt.Sprintf("%s=%d", k, n[k]))
 		}
