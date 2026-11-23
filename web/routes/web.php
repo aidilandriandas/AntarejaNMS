@@ -10,6 +10,7 @@ use App\Http\Controllers\CapacityController;
 use App\Http\Controllers\CctvController;
 use App\Http\Controllers\ChannelController;
 use App\Http\Controllers\ConfigTransferController;
+use App\Http\Controllers\CheckController;
 use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceBulkController;
@@ -85,6 +86,12 @@ Route::middleware('auth')->group(function () {
         Route::post('perangkat/uji', [DeviceController::class, 'test'])->name('devices.test')->middleware('throttle:20,1');
         Route::post('perangkat/massal', [DeviceBulkController::class, 'apply'])->name('devices.bulk')->middleware('throttle:20,1');
         Route::get('perangkat/{device}/ubah', [DeviceController::class, 'edit'])->name('devices.edit');
+        Route::get('cek-layanan/tambah', [CheckController::class, 'create'])->name('checks.create');
+        Route::post('cek-layanan', [CheckController::class, 'store'])->name('checks.store');
+        Route::get('cek-layanan/{check}/ubah', [CheckController::class, 'edit'])->name('checks.edit')->whereNumber('check');
+        Route::put('cek-layanan/{check}', [CheckController::class, 'update'])->name('checks.update')->whereNumber('check');
+        Route::delete('cek-layanan/{check}', [CheckController::class, 'destroy'])->name('checks.destroy')->whereNumber('check');
+        Route::post('cek-layanan/{check}/uji', [CheckController::class, 'run'])->name('checks.run')->whereNumber('check')->middleware('throttle:20,1');
         Route::put('perangkat/{device}', [DeviceController::class, 'update'])->name('devices.update');
         Route::delete('perangkat/{device}', [DeviceController::class, 'destroy'])->name('devices.destroy');
         Route::post('perangkat/{device}/periksa', [DeviceController::class, 'poll'])->name('devices.poll')->middleware('throttle:10,1');
@@ -154,6 +161,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('site', [SiteController::class, 'index'])->name('sites.index');
     Route::get('dampak', [ImpactController::class, 'index'])->name('impact.index');
+    Route::get('cek-layanan', [CheckController::class, 'index'])->name('checks.index');
     Route::get('kejadian', [EventController::class, 'index'])->name('events.index');
     Route::get('log', [LogController::class, 'index'])->name('logs.index');
     Route::get('peta', [MapController::class, 'index'])->name('map.index');

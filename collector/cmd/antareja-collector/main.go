@@ -31,6 +31,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/anomaly"
 	apiserver "github.com/aidilandriandas/antarejanms/collector/internal/api"
 	"github.com/aidilandriandas/antarejanms/collector/internal/cctv"
+	"github.com/aidilandriandas/antarejanms/collector/internal/checks"
 	"github.com/aidilandriandas/antarejanms/collector/internal/config"
 	"github.com/aidilandriandas/antarejanms/collector/internal/configbak"
 	"github.com/aidilandriandas/antarejanms/collector/internal/discovery"
@@ -244,6 +245,25 @@ func run() error {
 			}()
 		}
 
+		// Cek layanan (HTTP, TCP, DNS): yang jatuh tempo diperiksa tiap 15 detik
+		checkRunner := &checks.Runner{DB: db, Log: log, Writer: p.Writer}
+		go func() {
+			t := time.NewTicker(15 * time.Second)
+			defer t.Stop()
+			for {
+				rctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+				if err := checkRunner.Run(rctx); err != nil && ctx.Err() == nil {
+					log.Warn("cek layanan gagal", "galat", err)
+				}
+				cancel()
+				select {
+				case <-ctx.Done():
+					return
+				case <-t.C:
+				}
+			}
+		}()
+
 		// Salinan backup NMS ke luar server (SFTP / S3), dicek tiap menit
 		off := &offsite.Runner{DB: db, Box: box, Log: log, Dir: cfg.BackupDir}
 		go func() {
@@ -299,7 +319,7 @@ func run() error {
 		}()
 
 		if cfg.APIAddr != "" {
-			api := &http.Server{Addr: cfg.APIAddr, Handler: (&apiserver.Server{Poller: p, Notify: disp, Report: reports.Preview, Offsite: off, Token: apiserver.Token(box.Key()), Log: log}).Handler(),
+			api := &http.Server{Addr: cfg.APIAddr, Handler: (&apiserver.Server{Poller: p, Notify: disp, Report: reports.Preview, Offsite: off, Checks: checkRunner, Token: apiserver.Token(box.Key()), Log: log}).Handler(),
 				ReadHeaderTimeout: 5 * time.Second, WriteTimeout: 60 * time.Second}
 			go func() {
 				if err := api.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

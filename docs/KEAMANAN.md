@@ -93,6 +93,14 @@ Bila rahasia disertakan, bagian `secrets` dienkripsi AES-256-GCM dengan kunci PB
 frasa sandi ekspor (min. 12 karakter), terpisah dari `ANTAREJA_APP_KEY`. Frasa sandi tidak disimpan di mana pun; simpan
 terpisah dari berkasnya. Impor & ekspor khusus admin dan tercatat di jejak audit.
 
+## 6a. Cek layanan
+
+- Hanya engineer dan admin yang bisa membuat cek; tiap pembuatan, perubahan, dan penghapusan tercatat di jejak audit.
+- HTTP hanya `http://` dan `https://`, metode GET, tanpa kredensial, tanpa cookie, tanpa mengikuti pengalihan, tanpa
+  proxy, dan hanya membaca 64 KB pertama. TCP hanya membuka lalu menutup koneksi. DNS hanya bertanya.
+- *Uji sekarang* hanya menjalankan cek yang sudah tersimpan, bukan alamat bebas.
+- Verifikasi sertifikat HTTPS bisa dimatikan per cek untuk perangkat dengan sertifikat bawaan; tetap aktif secara bawaan.
+
 ## 7. Batasan yang diketahui
 
 - **CSP masih mengizinkan gaya (CSS) inline** (atribut `style` di template & Leaflet). Skrip inline sudah tidak diizinkan.

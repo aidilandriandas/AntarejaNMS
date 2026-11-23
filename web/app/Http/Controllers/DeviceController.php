@@ -82,6 +82,7 @@ class DeviceController extends Controller
         return view('devices.show', [
             'device' => $device,
             'impact' => $impact,
+            'checks' => \App\Models\ServiceCheck::where('device_id', $device->id)->orderBy('name')->get(),
             'traffic' => $traffic,
             'events' => $device->events()->limit(20)->get(),
             'logs' => \App\Models\SyslogEntry::where('device_id', $device->id)->where('received_at', '>=', now()->subDay())->orderByDesc('id')->limit(10)->get(),

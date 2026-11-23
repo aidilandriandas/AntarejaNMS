@@ -120,6 +120,17 @@ class Collector
         return $res->json();
     }
 
+    /** Jalankan satu cek layanan sekarang. @return array{ok: bool, ms: float, error: string, status: int} */
+    public function runCheck(int $checkId): array
+    {
+        $res = $this->http()->timeout(75)->post("/v1/checks/{$checkId}/run");
+        if (! $res->successful()) {
+            throw new RuntimeException($res->json('error') ?? ('collector menjawab ' . $res->status()));
+        }
+
+        return $res->json();
+    }
+
     /** Uji tujuan salinan backup (tulis, daftar, hapus berkas kecil). */
     public function offsiteTest(): array
     {

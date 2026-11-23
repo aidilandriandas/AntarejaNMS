@@ -24,6 +24,9 @@ class DeviceEvent extends Model
         'syslog' => ['Syslog kritis', 'crit', 'terminal'],
         'anomaly' => ['Anomali', 'warn', 'wave'],
         'trap' => ['SNMP trap', 'info', 'bell'],
+        'check_down' => ['Cek gagal', 'crit', 'x'],
+        'check_up' => ['Cek pulih', 'ok', 'check'],
+        'check_slow' => ['Cek lambat', 'warn', 'gauge'],
     ];
 
     protected function casts(): array

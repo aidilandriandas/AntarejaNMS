@@ -152,6 +152,19 @@
             </div></section>
         @endif
         @endcan
+        @if($checks->isNotEmpty() || auth()->user()->can('manage-devices'))
+        <section class="card"><div class="hd"><h2>Cek layanan</h2>@can('manage-devices')<a class="sub" href="{{ route('checks.create', ['device' => $device->id]) }}">Tambah cek</a>@endcan</div><div class="bd @if($checks->isNotEmpty()) flush @endif">
+            @if($checks->isEmpty())<p class="muted" style="margin:0">Belum ada. Tambahkan bila perangkat ini menjalankan aplikasi (web, database, DNS) supaya aplikasinya ikut dipantau.</p>@else
+            <table class="t"><tbody>
+            @foreach($checks as $c)
+                @php([$lbl, $tone] = \App\Models\ServiceCheck::STATES[$c->status])
+                <tr><td class="name">{{ $c->name }}<small class="mono">{{ $c->target() }}</small></td>
+                    <td class="right">@if(! $c->enabled)<span class="badge">nonaktif</span>@else<span class="badge {{ $tone }}">{{ $lbl }}</span>@endif
+                        @if($c->last_ms !== null && $c->status !== 'down')<div class="muted" style="font-size:12px">{{ \App\Support\Fmt::ms($c->last_ms) }}</div>@endif</td></tr>
+            @endforeach
+            </tbody></table>@endif
+        </div></section>
+        @endif
         @if($impact && ($impactLine = \App\Services\Impact::line($impact)) !== '')
         <section class="card"><div class="hd"><h2>{{ $device->status === 'down' ? 'Dampak sekarang' : 'Bila perangkat ini mati' }}</h2><a class="sub" href="{{ route('impact.index', ['sim' => [$device->id]]) }}#simulasi">Rincian</a></div><div class="bd">
             <p style="margin:0">{{ ucfirst($impactLine) }}.</p>

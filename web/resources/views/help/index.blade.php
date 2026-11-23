@@ -25,6 +25,7 @@
     <a href="#topologi">Sinkron LLDP & diagnosa SNMP</a>
     <a href="#api">Integrasi lewat API</a>
     <a href="#diag">Alat diagnosa & down bulanan</a>
+    <a href="#cek">Cek layanan</a>
     <a href="#dampak">Peta dampak</a>
     <a href="#site">Collector site</a>
     <a href="#akun">2FA & login kantor</a>
@@ -189,6 +190,15 @@
     <ul class="help-list">
         <li><b>Alat diagnosa</b> di halaman perangkat menjalankan ping, traceroute, atau cek port TCP dari server ANTAREJA ke perangkat itu. Bila traceroute berhenti sebelum tujuan, hop terakhir yang menjawab adalah titik yang perlu diperiksa (radio, switch, atau router di lokasi itu). Cek port berguna untuk kamera (554 RTSP), web perangkat (80/443), atau SSH (22).</li>
         <li><b>Down bulanan</b> (menu Laporan) menunjukkan persen waktu down tiap perangkat per bulan, dengan rumus yang sama seperti SLA perangkat. Waktu di dalam maintenance tidak dihitung down. Angka bulan berjalan masih sementara dan dikunci setelah bulan berganti.</li>
+    </ul>
+</div></section>
+
+<section class="card" id="cek"><div class="hd"><h2>Cek layanan</h2></div><div class="bd">
+    <ul class="help-list">
+        <li>Perangkat bisa menjawab ping padahal aplikasinya mati. <b>Cek layanan</b> memeriksa aplikasinya langsung: halaman web (misalnya halaman login FMS), port TCP (misalnya database), atau server DNS.</li>
+        <li><b>Gagal</b> dua kali berturut-turut menjadi problem. <b>Lambat</b> (di atas ambang) dan <b>sertifikat HTTPS hampir habis</b> menjadi Warning.</li>
+        <li>Bila perangkatnya sendiri down atau sedang maintenance, problem cek ditandai terdampak dan tidak membanjiri notifikasi.</li>
+        <li>Pesan galat menjelaskan penyebabnya, misalnya <i>koneksi ditolak</i> (layanan tidak berjalan), <i>kode HTTP 503</i> (aplikasi bermasalah), atau <i>sertifikat ditolak</i>.</li>
     </ul>
 </div></section>
 

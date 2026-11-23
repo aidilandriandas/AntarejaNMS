@@ -32,6 +32,7 @@ class Problem extends Model
         'custom' => 'Trigger custom',
         'anomaly' => 'Anomali',
         'port_flap' => 'Port naik-turun',
+        'check' => 'Cek layanan',
     ];
 
     protected function casts(): array

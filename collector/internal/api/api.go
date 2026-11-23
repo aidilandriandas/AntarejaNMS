@@ -21,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aidilandriandas/antarejanms/collector/internal/checks"
 	"github.com/aidilandriandas/antarejanms/collector/internal/notify"
 	"github.com/aidilandriandas/antarejanms/collector/internal/offsite"
 	"github.com/aidilandriandas/antarejanms/collector/internal/poller"
@@ -45,8 +46,10 @@ type Server struct {
 	Report func(ctx context.Context, scheduleID int64) (subject, html string, err error)
 	// Salinan backup ke luar server (opsional)
 	Offsite *offsite.Runner
-	Token   string
-	Log     *slog.Logger
+	// Cek layanan (opsional)
+	Checks *checks.Runner
+	Token  string
+	Log    *slog.Logger
 
 	ingestMu sync.Mutex // kiriman collector site diterapkan satu per satu
 }
@@ -59,6 +62,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /v1/devices/{id}/diagnose", s.auth(s.diagnose))
 	mux.HandleFunc("POST /v1/devices/{id}/tools", s.auth(s.tools))
 	mux.HandleFunc("POST /v1/backup/offsite/test", s.auth(s.offsiteTest))
+	mux.HandleFunc("POST /v1/checks/{id}/run", s.auth(s.checkRun))
 	mux.HandleFunc("POST /v1/channels/{id}/test", s.auth(s.testChannel))
 	mux.HandleFunc("POST /v1/live", s.auth(s.live))
 	mux.HandleFunc("GET /v1/reports/{id}/preview", s.auth(s.reportPreview))
@@ -409,4 +413,25 @@ func (s *Server) siteIngest(w http.ResponseWriter, r *http.Request) {
 		s.Log.Debug("kiriman collector site", "collector", id, "ping", res.Pings, "snmp", res.SNMP, "dilewati", res.Skipped)
 	}
 	writeJSON(w, http.StatusOK, res)
+}
+
+// checkRun menjalankan satu cek layanan sekarang (cek yang sudah tersimpan saja, bukan alamat bebas).
+func (s *Server) checkRun(w http.ResponseWriter, r *http.Request) {
+	if s.Checks == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "cek layanan tidak aktif di collector ini"})
+		return
+	}
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil || id <= 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "id tidak valid"})
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 70*time.Second)
+	defer cancel()
+	res, err := s.Checks.RunOne(ctx, id)
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "cek tidak ditemukan"})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": res.OK, "ms": res.MS, "error": res.Error, "status": res.Status})
 }

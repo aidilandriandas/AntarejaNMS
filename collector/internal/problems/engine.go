@@ -65,6 +65,11 @@ func (e *Engine) Run(ctx context.Context) (Outcome, error) {
 	} else if sev != "off" {
 		res.Conds = append(res.Conds, AnomalyConds(an, devs, sev)...)
 	}
+	if cks, err := e.loadChecks(ctx); err != nil {
+		return out, err
+	} else {
+		res.Conds = append(res.Conds, CheckConds(cks, devs, time.Now())...)
+	}
 	out.Summary = Summary(res)
 
 	tx, err := e.DB.Begin(ctx)
