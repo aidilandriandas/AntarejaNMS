@@ -1,7 +1,7 @@
 <div class="kpis">
     <div class="kpi {{ $availability === null ? '' : ($availability >= 99 ? 'ok' : ($availability >= 95 ? 'warn' : 'crit')) }}">
         <div class="lbl">Ketersediaan</div>
-        <div class="val">@if($availability === null)Belum ada@else{{ number_format($availability, $availability == 100 ? 0 : 2, ',', '.') }}<small>%</small>@endif</div>
+        <div class="val">@if($availability === null) Belum ada @else {{ number_format($availability, $availability == 100 ? 0 : 2, ',', '.') }}<small>%</small> @endif</div>
         <div class="note">{{ $counts->up }} dari {{ $counts->up + $counts->down }} perangkat online</div>
     </div>
     <a class="kpi ok" href="{{ route('devices.index', ['status' => 'up']) }}"><div class="lbl">Online</div><div class="val">{{ $counts->up }}</div><div class="note">dari {{ $counts->total }} aktif</div></a>

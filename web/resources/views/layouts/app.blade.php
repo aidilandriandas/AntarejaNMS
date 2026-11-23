@@ -48,6 +48,7 @@
             <div class="grp">Laporan</div>
             <a href="{{ route('services.index') }}" class="{{ $nav('services.*') }}"><x-icon name="layers"/>SLA layanan</a>
             <a href="{{ route('reports.sla') }}" class="{{ $nav('reports.sla*') }}"><x-icon name="chart"/>SLA perangkat</a>
+            <a href="{{ route('reports.incidents') }}" class="{{ $nav('reports.incidents*') }}"><x-icon name="flag"/>Insiden bulanan</a>
             <a href="{{ route('capacity.index') }}" class="{{ $nav('capacity.*') }}"><x-icon name="gauge"/>Kapasitas port</a>
             @can('admin')<a href="{{ route('reports.schedules') }}" class="{{ $nav('reports.schedules*') }}"><x-icon name="bell"/>Laporan terjadwal</a>@endcan
             <a href="{{ route('help') }}" class="{{ $nav('help') }}"><x-icon name="info"/>Panduan</a>

@@ -30,6 +30,17 @@ type SiteAvail struct {
 }
 
 // DownNow perangkat yang sedang down saat laporan dibuat.
+// IncRow satu insiden di laporan (terlama dulu).
+type IncRow struct {
+	ID       int64
+	Title    string
+	Site     string
+	Severity string
+	Status   string
+	Seconds  float64
+	Cause    string
+}
+
 type DownNow struct {
 	Name, Host, Site string
 	Since            time.Time
@@ -54,6 +65,13 @@ type Data struct {
 	ConfigChg  int
 	SyslogErr  int
 	BaseURL    string
+	// Insiden yang dibuka dalam periode
+	IncN      int
+	IncActive int     // masih terbuka / ditangani sekarang
+	IncNoRCA  int     // sudah pulih tetapi penyebab & tindakan belum diisi
+	IncMTTA   float64 // detik rata-rata sampai ditangani (0 = tidak ada data)
+	IncMTTR   float64 // detik rata-rata sampai pulih
+	IncTop    []IncRow
 }
 
 const availSQL = `
@@ -201,5 +219,32 @@ func Build(ctx context.Context, db *pgxpool.Pool, p Period, siteID int64) (Data,
 		FROM events e JOIN devices dv ON dv.id = e.device_id WHERE e.at >= $1 AND e.at < $2 AND `+site, p.Start, p.End, siteID).Scan(&d.Reboots, &d.ConfigChg)
 	_ = db.QueryRow(ctx, `SELECT count(*) FROM syslog sl LEFT JOIN devices dv ON dv.id = sl.device_id
 		WHERE sl.received_at >= $1 AND sl.received_at < $2 AND sl.severity <= 3 AND ($3::bigint = 0 OR dv.site_id = $3)`, p.Start, p.End, siteID).Scan(&d.SyslogErr)
+	buildIncidents(ctx, db, p, siteID, &d)
 	return d, nil
+}
+
+// buildIncidents: insiden yang dibuka dalam periode (filter site lewat incidents.site_id).
+func buildIncidents(ctx context.Context, db *pgxpool.Pool, p Period, siteID int64, d *Data) {
+	_ = db.QueryRow(ctx, `SELECT count(*),
+			count(*) FILTER (WHERE status IN ('open', 'handling')),
+			count(*) FILTER (WHERE status IN ('recovered', 'closed') AND (COALESCE(cause, '') = '' OR COALESCE(action_taken, '') = '')),
+			COALESCE(avg(EXTRACT(EPOCH FROM (handled_at - opened_at))) FILTER (WHERE handled_at IS NOT NULL), 0),
+			COALESCE(avg(EXTRACT(EPOCH FROM (recovered_at - opened_at))) FILTER (WHERE recovered_at IS NOT NULL), 0)
+		FROM incidents WHERE opened_at >= $1 AND opened_at < $2 AND ($3::bigint = 0 OR site_id = $3)`, p.Start, p.End, siteID).
+		Scan(&d.IncN, &d.IncActive, &d.IncNoRCA, &d.IncMTTA, &d.IncMTTR)
+	rows, err := db.Query(ctx, `SELECT i.id, i.title, COALESCE(s.code, ''), i.severity, i.status,
+			EXTRACT(EPOCH FROM (COALESCE(i.recovered_at, i.closed_at, now()) - i.opened_at)), COALESCE(i.cause, '')
+		FROM incidents i LEFT JOIN sites s ON s.id = i.site_id
+		WHERE i.opened_at >= $1 AND i.opened_at < $2 AND ($3::bigint = 0 OR i.site_id = $3)
+		ORDER BY 6 DESC LIMIT 5`, p.Start, p.End, siteID)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var x IncRow
+		if rows.Scan(&x.ID, &x.Title, &x.Site, &x.Severity, &x.Status, &x.Seconds, &x.Cause) == nil {
+			d.IncTop = append(d.IncTop, x)
+		}
+	}
 }

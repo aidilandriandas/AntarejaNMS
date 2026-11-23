@@ -130,6 +130,18 @@ var tpl = template.Must(template.New("r").Funcs(template.FuncMap{
   <tr style="border-top:1px solid #f3f4f6"><td>Syslog Error ke atas</td><td align="right"><b>{{.D.SyslogErr}}</b></td></tr>
   </table>
 </td></tr>
+<tr><td style="padding:16px 24px 0">
+  <div style="font:600 14px Segoe UI,Arial,sans-serif;margin-bottom:6px">Insiden</div>
+  {{if .D.IncN}}<table role="presentation" width="100%" cellpadding="6" cellspacing="0" style="font-size:13px;border-collapse:collapse">
+  <tr style="border-top:1px solid #f3f4f6"><td>Insiden dibuka</td><td align="right"><b>{{.D.IncN}}</b>{{if .D.IncActive}} <span style="color:#b91c1c">({{.D.IncActive}} masih berlangsung)</span>{{end}}</td></tr>
+  <tr style="border-top:1px solid #f3f4f6"><td>Rata-rata sampai ditangani (MTTA)</td><td align="right"><b>{{if .D.IncMTTA}}{{dur .D.IncMTTA}}{{else}}belum ada{{end}}</b></td></tr>
+  <tr style="border-top:1px solid #f3f4f6"><td>Rata-rata sampai pulih (MTTR)</td><td align="right"><b>{{if .D.IncMTTR}}{{dur .D.IncMTTR}}{{else}}belum ada{{end}}</b></td></tr>
+  {{if .D.IncNoRCA}}<tr style="border-top:1px solid #f3f4f6"><td>Pulih tetapi penyebab belum diisi</td><td align="right"><b style="color:#b45309">{{.D.IncNoRCA}}</b></td></tr>{{end}}
+  </table>
+  <table role="presentation" width="100%" cellpadding="6" cellspacing="0" style="font-size:13px;border-collapse:collapse;margin-top:8px">
+  {{range .D.IncTop}}<tr style="border-top:1px solid #f3f4f6"><td><b>#{{.ID}} {{.Title}}</b><br><span style="color:#6b7280;font-size:12px">{{if .Site}}{{.Site}}, {{end}}{{.Severity}}{{if .Cause}}, penyebab: {{.Cause}}{{end}}</span></td><td align="right" style="white-space:nowrap">{{dur .Seconds}}</td></tr>{{end}}
+  </table>{{else}}<div style="font-size:13px;color:#6b7280">Tidak ada insiden pada periode ini.</div>{{end}}
+</td></tr>
 <tr><td style="padding:20px 24px 22px;font-size:12px;color:#6b7280">
   Downtime dihitung dari problem <i>down</i> dan tidak termasuk jendela maintenance.{{if .Link}} <a href="{{.Link}}" style="color:#0f766e">Buka laporan SLA lengkap</a>.{{end}}<br>
   Dibuat otomatis {{since .D.Generated}} oleh ANTAREJA NMS.
@@ -164,6 +176,9 @@ func Text(freq string, d Data) string {
 			fmt.Fprintf(&b, "- %s: %s, %d gangguan, downtime %s\n", s.Site, pct(s.Avail), s.Incidents, durText(s.Down))
 		}
 	}
+	if d.IncN > 0 {
+		fmt.Fprintf(&b, "Insiden: %d dibuka (%d masih berlangsung), MTTA %s, MTTR %s\n", d.IncN, d.IncActive, durText(d.IncMTTA), durText(d.IncMTTR))
+	}
 	if len(d.Worst) > 0 {
 		b.WriteString("\nDowntime terbesar:\n")
 		for _, x := range d.Worst {
@@ -191,6 +206,9 @@ func Telegram(freq string, d Data) string {
 	fmt.Fprintf(&b, "Ketersediaan <b>%s</b> (target %s) · %d perangkat\n", pct(d.Total.Avail), pct(d.Target), d.Total.Devices)
 	fmt.Fprintf(&b, "Gangguan %d · downtime %s\n", d.Total.Incidents, durText(d.Total.Down))
 	fmt.Fprintf(&b, "Sekarang: <b>%d down</b> · %d problem terbuka\n", len(d.DownNow), d.OpenNow)
+	if d.IncN > 0 {
+		fmt.Fprintf(&b, "Insiden %d (%d berlangsung) · MTTR %s\n", d.IncN, d.IncActive, durText(d.IncMTTR))
+	}
 	if len(d.Worst) > 0 {
 		b.WriteString("\n<b>Downtime terbesar</b>\n")
 		for i, x := range d.Worst {

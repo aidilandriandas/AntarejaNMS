@@ -16,6 +16,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\IncidentController;
+use App\Http\Controllers\IncidentReportController;
 use App\Http\Controllers\IpamController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NocController;
@@ -156,6 +157,8 @@ Route::middleware('auth')->group(function () {
     Route::get('layanan', [ServiceController::class, 'index'])->name('services.index');
     Route::get('layanan.csv', [ServiceController::class, 'csv'])->name('services.csv');
     Route::get('layanan/{service}', [ServiceController::class, 'show'])->name('services.show')->whereNumber('service');
+    Route::get('laporan/insiden', [IncidentReportController::class, 'index'])->name('reports.incidents');
+    Route::get('laporan/insiden.csv', [IncidentReportController::class, 'csv'])->name('reports.incidents.csv');
     Route::get('laporan/sla', [ReportController::class, 'sla'])->name('reports.sla');
     Route::get('laporan/sla.csv', [ReportController::class, 'csv'])->name('reports.sla.csv');
     Route::get('topologi', [TopologyController::class, 'index'])->name('topology.index');

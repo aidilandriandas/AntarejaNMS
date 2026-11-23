@@ -44,12 +44,13 @@ func TestRender(t *testing.T) {
 		Sites:    []SiteAvail{{Site: "PIT-A", Devices: 7, Avail: 98.9, Down: 5400, Incidents: 3}, {Site: "JETTY", Devices: 5, Avail: 100}},
 		Worst:    []DeviceAvail{{Name: "Radio <PTP> Pit A", Host: "10.0.0.5", Site: "PIT-A", Down: 5400, Incidents: 3, Avail: 93.75}},
 		Problems: map[string]int{"high": 2, "warning": 4}, ProblemsN: 6, Generated: time.Now(), BaseURL: "https://nms.local",
+		IncN: 2, IncActive: 1, IncMTTR: 5400, IncTop: []IncRow{{ID: 7, Title: "PLN padam Pit A", Site: "PIT-A", Severity: "disaster", Seconds: 3600, Cause: "UPS habis"}},
 	}
 	h, err := HTML("daily", d)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"99,47%", "Radio &lt;PTP&gt; Pit A", "1 j 30 m", "High 2</span>, <span style=\"color:#b45309\">Warning 4", "/laporan/sla?bulan=2026-11", "PIT-A"} {
+	for _, want := range []string{"99,47%", "Radio &lt;PTP&gt; Pit A", "1 j 30 m", "High 2</span>, <span style=\"color:#b45309\">Warning 4", "/laporan/sla?bulan=2026-11", "PIT-A", "#7 PLN padam Pit A", "penyebab: UPS habis", "1 masih berlangsung", "belum ada"} {
 		if !strings.Contains(h, want) {
 			t.Errorf("HTML tidak memuat %q", want)
 		}
