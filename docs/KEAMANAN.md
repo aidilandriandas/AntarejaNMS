@@ -53,6 +53,14 @@ Token acak 40 karakter, disimpan sebagai SHA-256 dan hanya ditampilkan sekali; b
 throttle 60/menit; `noindex`, `no-referrer`, `no-store`; tidak menampilkan IP/host/konfigurasi; URL `/status/`
 tidak dicatat di access log nginx. Siapa pun yang memegang tautan bisa membukanya — cabut bila bocor.
 
+## 5a. API baca-saja
+
+- `/api/v1` hanya menerima GET; metode lain dijawab 405 sebelum menyentuh data.
+- Token `ant_` acak 44 karakter, disimpan sebagai hash SHA-256, tampil sekali saat dibuat. Bisa diberi masa berlaku
+  dan dibatasi ke IP/CIDR; token salah, dicabut, kedaluwarsa, atau dari IP lain dijawab 401 yang sama.
+- Kolom keluaran ditulis eksplisit per endpoint; kolom `*_enc` (kredensial) tidak pernah dipilih. Dibatasi 120 permintaan per menit.
+- Pembuatan dan pencabutan token tercatat di jejak audit; waktu dan IP pemakaian terakhir tampil di daftar token.
+
 ## 6. Ekspor konfigurasi
 
 Berkas ekspor tanpa rahasia hanya berisi nama, host/IP, dan pengaturan — tetap perlakukan sebagai dokumen internal.

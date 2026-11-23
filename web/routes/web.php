@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AnomalyController;
+use App\Http\Controllers\ApiTokenController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BackupController;
@@ -196,6 +197,9 @@ Route::middleware('auth')->group(function () {
         Route::post('ekspor-impor/terapkan', [ConfigTransferController::class, 'apply'])->name('transfer.apply')->middleware('throttle:10,1');
         Route::post('tautan-status', [StatusLinkController::class, 'store'])->name('status.links.store')->middleware('throttle:20,1');
         Route::post('tautan-status/{link}/cabut', [StatusLinkController::class, 'revoke'])->name('status.links.revoke')->whereNumber('link');
+        Route::get('token-api', [ApiTokenController::class, 'index'])->name('apitokens.index');
+        Route::post('token-api', [ApiTokenController::class, 'store'])->name('apitokens.store')->middleware('throttle:20,1');
+        Route::post('token-api/{token}/cabut', [ApiTokenController::class, 'revoke'])->name('apitokens.revoke')->whereNumber('token');
         Route::post('peta/denah', [MapController::class, 'planStore'])->name('map.plan.store')->middleware('throttle:10,1');
         Route::delete('peta/denah/{plan}', [MapController::class, 'planDestroy'])->name('map.plan.destroy')->whereNumber('plan');
         Route::get('pengguna', [UserController::class, 'index'])->name('users.index');
