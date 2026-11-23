@@ -20,6 +20,7 @@ use App\Http\Controllers\DowntimeController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\MapController;
+use App\Http\Controllers\ImpactController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\IncidentReportController;
 use App\Http\Controllers\IpamController;
@@ -152,6 +153,7 @@ Route::middleware('auth')->group(function () {
     Route::post('perangkat/{device}/live', [DeviceController::class, 'live'])->name('devices.live')->middleware('throttle:150,1');
 
     Route::get('site', [SiteController::class, 'index'])->name('sites.index');
+    Route::get('dampak', [ImpactController::class, 'index'])->name('impact.index');
     Route::get('kejadian', [EventController::class, 'index'])->name('events.index');
     Route::get('log', [LogController::class, 'index'])->name('logs.index');
     Route::get('peta', [MapController::class, 'index'])->name('map.index');

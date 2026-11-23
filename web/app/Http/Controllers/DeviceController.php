@@ -77,8 +77,11 @@ class DeviceController extends Controller
             }
         }
 
+        $impact = $device->enabled ? (new \App\Services\Impact)->of([$device->id]) : null;
+
         return view('devices.show', [
             'device' => $device,
+            'impact' => $impact,
             'traffic' => $traffic,
             'events' => $device->events()->limit(20)->get(),
             'logs' => \App\Models\SyslogEntry::where('device_id', $device->id)->where('received_at', '>=', now()->subDay())->orderByDesc('id')->limit(10)->get(),

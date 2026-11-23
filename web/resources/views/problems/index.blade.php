@@ -27,7 +27,7 @@
         <button class="btn sm primary">Buat insiden</button><x-field-error name="problems"/>
     </form>
     @endif
-    <div class="bd flush">@include('problems.table', ['select' => $select, 'problems' => $problems, 'empty' => $history ? 'Belum ada riwayat problem.' : 'Tidak ada problem aktif. Semua normal.'])</div>
+    <div class="bd flush">@include('problems.table', ['select' => $select, 'impactLines' => $impactLines, 'problems' => $problems, 'empty' => $history ? 'Belum ada riwayat problem.' : 'Tidak ada problem aktif. Semua normal.'])</div>
     @include('partials.pager', ['p' => $problems])
 </section>
 @endsection

@@ -27,8 +27,19 @@ class ProblemController extends Controller
             $q->whereHas('device', fn ($d) => $d->search($term));
         }
 
+        $problems = $q->paginate(50)->withQueryString();
+        $impactLines = [];
+        $downIds = $problems->filter(fn ($p) => $p->kind === 'down' && ! $p->resolved_at && ! $p->suppressed)->pluck('device_id')->unique();
+        if ($downIds->isNotEmpty()) {
+            $impact = new \App\Services\Impact;
+            foreach ($downIds as $id) {
+                $impactLines[$id] = \App\Services\Impact::line($impact->of([$id]));
+            }
+        }
+
         return view('problems.index', [
-            'problems' => $q->paginate(50)->withQueryString(),
+            'impactLines' => $impactLines,
+            'problems' => $problems,
             'history' => $history,
             'sites' => Site::orderBy('code')->get(),
             'openCount' => Problem::open()->count(),

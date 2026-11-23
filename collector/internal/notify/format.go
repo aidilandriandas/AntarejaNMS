@@ -70,6 +70,10 @@ func Single(kind string, p Problem, delay int, base string) Message {
 			icon = "⏫ " + icon
 		}
 		m.HTML = fmt.Sprintf("%s <b>%s</b>\n<b>%s</b>\n%s\n%s\n<i>Mulai %s</i>", icon, esc(head), esc(p.Title), esc(where(p)), esc(p.Detail), when(p.StartedAt))
+		if p.Impact != "" {
+			m.Text += "\nDampak: " + p.Impact
+			m.HTML += "\n<b>Dampak:</b> " + esc(p.Impact)
+		}
 	}
 	if link != "" {
 		m.Text += "\n" + link

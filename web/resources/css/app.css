@@ -517,6 +517,12 @@ table.t.logs td:nth-child(4) { font-size: var(--text-xs); white-space: nowrap; }
 .totp-key { display: block; font-size: var(--text-md); letter-spacing: 0.08em; overflow-wrap: anywhere; }
 .recovery { columns: 2; list-style: none; padding: 0; margin: var(--space-xs) 0 0; font-size: var(--text-md); }
 @media (max-width: 600px) { .totp-setup { grid-template-columns: minmax(0, 1fr); } }
+.impact-tag { display: block; color: var(--color-crit); font-weight: 600; margin-top: var(--space-3xs); }
+.impact-sum { margin: 0 0 var(--space-md); }
+.impact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-md) var(--space-lg); }
+.impact-grid h3 { font-size: var(--text-sm); margin: 0 0 var(--space-2xs); }
+.impact-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3xs); font-size: var(--text-sm); }
+.impact-list li { min-width: 0; overflow-wrap: anywhere; }
 .notes { font-size: var(--text-sm); }
 .notes p { margin: 0; }
 .notes p + p { margin-top: var(--space-sm); }

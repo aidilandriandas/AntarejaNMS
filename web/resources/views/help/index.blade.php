@@ -25,6 +25,7 @@
     <a href="#topologi">Sinkron LLDP & diagnosa SNMP</a>
     <a href="#api">Integrasi lewat API</a>
     <a href="#diag">Alat diagnosa & down bulanan</a>
+    <a href="#dampak">Peta dampak</a>
     <a href="#site">Collector site</a>
     <a href="#akun">2FA & login kantor</a>
     <a href="#noc">Layar NOC</a>
@@ -188,6 +189,15 @@
     <ul class="help-list">
         <li><b>Alat diagnosa</b> di halaman perangkat menjalankan ping, traceroute, atau cek port TCP dari server ANTAREJA ke perangkat itu. Bila traceroute berhenti sebelum tujuan, hop terakhir yang menjawab adalah titik yang perlu diperiksa (radio, switch, atau router di lokasi itu). Cek port berguna untuk kamera (554 RTSP), web perangkat (80/443), atau SSH (22).</li>
         <li><b>Down bulanan</b> (menu Laporan) menunjukkan persen waktu down tiap perangkat per bulan, dengan rumus yang sama seperti SLA perangkat. Waktu di dalam maintenance tidak dihitung down. Angka bulan berjalan masih sementara dan dikunci setelah bulan berganti.</li>
+    </ul>
+</div></section>
+
+<section class="card" id="dampak"><div class="hd"><h2>Peta dampak</h2></div><div class="bd">
+    <ul class="help-list">
+        <li>Menu <b>Dampak</b> menampilkan tiap perangkat down yang menjadi <i>sumber</i> gangguan (induknya sendiri tidak down) dan apa saja yang ikut terganggu: perangkat di bawahnya, kamera, layanan, dan site yang putus total. Tangani sumbernya dulu.</li>
+        <li>Perhitungan memakai isian <i>perangkat induk</i>. Perangkat yang induknya belum diisi tidak ikut terhitung, jadi minta engineer melengkapinya.</li>
+        <li><b>Simulasi</b>: pilih satu atau beberapa perangkat untuk melihat dampaknya bila mati, mis. sebelum mematikan switch untuk maintenance.</li>
+        <li>Ringkasan dampak juga muncul di daftar Problem dan di pesan Telegram atau email untuk problem down.</li>
     </ul>
 </div></section>
 

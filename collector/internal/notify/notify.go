@@ -48,6 +48,9 @@ type Problem struct {
 	StartedAt  time.Time  `json:"started_at"`
 	ResolvedAt *time.Time `json:"resolved_at,omitempty"`
 	AckedBy    string     `json:"acked_by,omitempty"`
+	DeviceID   int64      `json:"device_id,omitempty"`
+	Kind       string     `json:"kind,omitempty"`
+	Impact     string     `json:"impact,omitempty"` // ringkasan dampak (problem down)
 }
 
 // Message adalah satu pesan siap kirim.
@@ -138,7 +141,7 @@ func (d *Dispatcher) rawChannels(ctx context.Context, onlyID int64) ([]Channel, 
 	return out, rows.Err()
 }
 
-const problemCols = `p.id, p.severity, p.title, COALESCE(p.suppressed_note, p.detail, ''), d.name, d.host, COALESCE(s.code, ''), p.started_at, p.resolved_at, COALESCE(u.username, '')`
+const problemCols = `p.id, p.severity, p.title, COALESCE(p.suppressed_note, p.detail, ''), d.name, d.host, COALESCE(s.code, ''), p.started_at, p.resolved_at, COALESCE(u.username, ''), p.device_id, p.kind`
 
 func scanProblems(rows interface {
 	Next() bool
@@ -150,7 +153,7 @@ func scanProblems(rows interface {
 	var out []Problem
 	for rows.Next() {
 		var p Problem
-		if err := rows.Scan(&p.ID, &p.Severity, &p.Title, &p.Detail, &p.Device, &p.Host, &p.Site, &p.StartedAt, &p.ResolvedAt, &p.AckedBy); err != nil {
+		if err := rows.Scan(&p.ID, &p.Severity, &p.Title, &p.Detail, &p.Device, &p.Host, &p.Site, &p.StartedAt, &p.ResolvedAt, &p.AckedBy, &p.DeviceID, &p.Kind); err != nil {
 			return nil, err
 		}
 		out = append(out, p)
@@ -196,6 +199,11 @@ func (d *Dispatcher) runChannel(ctx context.Context, c Channel) error {
 	opens, err := scanProblems(rows)
 	if err != nil {
 		return err
+	}
+	for i := range opens {
+		if opens[i].Kind == "down" && len(opens) < summaryAt {
+			opens[i].Impact = ImpactLine(ctx, d.DB, opens[i].DeviceID)
+		}
 	}
 	var resolves []Problem
 	if c.NotifyResolve {

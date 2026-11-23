@@ -9,6 +9,7 @@
             @if(! ($compact ?? false) && $p->device)<a href="{{ route('devices.show', $p->device) }}">{{ $p->device->name }}</a>@if($p->device->site), {{ $p->device->site->code }}@endif, @endif
             @if($p->relationLoaded('incidents') && ($inc = $p->incidents->first()))<a class="inc-tag" href="{{ route('incidents.show', $inc) }}">Insiden #{{ $inc->id }}</a>, @endif
             @if($p->suppressed)<span style="color:var(--info)">{{ $p->suppressed_note }}</span>@else{{ $p->detail }}@endif
+            @if(! empty($impactLines[$p->device_id]) && $p->kind === 'down')<a class="impact-tag" href="{{ route('impact.index') }}">Dampak: {{ $impactLines[$p->device_id] }}</a>@endif
         </small>
     </td>
     <td class="nowrap" title="Mulai {{ $p->started_at->format('d/m/Y H:i:s') }}">

@@ -152,6 +152,12 @@
             </div></section>
         @endif
         @endcan
+        @if($impact && ($impactLine = \App\Services\Impact::line($impact)) !== '')
+        <section class="card"><div class="hd"><h2>{{ $device->status === 'down' ? 'Dampak sekarang' : 'Bila perangkat ini mati' }}</h2><a class="sub" href="{{ route('impact.index', ['sim' => [$device->id]]) }}#simulasi">Rincian</a></div><div class="bd">
+            <p style="margin:0">{{ ucfirst($impactLine) }}.</p>
+            @if($impact['services'])<p class="muted" style="margin:var(--space-2xs) 0 0">Layanan: {{ collect($impact['services'])->map(fn ($s) => $s['service']->name)->implode(', ') }}</p>@endif
+        </div></section>
+        @endif
         <section class="card"><div class="hd"><h2>Informasi</h2></div><div class="bd">
             <dl class="facts">
                 <dt>Site</dt><dd>{{ $device->site ? $device->site->code . ' (' . $device->site->name . ')' : 'tidak ada' }}</dd>

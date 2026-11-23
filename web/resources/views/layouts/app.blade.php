@@ -31,6 +31,7 @@
                 @if($probCount)<span class="count" title="{{ $probCount }} problem belum di-ACK">{{ $probCount }}</span>@endif</a>
             <a href="{{ route('incidents.index') }}" class="{{ $nav('incidents.*') }}"><x-icon name="flag"/>Insiden
                 @if($incCount)<span class="count" title="{{ $incCount }} insiden terbuka belum ditangani">{{ $incCount }}</span>@endif</a>
+            <a href="{{ route('impact.index') }}" class="{{ $nav('impact.*') }}"><x-icon name="layers"/>Dampak</a>
             <div class="grp">Pemantauan</div>
             <a href="{{ route('devices.index') }}" class="{{ $nav('devices.*') }}"><x-icon name="server"/>Perangkat
                 @if($downCount)<span class="count" title="{{ $downCount }} perangkat down">{{ $downCount }}</span>@endif</a>
