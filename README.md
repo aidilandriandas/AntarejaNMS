@@ -94,6 +94,8 @@ berlisensi tertutup milik perusahaan. Lihat [`LICENSE`](LICENSE), [`docs/CLEAN-R
 | **SNMP trap** | Penerima trap v1/v2c UDP 162. Dikenali: linkDown/linkUp (dengan nama port), coldStart/warmStart, authenticationFailure, trap UPS-MIB (pindah ke baterai, alarm). Trap link, restart, dan UPS memicu pembacaan SNMP perangkat itu saat itu juga, jadi status port dan sensor tidak menunggu putaran polling. Trap vendor lain tetap disimpan dengan OID dan isinya. Halaman *Pemantauan → Trap*, masuk Kejadian, retensi bawaan 30 hari |
 | Error & discard port | Laju error dan discard per menit (masuk + keluar) dihitung tiap putaran SNMP dari counter IF-MIB: kolom di daftar port perangkat, widget Ringkasan *Port dengan error*, metrik trigger (mis. error radio di atas 30/menit selama 10 menit), dan di API. Tanda awal kabel, konektor, atau link radio yang memburuk sebelum port benar-benar putus |
 | Port naik-turun | Perubahan status port (up/down) dicatat dari polling dan dari trap linkDown/linkUp (yang menangkap putus-sambung cepat di antara dua putaran). Port infrastruktur (dipantau, punya tetangga LLDP/CDP, atau sambungan manual) yang berubah ≥ 4 kali dalam 15 menit menjadi problem Average *Port naik-turun*, tertutup sendiri setelah stabil (ambang di halaman Notifikasi). Halaman port menampilkan riwayat putus-sambung 7 hari |
+| **Down bulanan** | *Laporan → Down bulanan*: persentase down tiap perangkat per bulan (3 sampai 24 bulan), total per site, warna merah bila melewati batas target SLA, CSV, API `/api/v1/downtime`. Rekap disimpan collector tiap jam ke tabel tersendiri (bulan lalu dikunci), jadi riwayat tetap ada walau perangkat dihapus atau data problem lama dibersihkan |
+| Alat diagnosa | Di halaman perangkat (engineer/admin): ping 10 paket dengan RTT per paket, traceroute, dan cek port TCP, dijalankan dari collector ke host perangkat itu saja. Tercatat di jejak audit |
 | **Backup** | Backup database harian otomatis (jam & jumlah simpanan diatur dari web) + tombol *Backup sekarang*, unduh dari web, pemulihan dengan `./antareja.sh restore`. Arahkan `BACKUP_DIR` ke NAS agar aman bila VM rusak |
 | **SLA bulanan** | Ketersediaan per perangkat & per site, downtime, jumlah gangguan, rata-rata waktu pulih; jam maintenance tidak dihitung; target SLA; ekspor CSV (Excel) & cetak/PDF |
 | **Laporan terjadwal** | Ringkasan harian (kemarin), mingguan (Senin–Minggu) atau bulanan otomatis ke kanal notifikasi: ketersediaan vs target, per site, perangkat dengan downtime terbesar, yang sedang down, problem baru per severity, reboot, perubahan konfigurasi, syslog error. Email tampil rapi (HTML + teks), Telegram ringkas. Pratinjau & *Kirim sekarang* dari web (admin) |
@@ -439,7 +441,7 @@ Apa yang berubah tiap versi, termasuk port baru yang perlu dibuka: [`CHANGELOG.m
 | `METRICS_RETENTION` | `400d` | Lama data grafik disimpan |
 | `TZ` | `Asia/Jakarta` | Zona waktu |
 | `BACKUP_DIR` | `./backups` | Folder backup (disarankan NAS) |
-| `ANTAREJA_TAG` | `0.3.0` | Label versi image |
+| `ANTAREJA_TAG` | `0.4.0` | Label versi image |
 
 Ambang problem, retensi syslog, jadwal backup, target SLA, dan sumber peta diatur dari web (admin).
 

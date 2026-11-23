@@ -4,7 +4,7 @@ WORKDIR /src
 COPY collector/go.mod collector/go.sum ./
 RUN go mod download
 COPY collector/ ./
-ARG VERSION=0.3.0
+ARG VERSION=0.4.0
 # timetzdata: zona waktu tertanam di biner (tidak perlu paket tzdata)
 RUN CGO_ENABLED=0 go build -trimpath -tags timetzdata -ldflags "-s -w -X main.version=${VERSION}" -o /out/antareja-collector ./cmd/antareja-collector
 

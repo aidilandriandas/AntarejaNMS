@@ -48,7 +48,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/trap"
 )
 
-var version = "0.3.0"
+var version = "0.4.0"
 
 func main() {
 	args := os.Args[1:]
@@ -205,6 +205,25 @@ func run() error {
 				}
 			}()
 		}
+
+		// Rekap down bulanan per perangkat (tiap jam)
+		go func() {
+			mr := &report.MonthlyRunner{DB: db, Log: log}
+			t := time.NewTicker(time.Hour)
+			defer t.Stop()
+			for {
+				rctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+				if err := mr.Run(rctx); err != nil && ctx.Err() == nil {
+					log.Warn("rekap down bulanan gagal", "galat", err)
+				}
+				cancel()
+				select {
+				case <-ctx.Done():
+					return
+				case <-t.C:
+				}
+			}
+		}()
 
 		reports := &report.Runner{DB: db, Notify: disp, Log: log, BaseURL: strings.TrimRight(cfg.BaseURL, "/")}
 		go func() {

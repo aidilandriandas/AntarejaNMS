@@ -49,7 +49,7 @@ class ApiController extends Controller
     public function index(): JsonResponse
     {
         return response()->json(['name' => 'ANTAREJA NMS API', 'version' => 1, 'app_version' => config('antareja.version'), 'time' => now()->toIso8601String(),
-            'endpoints' => ['/api/v1/sites', '/api/v1/devices', '/api/v1/devices/{id}', '/api/v1/problems', '/api/v1/incidents', '/api/v1/events', '/api/v1/anomalies', '/api/v1/services']]);
+            'endpoints' => ['/api/v1/sites', '/api/v1/devices', '/api/v1/devices/{id}', '/api/v1/problems', '/api/v1/incidents', '/api/v1/events', '/api/v1/anomalies', '/api/v1/services', '/api/v1/downtime']]);
     }
 
     public function sites(): JsonResponse
@@ -192,5 +192,20 @@ class ApiController extends Controller
                     'device_ids' => $c->devices->pluck('id')->values()])->values(),
                 'month' => ['availability_pct' => $x['availability'] ?? null, 'down_s' => (int) ($x['down'] ?? 0), 'outages' => $x['count'] ?? 0]];
         })->values()]);
+    }
+
+    /** Persen down per perangkat untuk satu bulan (?month=YYYY-MM, bawaan bulan berjalan). */
+    public function downtime(Request $r): JsonResponse
+    {
+        $month = (string) $r->query('month', now()->format('Y-m'));
+        if (! preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month)) {
+            return response()->json(['error' => 'month harus YYYY-MM'], 422);
+        }
+        $rows = DB::table('downtime_monthly')->where('month', $month . '-01')->orderBy('device_name')
+            ->get(['device_id', 'device_name', 'host', 'site', 'monitored_s', 'down_s', 'outages', 'final']);
+
+        return response()->json(['month' => $month, 'data' => $rows->map(fn ($x) => ['device_id' => $x->device_id, 'device' => $x->device_name,
+            'host' => $x->host, 'site' => $x->site, 'monitored_s' => (int) round($x->monitored_s), 'down_s' => (int) round($x->down_s),
+            'down_pct' => $x->monitored_s > 0 ? round($x->down_s / $x->monitored_s * 100, 4) : null, 'outages' => $x->outages, 'final' => (bool) $x->final])->values()]);
     }
 }

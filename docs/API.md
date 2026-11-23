@@ -38,6 +38,7 @@ Daftar memakai kursor: `limit` (1 sampai 500, bawaan 100), lalu `after_id` dari 
 | `GET /api/v1/incidents` | `status` (open, handling, recovered, closed; boleh dipisah koma), `since` | judul, severity, status, site, penanggung jawab, penyebab, tindakan, waktu dibuka/ditangani/pulih/ditutup, ID problem |
 | `GET /api/v1/events` | `since` (bawaan 24 jam terakhir), `kind` (down, up, reboot, flapping, latency_high, snmp_fail, snmp_ok, config_change, syslog, anomaly) | perangkat, jenis, pesan, durasi, waktu |
 | `GET /api/v1/anomalies` | `status` (open bawaan, all), `since` | metrik, port, arah, nilai, patokan, skor, mulai, selesai, ditandai wajar |
+| `GET /api/v1/downtime` | `month` (YYYY-MM, bawaan bulan berjalan) | per perangkat: detik dipantau, detik down, persen down, jumlah gangguan, final atau sementara |
 | `GET /api/v1/services` | | status sekarang per layanan dan komponen, target, ketersediaan bulan ini, downtime, jumlah gangguan |
 
 ## Contoh: menarik problem baru tiap menit

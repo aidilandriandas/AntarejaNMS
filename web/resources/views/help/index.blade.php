@@ -24,6 +24,7 @@
     <a href="#trap">SNMP trap</a>
     <a href="#topologi">Sinkron LLDP & diagnosa SNMP</a>
     <a href="#api">Integrasi lewat API</a>
+    <a href="#diag">Alat diagnosa & down bulanan</a>
     <a href="#noc">Layar NOC</a>
     <a href="#sensor">Ambang sensor bawaan</a>
     <a href="#istilah">Istilah</a>
@@ -178,6 +179,13 @@
     <ul class="help-list">
         <li>Sistem lain (SOC, dashboard manajemen) bisa membaca data ANTAREJA lewat <code>/api/v1</code> dengan token dari menu <i>Token API</i> (admin). API ini hanya membaca dan tidak pernah mengirim kredensial.</li>
         <li>Batasi token ke IP server pemakainya, beri masa berlaku, dan cabut bila tidak dipakai lagi. Daftar token menunjukkan kapan dan dari IP mana token terakhir dipakai.</li>
+    </ul>
+</div></section>
+
+<section class="card" id="diag"><div class="hd"><h2>Alat diagnosa & down bulanan</h2></div><div class="bd">
+    <ul class="help-list">
+        <li><b>Alat diagnosa</b> di halaman perangkat menjalankan ping, traceroute, atau cek port TCP dari server ANTAREJA ke perangkat itu. Bila traceroute berhenti sebelum tujuan, hop terakhir yang menjawab adalah titik yang perlu diperiksa (radio, switch, atau router di lokasi itu). Cek port berguna untuk kamera (554 RTSP), web perangkat (80/443), atau SSH (22).</li>
+        <li><b>Down bulanan</b> (menu Laporan) menunjukkan persen waktu down tiap perangkat per bulan, dengan rumus yang sama seperti SLA perangkat. Waktu di dalam maintenance tidak dihitung down. Angka bulan berjalan masih sementara dan dikunci setelah bulan berganti.</li>
     </ul>
 </div></section>
 

@@ -14,6 +14,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\DeviceImportController;
 use App\Http\Controllers\DiscoveryController;
+use App\Http\Controllers\DowntimeController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\MapController;
@@ -175,6 +176,8 @@ Route::middleware('auth')->group(function () {
     Route::get('laporan/insiden', [IncidentReportController::class, 'index'])->name('reports.incidents');
     Route::get('laporan/insiden.csv', [IncidentReportController::class, 'csv'])->name('reports.incidents.csv');
     Route::get('laporan/sla', [ReportController::class, 'sla'])->name('reports.sla');
+    Route::get('laporan/down-bulanan', [DowntimeController::class, 'index'])->name('reports.downtime');
+    Route::get('laporan/down-bulanan.csv', [DowntimeController::class, 'csv'])->name('reports.downtime.csv');
     Route::get('laporan/sla.csv', [ReportController::class, 'csv'])->name('reports.sla.csv');
     Route::get('topologi', [TopologyController::class, 'index'])->name('topology.index');
     Route::get('topologi/data', [TopologyController::class, 'data'])->name('topology.data');

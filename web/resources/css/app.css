@@ -498,6 +498,11 @@ table.t.logs td:nth-child(4) { font-size: var(--text-xs); white-space: nowrap; }
 .tool-out { margin-top: var(--space-sm); font-size: var(--text-sm); }
 .tool-out .t td, .tool-out .t th { padding-top: var(--space-3xs); padding-bottom: var(--space-3xs); }
 .tool-out .verdict { font-weight: 600; margin: 0 0 var(--space-xs); }
+.dt-matrix td.num, .dt-matrix th.num { min-width: 56px; }
+.dt-matrix td.dt-warn { color: var(--color-warn); font-weight: 600; }
+.dt-matrix td.dt-crit { color: var(--color-crit); font-weight: 700; }
+.dt-matrix td.muted { color: var(--color-muted); }
+.dt-matrix .dt-total td { border-top: 1px solid var(--color-rule-strong); font-weight: 600; }
 .notes { font-size: var(--text-sm); }
 .notes p { margin: 0; }
 .notes p + p { margin-top: var(--space-sm); }

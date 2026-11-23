@@ -1,5 +1,13 @@
 # Catatan perubahan ANTAREJA NMS
 
+## 0.4.0
+
+Pembaruan dari 0.3.0: ganti image lalu jalankan ulang; migrasi 0029 otomatis. Rekap 12 bulan ke belakang diisi
+sendiri oleh collector dari data problem yang masih ada.
+
+- **Down bulanan**: persen down per perangkat per bulan, total per site, CSV, API `/api/v1/downtime`; disimpan permanen.
+- **Alat diagnosa** di halaman perangkat: ping, traceroute, cek port TCP dari collector ke perangkat itu.
+
 ## 0.3.0
 
 Pembaruan dari 0.2.0: cukup ganti image lalu jalankan ulang (`./antareja.sh` atau `docker compose up -d`).
