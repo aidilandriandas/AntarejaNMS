@@ -19,6 +19,7 @@
     <a href="#kapasitas">Kapasitas port</a>
     <a href="#maintenance">Maintenance & perangkat induk</a>
     <a href="#piket">Jadwal piket</a>
+    <a href="#anomali">Anomali</a>
     <a href="#noc">Layar NOC</a>
     <a href="#sensor">Ambang sensor bawaan</a>
     <a href="#istilah">Istilah</a>
@@ -129,6 +130,15 @@
         <li>Di <i>Jadwal piket</i>, pakai <b>Buat rotasi</b> untuk mengisi seminggu atau sebulan sekaligus, mis. giliran 12 jam mulai 07.00 untuk Budi, Sari, Andi bergantian. Tukar giliran: tambah giliran pengganti, lalu hapus yang lama.</li>
         <li>Admin mencentang <b>Kirim ke yang sedang piket</b> di kanal email atau Telegram. Email dikirim ke semua yang sedang piket; Telegram ke orang piket pertama yang punya chat ID. Tujuan yang diisi di kanal tetap dipakai sebagai cadangan bila tidak ada yang piket.</li>
         <li>Supaya supervisor tetap tahu, biarkan kanal grup NOC atau kanal eskalasi (jeda 30 menit) seperti biasa; kanal piket berjalan di sampingnya.</li>
+    </ul>
+</div></section>
+
+<section class="card" id="anomali"><div class="hd"><h2>Anomali</h2></div><div class="bd">
+    <ul class="help-list">
+        <li>Anomali berbeda dari ambang tetap: patokannya kebiasaan perangkat itu sendiri pada jam yang sama. Trafik 80 Mbps siang hari bisa wajar, tetapi 80 Mbps jam 3 pagi di port yang biasanya 5 Mbps akan tercatat.</li>
+        <li>Yang paling berguna di tambang: <b>trafik anjlok</b> di port kamera atau NVR (streaming berhenti padahal perangkat masih bisa di-ping), dan <b>latensi naik</b> di radio PTP sebelum link benar-benar putus.</li>
+        <li>Bila anomali memang wajar (backup malam, pindah tiang kamera), tekan <b>Wajar</b> dan pilih berapa lama diabaikan. Untuk pola yang selalu berulang, lebih tepat pakai Maintenance.</li>
+        <li>Perangkat baru belum dinilai sampai punya data 7 hari di jam yang sama.</li>
     </ul>
 </div></section>
 

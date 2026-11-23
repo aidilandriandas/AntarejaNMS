@@ -30,6 +30,7 @@ class Problem extends Model
         'ip_conflict' => 'Konflik IP',
         'camera' => 'Gambar kamera',
         'custom' => 'Trigger custom',
+        'anomaly' => 'Anomali',
     ];
 
     protected function casts(): array

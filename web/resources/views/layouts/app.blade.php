@@ -41,6 +41,7 @@
             <a href="{{ route('ipam.index') }}" class="{{ $nav('ipam.*') }}"><x-icon name="grid"/>IPAM</a>
             <a href="{{ route('cctv.index') }}" class="{{ $nav('cctv.*') }}"><x-icon name="camera"/>CCTV</a>
             <a href="{{ route('events.index') }}" class="{{ $nav('events.*') }}"><x-icon name="pulse"/>Kejadian</a>
+            <a href="{{ route('anomalies.index') }}" class="{{ $nav('anomalies.*') }}"><x-icon name="wave"/>Anomali</a>
             <a href="{{ route('logs.index') }}" class="{{ $nav('logs.*') }}"><x-icon name="terminal"/>Log</a>
             <a href="{{ route('sites.index') }}" class="{{ $nav('sites.*') }}"><x-icon name="map-pin"/>Site</a>
             <a href="{{ route('triggers.index') }}" class="{{ $nav('triggers.*') }}"><x-icon name="bell"/>Trigger</a>

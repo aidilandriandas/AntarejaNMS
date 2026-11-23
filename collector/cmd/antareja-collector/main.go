@@ -27,12 +27,13 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/aidilandriandas/antarejanms/collector/internal/anomaly"
 	apiserver "github.com/aidilandriandas/antarejanms/collector/internal/api"
 	"github.com/aidilandriandas/antarejanms/collector/internal/cctv"
 	"github.com/aidilandriandas/antarejanms/collector/internal/config"
 	"github.com/aidilandriandas/antarejanms/collector/internal/configbak"
-	"github.com/aidilandriandas/antarejanms/collector/internal/incidents"
 	"github.com/aidilandriandas/antarejanms/collector/internal/discovery"
+	"github.com/aidilandriandas/antarejanms/collector/internal/incidents"
 	"github.com/aidilandriandas/antarejanms/collector/internal/migrate"
 	"github.com/aidilandriandas/antarejanms/collector/internal/notify"
 	"github.com/aidilandriandas/antarejanms/collector/internal/ping"
@@ -172,6 +173,32 @@ func run() error {
 			}
 		}()
 		defer srv.Close()
+
+		// Deteksi anomali: tiap 5 menit, mulai 2 menit setelah start supaya metrik 15 menit terakhir sudah ada
+		if cfg.VMURL != "" {
+			an := &anomaly.Runner{DB: db, VMURL: cfg.VMURL, Log: log}
+			go func() {
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(2 * time.Minute):
+				}
+				t := time.NewTicker(5 * time.Minute)
+				defer t.Stop()
+				for {
+					rctx, cancel := context.WithTimeout(ctx, 4*time.Minute)
+					if err := an.Run(rctx); err != nil && ctx.Err() == nil {
+						log.Warn("deteksi anomali gagal", "galat", err)
+					}
+					cancel()
+					select {
+					case <-ctx.Done():
+						return
+					case <-t.C:
+					}
+				}
+			}()
+		}
 
 		reports := &report.Runner{DB: db, Notify: disp, Log: log, BaseURL: strings.TrimRight(cfg.BaseURL, "/")}
 		go func() {

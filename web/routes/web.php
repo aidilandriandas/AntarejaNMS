@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AnomalyController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BackupController;
@@ -105,6 +106,8 @@ Route::middleware('auth')->group(function () {
         Route::post('maintenance/{maintenance}/akhiri', [MaintenanceController::class, 'finish'])->name('maintenance.finish');
         Route::delete('maintenance/{maintenance}', [MaintenanceController::class, 'destroy'])->name('maintenance.destroy');
         Route::post('piket', [OncallController::class, 'store'])->name('oncall.store');
+        Route::post('anomali/{anomaly}/wajar', [AnomalyController::class, 'dismiss'])->name('anomalies.dismiss')->whereNumber('anomaly');
+        Route::delete('anomali/abaikan', [AnomalyController::class, 'unmute'])->name('anomalies.unmute');
         Route::post('piket/rotasi', [OncallController::class, 'rotate'])->name('oncall.rotate');
         Route::delete('piket/{slot}', [OncallController::class, 'destroy'])->name('oncall.destroy')->whereNumber('slot');
 
@@ -149,6 +152,7 @@ Route::middleware('auth')->group(function () {
     Route::get('insiden/{incident}', [IncidentController::class, 'show'])->name('incidents.show')->whereNumber('incident');
     Route::get('maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
     Route::get('piket', [OncallController::class, 'index'])->name('oncall.index');
+    Route::get('anomali', [AnomalyController::class, 'index'])->name('anomalies.index');
     Route::get('sensor', [SensorController::class, 'index'])->name('sensors.index');
     Route::get('kualitas', [QualityController::class, 'index'])->name('quality.index');
     Route::get('cctv', [CctvController::class, 'index'])->name('cctv.index');
@@ -200,6 +204,7 @@ Route::middleware('auth')->group(function () {
         Route::get('audit', [AuditController::class, 'index'])->name('audit.index');
 
         Route::get('notifikasi', [ChannelController::class, 'index'])->name('channels.index');
+        Route::put('anomali/setelan', [AnomalyController::class, 'settings'])->name('anomalies.settings');
         Route::get('laporan/terjadwal', [ReportScheduleController::class, 'index'])->name('reports.schedules');
         Route::post('laporan/terjadwal', [ReportScheduleController::class, 'store'])->name('reports.schedules.store');
         Route::put('laporan/terjadwal/{schedule}', [ReportScheduleController::class, 'update'])->name('reports.schedules.update')->whereNumber('schedule');
