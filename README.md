@@ -403,6 +403,20 @@ kredensial). Daftar uji lengkap per jenis perangkat ada di [`docs/UJI-LAPANGAN.m
 | Arti warna/severity, cara ACK, istilah | Tombol **?** di kanan atas / menu *Panduan* |
 | Pindah ke VM baru | *Ekspor & impor* (dengan rahasia + frasa sandi) atau backup database + `.env` yang sama |
 
+## Tes otomatis (CI)
+
+Tiap push ke GitHub menjalankan `.github/workflows/ci.yml`: format dan vet Go, tes collector termasuk tes integrasi
+dengan PostgreSQL sungguhan, tes web (PHPUnit, termasuk audit hak akses seluruh rute), build aset, dan build kedua image Docker.
+Menjalankan sendiri di mesin pengembang (database tes wajib berakhiran `_test`):
+
+```bash
+cd collector && ANTAREJA_TEST_DATABASE_URL=postgres://USER:PASS@HOST:5432/antareja_go_test?sslmode=disable go test -p 1 ./...
+```
+
+```bash
+cd web && DB_HOST=HOST DB_USERNAME=USER DB_PASSWORD=PASS php vendor/bin/phpunit
+```
+
 ## Operasional server
 
 Semua dari folder `deploy`:

@@ -1,0 +1,101 @@
+# ANTAREJA NMS: tes otomatis tiap push dan pull request.
+# Database tes memakai PostgreSQL versi yang sama dengan produksi; nama database wajib berakhiran _test.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  collector:
+    name: Collector (Go)
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_USER: antareja
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: antareja_go_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U antareja" --health-interval 5s --health-timeout 5s --health-retries 20
+    defaults:
+      run:
+        working-directory: collector
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: collector/go.mod
+          cache-dependency-path: collector/go.sum
+      - name: Format (gofmt)
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && echo "jalankan gofmt -w" && exit 1)
+      - name: Vet
+        run: go vet ./...
+      - name: Tes (termasuk integrasi database)
+        env:
+          ANTAREJA_TEST_DATABASE_URL: postgres://antareja:ci-only-password@localhost:5432/antareja_go_test?sslmode=disable
+        run: go test -p 1 -count=1 ./...
+      - name: Build
+        run: CGO_ENABLED=0 go build -trimpath -o /tmp/antareja-collector ./cmd/antareja-collector
+
+  web:
+    name: Web (Laravel)
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_USER: antareja
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: antareja_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U antareja" --health-interval 5s --health-timeout 5s --health-retries 20
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: pdo_pgsql, intl, mbstring
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Composer
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Aset (Vite)
+        run: npm ci --no-audit --no-fund && npm run build
+      - name: PHPUnit
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: "5432"
+          DB_USERNAME: antareja
+          DB_PASSWORD: ci-only-password
+        run: php vendor/bin/phpunit
+
+  images:
+    name: Build image Docker
+    runs-on: ubuntu-24.04
+    needs: [collector, web]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Image collector
+        run: docker build -f collector/Dockerfile -t antareja-collector:ci .
+      - name: Image web
+        run: docker build -f web/Dockerfile -t antareja-web:ci .
+      - name: Versi collector
+        run: docker run --rm --entrypoint /usr/local/bin/antareja-collector antareja-collector:ci version
