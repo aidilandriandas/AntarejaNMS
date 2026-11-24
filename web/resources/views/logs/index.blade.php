@@ -5,7 +5,8 @@
 @section('content')
 <div class="page-head">
     <div><h1>Log{{ $device ? ': ' . $device->name : '' }}</h1><p>Syslog dari perangkat (UDP/TCP port {{ $port }}), dicocokkan ke perangkat lewat IP pengirim. Disimpan {{ $settings['keep'] }} hari.</p></div>
-    <label class="check" title="Muat ulang tiap 10 detik"><input type="checkbox" data-log-live> Live</label>
+    <div class="row-actions">@can('manage-devices')<a class="btn" href="{{ route('logs.rules') }}"><x-icon name="bell"/>Aturan log</a>@endcan
+    <label class="check" title="Muat ulang tiap 10 detik"><input type="checkbox" data-log-live> Live</label></div>
 </div>
 
 <div class="kpis">

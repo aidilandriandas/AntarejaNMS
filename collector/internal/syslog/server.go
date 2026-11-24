@@ -30,6 +30,9 @@ type Server struct {
 
 	ch      chan Message
 	devices atomic.Pointer[map[netip.Addr]int64]
+	sites   atomic.Pointer[map[int64]int64] // perangkat -> site, untuk aturan pola per site
+	rules   atomic.Pointer[[]*Rule]
+	counter Counter
 	buckets sync.Map // ip -> *bucket
 
 	Received, Stored, Dropped atomic.Int64
@@ -227,6 +230,18 @@ func (s *Server) refresh(ctx context.Context) {
 		}
 	}
 	s.devices.Store(&m)
+	st := map[int64]int64{}
+	if r2, err := s.DB.Query(ctx, `SELECT id, site_id FROM devices WHERE site_id IS NOT NULL`); err == nil {
+		for r2.Next() {
+			var id, site int64
+			if r2.Scan(&id, &site) == nil {
+				st[id] = site
+			}
+		}
+		r2.Close()
+	}
+	s.sites.Store(&st)
+	s.loadRules(ctx)
 }
 
 func (s *Server) deviceFor(src string) (netip.Addr, *int64) {
@@ -309,6 +324,7 @@ func (s *Server) store(ctx context.Context, batch []Message) error {
 		[]string{"received_at", "device_id", "source", "facility", "severity", "host", "app", "message"}, pgx.CopyFromRows(rows)); err != nil {
 		return err
 	}
+	s.applyRules(ctx, batch)
 	// Log kritis → kejadian perangkat (paling banyak 1 per perangkat per 10 menit agar tidak membanjiri)
 	seen := map[int64]bool{}
 	for _, e := range evs {
@@ -354,6 +370,7 @@ func (s *Server) housekeeping(ctx context.Context) {
 		case <-t.C:
 		}
 		s.refresh(ctx)
+		s.counter.Prune(time.Now(), 24*time.Hour)
 		if d := s.Dropped.Load(); d > lastDropped {
 			s.Log.Warn("syslog: pesan dibuang (batas laju/antrean penuh)", "jumlah", d-lastDropped)
 			lastDropped = d

@@ -33,6 +33,7 @@ class Problem extends Model
         'anomaly' => 'Anomali',
         'port_flap' => 'Port naik-turun',
         'check' => 'Cek layanan',
+        'log' => 'Pola log',
     ];
 
     protected function casts(): array

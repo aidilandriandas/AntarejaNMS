@@ -70,6 +70,11 @@ func (e *Engine) Run(ctx context.Context) (Outcome, error) {
 	} else {
 		res.Conds = append(res.Conds, CheckConds(cks, devs, time.Now())...)
 	}
+	if lh, err := e.loadLogHits(ctx); err != nil {
+		return out, err
+	} else {
+		res.Conds = append(res.Conds, LogConds(lh, devs)...)
+	}
 	out.Summary = Summary(res)
 
 	tx, err := e.DB.Begin(ctx)

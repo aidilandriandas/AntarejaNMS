@@ -16,6 +16,9 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - **Flow trafik** (NetFlow v5, v9, IPFIX di 2055/UDP; sFlow v5 di 6343/UDP): siapa dan aplikasi apa yang memakai
   bandwidth per port dan arah, ringkasan 5 menit (50 percakapan terbesar + lainnya), disimpan 7 hari; pemakai terbesar
   di halaman port. Hanya dari perangkat terdaftar. **Buka 2055/UDP dan 6343/UDP** dari subnet manajemen bila dipakai.
+- **Aturan log** (Log, *Aturan log*): pola teks atau regex pada syslog, N kali dalam jendela waktu per perangkat,
+  jadi problem *Pola log* dengan severity pilihan; bisa dibatasi tingkat log, program, site, atau perangkat; pulih
+  sendiri setelah sepi. *Uji ke log 24 jam* sebelum disimpan. Regex memakai RE2 (tanpa lookaround). Migrasi 0042.
 - **Akun terbatas per site** (Pengguna, ubah akun, *Site yang boleh dilihat*): viewer atau engineer hanya melihat
   Ringkasan, Problem, Perangkat, Sensor, dan Kejadian site terpilih; halaman lain ditolak. Engineer terbatas bisa
   ACK problem site-nya tetapi tidak mengubah perangkat. Admin selalu melihat semua site. Migrasi 0041.

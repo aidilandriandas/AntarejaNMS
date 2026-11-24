@@ -72,6 +72,7 @@ class AuthorizationAuditTest extends TestCase
             'collector' => DB::table('site_collectors')->insertGetId(['name' => 'QA collector', 'token_hash' => str_repeat('c', 64), 'token_hint' => 'acs_qa']),
             'check' => DB::table('service_checks')->insertGetId(['name' => 'QA cek', 'device_id' => $dev, 'type' => 'tcp', 'port' => 22]),
             'runbook' => DB::table('runbooks')->insertGetId(['title' => 'QA runbook', 'body' => 'langkah']),
+            'rule' => DB::table('syslog_rules')->insertGetId(['name' => 'QA', 'pattern' => 'x']),
             'point' => DB::table('modbus_points')->insertGetId(['device_id' => $dev, 'label' => 'QA', 'class' => 'other', 'address' => 1]),
             'link' => DB::table('device_links')->insertGetId(['a_device_id' => $dev, 'b_device_id' => DB::table('devices')->insertGetId(['name' => 'QA b', 'host' => '10.99.0.2'])]),
             'subnet' => DB::table('subnets')->insertGetId(['cidr' => '10.99.0.0/24']),
