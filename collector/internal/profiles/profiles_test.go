@@ -97,6 +97,33 @@ func TestMikrotikWireless(t *testing.T) {
 	}
 }
 
+func TestMikrotikLTE(t *testing.T) {
+	q := fakeQ{
+		mtxrHlVoltage: 120.0,
+		mtxrLTERSRP + ".9": -112.0, mtxrLTERSRQ + ".9": -11.0, mtxrLTESINR + ".9": 12.0, mtxrLTERSSI + ".9": -79.0,
+		ifName + ".9": "lte1",
+		mtxrLTERSRP + ".10": 0.0, // modem kedua belum terdaftar
+	}
+	rs := Collect(q, []string{"mikrotik"})
+	if r := find(rs, "lte:rsrp:9"); r == nil || r.Status != "warn" || r.Label != "RSRP (lte1)" || r.Group != "radio" {
+		t.Fatalf("RSRP lemah = warning: %+v", r)
+	}
+	if r := find(rs, "lte:rsrq:9"); r == nil || r.Status != "ok" {
+		t.Fatalf("RSRQ: %+v", r)
+	}
+	if r := find(rs, "lte:sinr:9"); r == nil || r.Value != 12 || r.Status != "ok" {
+		t.Fatalf("SINR: %+v", r)
+	}
+	if find(rs, "lte:rsrp:10") != nil {
+		t.Fatal("nilai 0 (belum terdaftar) dilewati")
+	}
+	r := Reading{Class: "lte_rsrp", Value: -118}
+	Judge(&r)
+	if r.Status != "crit" {
+		t.Fatalf("RSRP -118 kritis: %s", r.Status)
+	}
+}
+
 func TestUbiquitiAndUPS(t *testing.T) {
 	q := fakeQ{ubntWlSignal + ".1": -62.0, ubntWlCCQ + ".1": 45.0, ubntWlTxRate + ".1": 300000.0, ubntAMQuality + ".1": 88.0, ubntRadioDist + ".1": 4200.0}
 	rs := Collect(q, []string{"ubiquiti-airmax"})

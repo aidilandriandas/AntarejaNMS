@@ -28,6 +28,12 @@ const (
 	mtxrWlApNoise    = ".1.3.6.1.4.1.14988.1.1.1.3.1.9"
 	mtxrWlApCCQ      = ".1.3.6.1.4.1.14988.1.1.1.3.1.10"
 	mtxrWlRtabSignal = ".1.3.6.1.4.1.14988.1.1.1.2.1.3"
+	// mtxrLTEModemTable (mtxrLTEModem = mtXRouterOs 16), indeks = ifIndex interface LTE.
+	mtxrLTERSSI = ".1.3.6.1.4.1.14988.1.1.16.1.1.2" // dBm
+	mtxrLTERSRQ = ".1.3.6.1.4.1.14988.1.1.16.1.1.3" // dB
+	mtxrLTERSRP = ".1.3.6.1.4.1.14988.1.1.16.1.1.4" // dBm
+	mtxrLTESINR = ".1.3.6.1.4.1.14988.1.1.16.1.1.7" // dB
+	ifName      = ".1.3.6.1.2.1.31.1.1.1.1"
 )
 
 func init() {
@@ -113,6 +119,30 @@ func mikrotik(q Q) []Reading {
 			out = append(out, Reading{Key: "wl:freq-ap:" + idx, Class: "frequency", Label: "Frekuensi" + tag, Unit: "MHz", Value: v, Group: "radio"})
 		}
 	}
+	// Modem LTE/4G (router dengan modem bawaan atau USB): kualitas sinyal per interface LTE
+	lte := walks(q, map[string]string{"rssi": mtxrLTERSSI, "rsrq": mtxrLTERSRQ, "rsrp": mtxrLTERSRP, "sinr": mtxrLTESINR})
+	for _, idx := range sortedIdx(lte["rsrp"]) {
+		tag := " LTE"
+		if names, err := q.Get([]string{ifName + "." + idx}); err == nil {
+			if n := str(names[ifName+"."+idx]); n != "" {
+				tag = " (" + n + ")"
+			}
+		}
+		// 0 = modem belum terdaftar ke jaringan / nilai tidak tersedia
+		if v, ok := num(lte["rsrp"][idx]); ok && v != 0 {
+			out = append(out, Reading{Key: "lte:rsrp:" + idx, Class: "lte_rsrp", Label: "RSRP" + tag, Unit: "dBm", Value: v, Group: "radio"})
+		}
+		if v, ok := num(lte["rsrq"][idx]); ok && v != 0 {
+			out = append(out, Reading{Key: "lte:rsrq:" + idx, Class: "lte_rsrq", Label: "RSRQ" + tag, Unit: "dB", Value: v, Group: "radio"})
+		}
+		if v, ok := num(lte["sinr"][idx]); ok {
+			out = append(out, Reading{Key: "lte:sinr:" + idx, Class: "lte_sinr", Label: "SINR" + tag, Unit: "dB", Value: v, Group: "radio"})
+		}
+		if v, ok := num(lte["rssi"][idx]); ok && v != 0 {
+			out = append(out, Reading{Key: "lte:rssi:" + idx, Class: "lte_rssi", Label: "RSSI" + tag, Unit: "dBm", Value: v, Group: "radio"})
+		}
+	}
+
 	// Klien terlemah di registration table (sisi AP)
 	if rt, _ := q.Walk(mtxrWlRtabSignal); len(rt) > 0 {
 		weakest := 0.0

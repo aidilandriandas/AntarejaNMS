@@ -16,6 +16,8 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - **Flow trafik** (NetFlow v5, v9, IPFIX di 2055/UDP; sFlow v5 di 6343/UDP): siapa dan aplikasi apa yang memakai
   bandwidth per port dan arah, ringkasan 5 menit (50 percakapan terbesar + lainnya), disimpan 7 hari; pemakai terbesar
   di halaman port. Hanya dari perangkat terdaftar. **Buka 2055/UDP dan 6343/UDP** dari subnet manajemen bila dipakai.
+- **Sinyal 4G/LTE** modem MikroTik (RSRP, RSRQ, SINR, RSSI) di halaman Sensor tab Radio, jadi problem bila di bawah
+  ambang, bisa dipakai di trigger. Modem Teltonika belum didukung (MIB belum terverifikasi).
 - **Uji beban 1.012 perangkat** (lihat `docs/UJI-BEBAN.md`): ping 2,7 detik, SNMP 46,5 detik per putaran di 4 vCPU.
   Pencocokan ulang tetangga LLDP/CDP ditulis ulang lewat indeks (migrasi 0037), puncak CPU database 211% → 96%.
   Log putaran ping dan SNMP kini mencantumkan durasi.

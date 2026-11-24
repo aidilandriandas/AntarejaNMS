@@ -40,6 +40,8 @@ class Device extends Model
         'cpu' => ['CPU', '%', '80 / 95', 'pair'],
         'battery' => ['Muatan baterai UPS', '%', '50 / 20', 'pair'],
         'runtime' => ['Waktu cadangan UPS', 'menit', '15 / 5', 'pair'],
+        'lte_rsrp' => ['RSRP modem LTE', 'dBm', '-105 / -115', 'pair'],
+        'lte_sinr' => ['SINR modem LTE', 'dB', '3 / 0', 'pair'],
     ];
 
     public const CATEGORY_ICONS = [

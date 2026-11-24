@@ -275,6 +275,9 @@
         <tr><td>Suhu</td><td class="num">≥ 60 °C</td><td class="num">≥ 75 °C</td><td>Suhu CPU: 75 / 90 °C</td></tr>
         <tr><td>Sinyal radio</td><td class="num">≤ −70 dBm</td><td class="num">≤ −78 dBm</td><td>Makin negatif makin lemah</td></tr>
         <tr><td>CCQ / Quality (radio)</td><td class="num">≤ 70%</td><td class="num">≤ 50%</td><td>Kualitas link nirkabel</td></tr>
+        <tr><td>RSRP LTE</td><td class="num">≤ -105 dBm</td><td class="num">≤ -115 dBm</td><td>Kuat sinyal modem 4G</td></tr>
+        <tr><td>RSRQ LTE</td><td class="num">≤ -15 dB</td><td class="num">≤ -20 dB</td><td>Kualitas sinyal modem 4G</td></tr>
+        <tr><td>SINR LTE</td><td class="num">≤ 3 dB</td><td class="num">≤ 0 dB</td><td>Sinyal dibanding derau</td></tr>
         <tr><td>Baterai UPS</td><td class="num">≤ 50%</td><td class="num">≤ 20%</td><td>Muatan</td></tr>
         <tr><td>Waktu cadangan UPS</td><td class="num">≤ 15 menit</td><td class="num">≤ 5 menit</td><td></td></tr>
         <tr><td>Beban UPS</td><td class="num">≥ 80%</td><td class="num">≥ 95%</td><td></td></tr>
@@ -292,6 +295,7 @@
         <dt>SNMP</dt><dd>Protokol baca data perangkat (port, trafik, sensor). ANTAREJA hanya membaca, tidak pernah mengubah.</dd>
         <dt>Community / SNMPv3</dt><dd>"Kata sandi" SNMP. v3 lebih aman (terenkripsi).</dd>
         <dt>dBm</dt><dd>Satuan kekuatan sinyal radio (selalu negatif): −55 kuat, −70 cukup, −80 lemah.</dd>
+        <dt>RSRP, RSRQ, SINR</dt><dd>Ukuran sinyal modem 4G/LTE: kuat sinyal, kualitas, dan perbandingan sinyal dengan derau. Makin tinggi makin baik.</dd>
         <dt>CCQ</dt><dd>Client Connection Quality (MikroTik): efisiensi link nirkabel dalam %.</dd>
         <dt>Uptime</dt><dd>Lama perangkat menyala sejak boot terakhir; turun tiba-tiba = reboot.</dd>
         <dt>Syslog</dt><dd>Pesan log yang dikirim perangkat ke ANTAREJA (halaman Log).</dd>

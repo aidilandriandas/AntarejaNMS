@@ -8,7 +8,7 @@ perangkat dilewati tanpa galat. Kode: `collector/internal/profiles/`.
 |---|---|---|---|
 | `host-resources` | semua perangkat | HOST-RESOURCES-MIB (RFC 2790), UCD-SNMP-MIB | CPU (rata-rata hrProcessorLoad), memori (UCD bila ada, selain itu hrStorageRam), disk tetap |
 | `entity-sensor` | semua perangkat | ENTITY-SENSOR-MIB (RFC 3433), ENTITY-MIB | suhu, tegangan, kipas, daya, arus |
-| `mikrotik` | sysObjectID `.1.3.6.1.4.1.14988` atau probe `mtxrHlVoltage` | MIKROTIK-MIB | suhu board/CPU, tegangan input, gauge RouterOS 7; wireless station (sinyal, TX/RX rate, frekuensi), AP (klien, CCQ, noise, frekuensi), klien terlemah |
+| `mikrotik` | sysObjectID `.1.3.6.1.4.1.14988` atau probe `mtxrHlVoltage` | MIKROTIK-MIB | suhu board/CPU, tegangan input, gauge RouterOS 7; wireless station (sinyal, TX/RX rate, frekuensi), AP (klien, CCQ, noise, frekuensi), klien terlemah; modem LTE (mtxrLTEModemTable: RSRP, RSRQ, SINR, RSSI per interface) |
 | `ubiquiti-airmax` | sysObjectID `.1.3.6.1.4.1.41112` atau probe `ubntWlStatSignal.1` | UBNT-AirMAX-MIB | sinyal, CCQ, noise, TX/RX rate, station, airMAX quality & capacity, frekuensi, daya TX, jarak |
 | `cisco` | sysObjectID `.1.3.6.1.4.1.9.1` / `.9.12` | CISCO-PROCESS-MIB, CISCO-MEMORY-POOL-MIB, CISCO-ENVMON-MIB | CPU 5 menit, memori processor pool, suhu |
 | `ups-mib` | probe `upsBatteryStatus` | UPS-MIB (RFC 1628) | sumber output (normal/baterai/bypass), status & muatan baterai, perkiraan cadangan, beban, tegangan input, suhu baterai |
@@ -53,3 +53,12 @@ snmpwalk -v2c -c COMMUNITY -On IP-PERANGKAT .1.3.6.1.2.1.25 > host-resources.txt
 
 Untuk UPS tambahkan `.1.3.6.1.2.1.33`. Bandingkan nilai dengan tampilan perangkat (Winbox, airOS, panel UPS):
 bila berbeda, perbaiki skala di berkas profil dan catat model + versi firmware di komentar berkas.
+
+## Modem 4G/LTE
+
+Dibaca dari `mtxrLTEModemTable` MIKROTIK-MIB (`.1.3.6.1.4.1.14988.1.1.16.1.1`, kolom 2 RSSI, 3 RSRQ, 4 RSRP, 7 SINR,
+indeks = ifIndex interface LTE, label dari ifName). Nilai 0 dilewati (modem belum terdaftar ke jaringan). Ambang
+bawaan: RSRP -105 / -115 dBm, RSRQ -15 / -20 dB, SINR 3 / 0 dB; RSRP dan SINR bisa diatur per perangkat.
+
+Belum didukung: modem Teltonika dan merek lain (MIB-nya belum bisa diverifikasi). Untuk tahu kapan jalur cadangan
+LTE dipakai, buat trigger trafik pada port LTE (mis. masuk di atas 1 Mbps selama 5 menit).

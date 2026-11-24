@@ -139,6 +139,11 @@ var Limits = map[string]limit{
 	"battery":     {50, 20, true},   // muatan baterai %
 	"runtime":     {15, 5, true},    // menit
 	"load":        {80, 95, false},  // beban UPS %
+	// LTE: patokan umum kualitas sinyal 4G (RSRP < -105 dBm lemah, < -115 sangat lemah; RSRQ < -15 dB buruk;
+	// SINR < 3 dB buruk). Bisa diubah per perangkat lewat ambang khusus.
+	"lte_rsrp": {-105, -115, true},
+	"lte_rsrq": {-15, -20, true},
+	"lte_sinr": {3, 0, true},
 }
 
 // Judge mengisi Status dari ambang kelas bila profil belum menentukannya.

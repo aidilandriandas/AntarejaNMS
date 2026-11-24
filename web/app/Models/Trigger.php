@@ -29,6 +29,7 @@ class Trigger extends Model
         'noise' => 'Noise', 'ccq' => 'CCQ / kualitas link', 'rate' => 'Kecepatan link radio', 'distance' => 'Jarak link',
         'frequency' => 'Frekuensi', 'clients' => 'Jumlah klien', 'cpu' => 'CPU', 'memory' => 'Memori', 'disk' => 'Disk',
         'load' => 'Beban (UPS dll.)', 'battery' => 'Baterai', 'runtime' => 'Cadangan waktu UPS', 'fan' => 'Kipas', 'ups_status' => 'Status UPS',
+        'lte_rsrp' => 'RSRP LTE', 'lte_rsrq' => 'RSRQ LTE', 'lte_sinr' => 'SINR LTE', 'lte_rssi' => 'RSSI LTE',
         'fuel' => 'Bahan bakar (Modbus)', 'other' => 'Lainnya (Modbus)',
     ];
 

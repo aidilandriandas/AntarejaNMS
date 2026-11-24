@@ -15,6 +15,7 @@ class SensorController extends Controller
         'radio' => ['label' => 'Radio & PTP', 'cols' => [
             ['Sinyal', 'signal', 'worst'], ['CCQ', 'ccq', 'worst'], ['Kualitas', 'quality', 'worst'], ['Kapasitas', 'capacity', 'worst'],
             ['Noise', 'noise', 'first'], ['TX', 'rate', 'first'], ['Klien', 'clients', 'sum'], ['Frekuensi', 'frequency', 'first'], ['Jarak', 'distance', 'first'],
+            ['RSRP LTE', 'lte_rsrp', 'worst'], ['SINR LTE', 'lte_sinr', 'worst'],
         ]],
         'daya' => ['label' => 'Daya & UPS', 'cols' => [
             ['Status', 'ups_status', 'worst'], ['Baterai', 'battery', 'worst'], ['Cadangan', 'runtime', 'worst'], ['Beban', 'load', 'max'], ['Tegangan', 'voltage', 'worst'],
@@ -45,7 +46,7 @@ class SensorController extends Controller
                     $list->isEmpty() => null,
                     $how === 'sum' => ['text' => (string) (int) $list->sum('value'), 'status' => 'ok', 'n' => $list->count()],
                     $how === 'max' => $list->sortByDesc('value')->first(),
-                    $how === 'worst' => $list->sortBy(fn ($s) => [$rank[$s->status] ?? 3, $class === 'signal' ? $s->value : -$s->value])->first(),
+                    $how === 'worst' => $list->sortBy(fn ($s) => [$rank[$s->status] ?? 3, in_array($class, ['signal', 'lte_rsrp', 'lte_sinr', 'battery', 'runtime', 'ccq', 'quality', 'fuel'], true) ? $s->value : -$s->value])->first(),
                     default => $list->first(),
                 };
                 if ($cell instanceof DeviceSensor) {
