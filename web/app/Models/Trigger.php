@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 /** Trigger custom: aturan problem buatan engineer, dinilai collector setiap putaran. */
 class Trigger extends Model
 {
-    protected $fillable = ['name', 'enabled', 'severity', 'metric', 'sensor_class', 'match_text', 'op', 'threshold', 'duration_min',
+    protected $fillable = ['template_id', 'name', 'enabled', 'severity', 'metric', 'sensor_class', 'match_text', 'op', 'threshold', 'duration_min',
         'scope', 'site_id', 'category', 'days', 'start_min', 'end_min', 'note', 'created_by'];
 
     /** kunci => [label, satuan] */
@@ -82,6 +82,7 @@ class Trigger extends Model
             'site' => 'Site ' . ($this->site?->code ?? '?'),
             'category' => Device::CATEGORIES[$this->category] ?? $this->category,
             'devices' => $this->devices->count() . ' perangkat terpilih',
+            'template' => 'Templat ' . (\App\Models\DeviceTemplate::find($this->template_id)?->name ?? '?'),
             default => 'Semua perangkat',
         };
     }

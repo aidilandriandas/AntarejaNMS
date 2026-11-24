@@ -32,7 +32,7 @@ class SiteApiController extends Controller
         $devices = Device::where('collector_id', $c->id)->where('enabled', true)->orderBy('id')->get()->map(fn (Device $d) => [
             'id' => $d->id, 'name' => $d->name, 'host' => $d->host, 'category' => $d->category,
             'ping_enabled' => (bool) $d->ping_enabled, 'snmp_enabled' => (bool) $d->snmp_enabled,
-            'thresholds' => $d->thresholds ?: null,
+            'thresholds' => $d->effectiveThresholds() ?: null,
             'snmp' => $d->snmp_enabled ? array_filter([
                 'version' => $d->snmp_version, 'port' => (int) $d->snmp_port,
                 'community' => $d->snmp_version === '3' ? null : $open($d->snmp_community_enc),

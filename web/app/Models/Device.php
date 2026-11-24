@@ -51,7 +51,7 @@ class Device extends Model
 
     protected $fillable = [
         'name', 'host', 'site_id', 'parent_id', 'collector_id', 'category', 'enabled', 'notes', 'ping_enabled', 'snmp_enabled', 'snmp_version', 'snmp_port',
-        'snmp_v3_user', 'snmp_v3_level', 'snmp_v3_auth_proto', 'snmp_v3_priv_proto', 'cfg_type', 'ssh_port', 'ssh_user',
+        'snmp_v3_user', 'snmp_v3_level', 'snmp_v3_auth_proto', 'snmp_v3_priv_proto', 'cfg_type', 'ssh_port', 'ssh_user', 'template_id', 'macros',
     ];
 
     protected $hidden = ['snmp_community_enc', 'snmp_v3_auth_enc', 'snmp_v3_priv_enc', 'ssh_password_enc'];
@@ -73,6 +73,8 @@ class Device extends Model
             'last_loss_pct' => 'float',
             'last_jitter_ms' => 'float',
             'thresholds' => 'array',
+            'macros' => 'array',
+            'exporter_from_template' => 'boolean',
             'status_changed_at' => 'datetime',
             'last_ping_at' => 'datetime',
             'last_snmp_at' => 'datetime',
@@ -80,6 +82,17 @@ class Device extends Model
             'cfg_last_at' => 'datetime',
             'cfg_requested' => 'boolean',
         ];
+    }
+
+    public function template(): BelongsTo
+    {
+        return $this->belongsTo(DeviceTemplate::class, 'template_id');
+    }
+
+    /** Ambang yang berlaku: templat lalu ditimpa ambang perangkat sendiri (sama dengan collector). */
+    public function effectiveThresholds(): array
+    {
+        return array_merge($this->template?->thresholds ?? [], $this->thresholds ?? []);
     }
 
     public function site(): BelongsTo

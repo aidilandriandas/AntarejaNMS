@@ -65,6 +65,7 @@
             <a href="{{ route('traps.index') }}" class="{{ $nav('traps.*') }}"><x-icon name="bell"/>Trap</a>
             <a href="{{ route('sites.index') }}" class="{{ $nav('sites.*') }}"><x-icon name="map-pin"/>Site</a>
             <a href="{{ route('triggers.index') }}" class="{{ $nav('triggers.*') }}"><x-icon name="bell"/>Trigger</a>
+            @can('manage-devices')<a href="{{ route('templates.index') }}" class="{{ $nav('templates.*') }}"><x-icon name="layers"/>Templat</a>@endcan
             <a href="{{ route('maintenance.index') }}" class="{{ $nav('maintenance.*') }}"><x-icon name="wrench"/>Maintenance</a>
             <a href="{{ route('oncall.index') }}" class="{{ $nav('oncall.*') }}"><x-icon name="clock"/>Jadwal piket</a>
             <div class="grp">Laporan</div>

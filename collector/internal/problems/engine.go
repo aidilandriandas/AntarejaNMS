@@ -204,7 +204,7 @@ func (e *Engine) thresholds(ctx context.Context) (Thresholds, error) {
 
 func (e *Engine) load(ctx context.Context, th Thresholds) ([]Device, error) {
 	rows, err := e.DB.Query(ctx, `
-		SELECT d.id, d.name, d.category, COALESCE(d.site_id, 0), d.status, COALESCE(d.status_reason, ''), d.fail_streak, COALESCE(d.parent_id, 0), d.ping_enabled, d.snmp_enabled, d.thresholds,
+		SELECT d.id, d.name, d.category, COALESCE(d.site_id, 0), d.status, COALESCE(d.status_reason, ''), d.fail_streak, COALESCE(d.parent_id, 0), d.ping_enabled, d.snmp_enabled, (COALESCE((SELECT t.thresholds FROM device_templates t WHERE t.id = d.template_id), '{}'::jsonb) || d.thresholds),
 			COALESCE((SELECT m.title FROM maintenances m
 				WHERE now() >= m.starts_at AND now() < m.ends_at
 				  AND (m.scope = 'all' OR (m.scope = 'site' AND m.site_id = d.site_id)

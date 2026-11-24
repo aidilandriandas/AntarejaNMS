@@ -38,6 +38,8 @@
                 @foreach($parents as $p)<option value="{{ $p->id }}">{{ $p->name }} ({{ $p->host }})</option>@endforeach</select>
             <select class="input" name="collector_id" aria-label="Dipantau dari" data-show-if="action=collector"><option value="">Server pusat</option>
                 @foreach($collectors as $col)<option value="{{ $col->id }}">Collector site {{ $col->name }}</option>@endforeach</select>
+            <select class="input" name="template_id" aria-label="Templat" data-show-if="action=template"><option value="">Lepas templat</option>
+                @foreach(\App\Models\DeviceTemplate::orderBy('name')->get(['id', 'name']) as $tp)<option value="{{ $tp->id }}">{{ $tp->name }}</option>@endforeach</select>
             <select class="input" name="category" aria-label="Kategori" data-show-if="action=category">
                 @foreach(\App\Models\Device::CATEGORIES as $k => $v)<option value="{{ $k }}">{{ $v }}</option>@endforeach</select>
             <input class="input @error('confirm') is-err @enderror" name="confirm" placeholder="ketik HAPUS" aria-label="Konfirmasi hapus" autocomplete="off" data-show-if="action=delete">

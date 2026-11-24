@@ -19,7 +19,7 @@ type Trigger struct {
 	Op          string // > >= < <=
 	Threshold   float64
 	Duration    time.Duration
-	Scope       string // all | site | category | devices
+	Scope       string // all | site | category | devices | template (perangkat bertemplat itu)
 	SiteID      int64
 	Category    string
 	Devices     map[int64]bool
@@ -48,7 +48,7 @@ func (t Trigger) applies(d Device) bool {
 		return d.SiteID == t.SiteID
 	case "category":
 		return d.Category == t.Category
-	case "devices":
+	case "devices", "template":
 		return t.Devices[d.ID]
 	}
 	return true
@@ -266,7 +266,8 @@ func trimKey2(s string, n int) string {
 func (e *Engine) loadTriggers(ctx context.Context) ([]Trigger, map[int64][]PortVal, error) {
 	rows, err := e.DB.Query(ctx, `SELECT t.id, t.name, t.severity, t.metric, COALESCE(t.sensor_class, ''), lower(COALESCE(t.match_text, '')), t.op, t.threshold,
 			t.duration_min, t.scope, COALESCE(t.site_id, 0), COALESCE(t.category, ''), t.days, t.start_min, t.end_min,
-			COALESCE((SELECT array_agg(device_id) FROM trigger_devices td WHERE td.trigger_id = t.id), '{}')
+			CASE WHEN t.scope = 'template' THEN COALESCE((SELECT array_agg(id) FROM devices d WHERE d.template_id = t.template_id), '{}')
+				ELSE COALESCE((SELECT array_agg(device_id) FROM trigger_devices td WHERE td.trigger_id = t.id), '{}') END
 		FROM triggers t WHERE t.enabled ORDER BY t.id`)
 	if err != nil {
 		return nil, nil, err

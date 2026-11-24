@@ -28,7 +28,7 @@ class ConfigTransfer
     private const SETTING_PREFIX = ['threshold.', 'sla.', 'syslog.', 'backup.', 'map.', 'ipam.', 'anomaly.'];
 
     private const TRIGGER_OK = ['severity' => ['info', 'warning', 'average', 'high', 'disaster'], 'metric' => ['latency', 'loss', 'sensor', 'port_in', 'port_out', 'port_util', 'port_errors', 'port_discards'],
-        'op' => ['>', '>=', '<', '<='], 'scope' => ['all', 'site', 'category', 'devices']];
+        'op' => ['>', '>=', '<', '<='], 'scope' => ['all', 'site', 'category', 'devices', 'template']];
 
     private const CHANNEL_SECRET = ['telegram' => ['bot_token'], 'email' => ['password'], 'webhook' => ['url', 'secret']];
 
@@ -77,7 +77,9 @@ class ConfigTransfer
                     'parent' => $d->parent_id ? ($devKey[$d->parent_id] ?? null) : null, 'thresholds' => json_decode($d->thresholds ?: '{}', true) ?: (object) [],
                     'cfg_type' => $d->cfg_type, 'ssh_port' => $d->ssh_port, 'ssh_user' => $d->ssh_user, 'lat' => $d->lat, 'lng' => $d->lng, 'notes' => $d->notes,
                     'collector' => $d->collector_id ? ($collectorName[$d->collector_id] ?? null) : null,
-                    'exporter' => $d->exporter_url ? ['url' => $d->exporter_url, 'services' => $d->exporter_services] : null,
+                    'exporter' => $d->exporter_url && ! $d->exporter_from_template ? ['url' => $d->exporter_url, 'services' => $d->exporter_services] : null,
+                    'template' => $d->template_id ? DB::table('device_templates')->where('id', $d->template_id)->value('name') : null,
+                    'macros' => json_decode($d->macros ?? '{}', true) ?: (object) [],
                     'modbus' => ($d->modbus_port || isset($points[$d->id])) ? ['port' => $d->modbus_port, 'unit' => $d->modbus_unit,
                         'points' => ($points[$d->id] ?? collect())->map(fn ($p) => ['label' => $p->label, 'class' => $p->class, 'unit' => $p->unit, 'fn' => $p->fn,
                             'address' => $p->address, 'dtype' => $p->dtype, 'word_swap' => (bool) $p->word_swap, 'scale' => (float) $p->scale,
@@ -123,9 +125,19 @@ class ConfigTransfer
             'triggers' => DB::table('triggers')->orderBy('id')->get()->map(fn ($t) => ['name' => $t->name, 'enabled' => (bool) $t->enabled, 'severity' => $t->severity,
                 'metric' => $t->metric, 'sensor_class' => $t->sensor_class, 'match_text' => $t->match_text, 'op' => $t->op, 'threshold' => (float) $t->threshold,
                 'duration_min' => $t->duration_min, 'scope' => $t->scope, 'site' => $siteCode[$t->site_id] ?? null, 'category' => $t->category,
+                'template' => $t->template_id ? DB::table('device_templates')->where('id', $t->template_id)->value('name') : null,
                 'days' => $t->days, 'start_min' => $t->start_min, 'end_min' => $t->end_min, 'note' => $t->note,
                 'devices' => DB::table('trigger_devices')->where('trigger_id', $t->id)->pluck('device_id')->map(fn ($id) => $devKey[$id] ?? null)->filter()->values()])->values(),
-            'checks' => DB::table('service_checks')->orderBy('name')->get()->map(fn ($c) => ['name' => $c->name, 'device' => $devKey[$c->device_id] ?? null,
+            'templates' => DB::table('device_templates')->orderBy('name')->get()->map(fn ($t) => ['name' => $t->name, 'description' => $t->description,
+                'thresholds' => json_decode($t->thresholds ?: '{}', true) ?: (object) [], 'macros' => json_decode($t->macros ?: '{}', true) ?: (object) [],
+                'exporter_url' => $t->exporter_url, 'exporter_services' => $t->exporter_services,
+                'checks' => DB::table('template_checks')->where('template_id', $t->id)->orderBy('name')->get()->map(fn ($c) => collect((array) $c)
+                    ->only(['name', 'type', 'url', 'port', 'query', 'expect_status', 'expect_text', 'expect_answer', 'verify_tls', 'interval_s', 'timeout_s',
+                        'slow_ms', 'cert_warn_days', 'severity', 'enabled'])->all())->values()])->values(),
+            'syslog_rules' => DB::table('syslog_rules')->orderBy('name')->get()->map(fn ($r) => ['name' => $r->name, 'pattern' => $r->pattern, 'is_regex' => (bool) $r->is_regex,
+                'max_severity' => $r->max_severity, 'app' => $r->app, 'site' => $siteCode[$r->site_id] ?? null, 'device' => $r->device_id ? ($devKey[$r->device_id] ?? null) : null,
+                'min_count' => $r->min_count, 'window_s' => $r->window_s, 'clear_s' => $r->clear_s, 'severity' => $r->severity, 'enabled' => (bool) $r->enabled])->values(),
+            'checks' => DB::table('service_checks')->whereNull('template_check_id')->orderBy('name')->get()->map(fn ($c) => ['name' => $c->name, 'device' => $devKey[$c->device_id] ?? null,
                 'type' => $c->type, 'url' => $c->url, 'port' => $c->port, 'query' => $c->query, 'expect_status' => $c->expect_status, 'expect_text' => $c->expect_text,
                 'expect_answer' => $c->expect_answer, 'verify_tls' => (bool) $c->verify_tls, 'interval_s' => $c->interval_s, 'timeout_s' => $c->timeout_s,
                 'slow_ms' => $c->slow_ms, 'cert_warn_days' => $c->cert_warn_days, 'severity' => $c->severity, 'enabled' => (bool) $c->enabled])
@@ -184,7 +196,7 @@ class ConfigTransfer
         if ((int) ($d['version'] ?? 0) > self::VERSION) {
             throw new RuntimeException('Berkas dari versi ANTAREJA yang lebih baru, perbarui aplikasi dulu.');
         }
-        foreach (['sites', 'site_collectors', 'devices', 'links', 'subnets', 'cameras', 'channels', 'report_schedules', 'services', 'triggers', 'checks', 'runbooks'] as $k) {
+        foreach (['sites', 'site_collectors', 'devices', 'links', 'subnets', 'cameras', 'channels', 'report_schedules', 'services', 'triggers', 'checks', 'runbooks', 'templates', 'syslog_rules'] as $k) {
             $d[$k] = array_values(array_filter((array) ($d[$k] ?? []), 'is_array'));
         }
         $d['settings'] = is_array($d['settings'] ?? null) ? $d['settings'] : [];
@@ -220,6 +232,10 @@ class ConfigTransfer
         $p['checks'] = $this->count($d['checks'], fn ($x) => isset($ck[($x['name'] ?? '') . '|' . ($x['device']['name'] ?? '') . '|' . ($x['device']['host'] ?? '')]));
         $rb = DB::table('runbooks')->pluck('id', 'title');
         $p['runbooks'] = $this->count($d['runbooks'], fn ($x) => isset($rb[$x['title'] ?? '']));
+        $tp = DB::table('device_templates')->pluck('id', 'name');
+        $p['templates'] = $this->count($d['templates'], fn ($x) => isset($tp[$x['name'] ?? '']));
+        $sr = DB::table('syslog_rules')->pluck('id', 'name');
+        $p['syslog_rules'] = $this->count($d['syslog_rules'], fn ($x) => isset($sr[$x['name'] ?? '']));
         $p['modbus_points'] = ['total' => collect($d['devices'])->sum(fn ($x) => count((array) ($x['modbus']['points'] ?? [])))];
         if ($p['site_collectors']['new'] > 0) {
             $p['warnings'][] = 'Collector site baru dibuat dengan token acak yang tidak diketahui siapa pun: buka Collector site, klik Ganti token, lalu pasang token baru di site.';
@@ -337,7 +353,7 @@ class ConfigTransfer
             $sec = self::open($d['secrets'], $pass) + $sec;
         }
         $enc = fn (?string $v) => $v !== null && $v !== '' ? Crypt::encryptString($v) : null;
-        $res = ['site_collectors' => 0, 'checks' => 0, 'runbooks' => 0, 'modbus_points' => 0, 'sites' => 0, 'devices' => 0, 'links' => 0, 'subnets' => 0, 'cameras' => 0, 'channels' => 0, 'report_schedules' => 0, 'services' => 0, 'triggers' => 0, 'settings' => 0, 'skipped' => 0];
+        $res = ['templates' => 0, 'syslog_rules' => 0, 'site_collectors' => 0, 'checks' => 0, 'runbooks' => 0, 'modbus_points' => 0, 'sites' => 0, 'devices' => 0, 'links' => 0, 'subnets' => 0, 'cameras' => 0, 'channels' => 0, 'report_schedules' => 0, 'services' => 0, 'triggers' => 0, 'settings' => 0, 'skipped' => 0];
 
         DB::transaction(function () use ($d, $sec, $enc, &$res) {
             $now = now();
@@ -381,6 +397,42 @@ class ConfigTransfer
             }
             $collectorId = fn ($n) => is_string($n) && $n !== '' ? DB::table('site_collectors')->where('name', $n)->value('id') : null;
 
+            // Templat (dicocokkan lewat nama), sebelum perangkat supaya perangkat bisa merujuknya
+            foreach ($d['templates'] as $t) {
+                $name = self::str($t['name'] ?? null, 80);
+                if (! $name) {
+                    $res['skipped']++;
+                    continue;
+                }
+                $macros = collect(is_array($t['macros'] ?? null) ? $t['macros'] : [])->filter(fn ($v, $k) => preg_match(\App\Services\TemplateSync::MACRO_RE, (string) $k) && is_scalar($v))
+                    ->map(fn ($v) => mb_substr((string) $v, 0, 200))->all();
+                $eu = self::str($t['exporter_url'] ?? null, 255);
+                $row = ['description' => self::str($t['description'] ?? null, 500), 'thresholds' => json_encode(is_array($t['thresholds'] ?? null) ? $t['thresholds'] : (object) []),
+                    'macros' => json_encode((object) $macros), 'exporter_url' => $eu && preg_match('#^https?://[^\s@]+$#i', $eu) ? $eu : null,
+                    'exporter_services' => self::str($t['exporter_services'] ?? null, 500), 'updated_at' => $now];
+                $tid = DB::table('device_templates')->where('name', $name)->value('id');
+                $tid ? DB::table('device_templates')->where('id', $tid)->update($row) : ($tid = DB::table('device_templates')->insertGetId($row + ['name' => $name, 'created_at' => $now]));
+                if (is_array($t['checks'] ?? null)) {
+                    DB::table('template_checks')->where('template_id', $tid)->delete();
+                    foreach ($t['checks'] as $c) {
+                        if (! is_array($c) || ! in_array($c['type'] ?? null, ['http', 'tcp', 'dns'], true) || ! self::str($c['name'] ?? null, 128)) {
+                            continue;
+                        }
+                        DB::table('template_checks')->insert(['template_id' => $tid, 'name' => self::str($c['name'], 128), 'type' => $c['type'],
+                            'url' => self::str($c['url'] ?? null, 500), 'port' => self::str($c['port'] ?? null, 64), 'query' => self::str($c['query'] ?? null, 255),
+                            'expect_status' => self::str($c['expect_status'] ?? null, 32), 'expect_text' => self::str($c['expect_text'] ?? null, 200),
+                            'expect_answer' => self::str($c['expect_answer'] ?? null, 255), 'verify_tls' => (bool) ($c['verify_tls'] ?? true),
+                            'interval_s' => in_array((int) ($c['interval_s'] ?? 60), array_keys(\App\Models\ServiceCheck::INTERVALS), true) ? (int) $c['interval_s'] : 60,
+                            'timeout_s' => self::int($c['timeout_s'] ?? 10, 1, 60, 10), 'slow_ms' => is_numeric($c['slow_ms'] ?? null) ? self::int($c['slow_ms'], 1, 600000, 1000) : null,
+                            'cert_warn_days' => is_numeric($c['cert_warn_days'] ?? null) ? self::int($c['cert_warn_days'], 1, 365, 14) : null,
+                            'severity' => isset(\App\Models\Problem::SEVERITIES[$c['severity'] ?? '']) ? $c['severity'] : 'high', 'enabled' => (bool) ($c['enabled'] ?? true),
+                            'created_at' => $now, 'updated_at' => $now]);
+                    }
+                }
+                $res['templates']++;
+            }
+            $tplId = fn ($n) => is_string($n) && $n !== '' ? DB::table('device_templates')->where('name', $n)->value('id') : null;
+
             // Perangkat (induk diset setelah semua ada)
             $devId = fn (?array $k) => $k ? DB::table('devices')->where('name', $k['name'] ?? '')->where('host', $k['host'] ?? '')->value('id') : null;
             foreach ($d['devices'] as $x) {
@@ -401,6 +453,13 @@ class ConfigTransfer
                     'lat' => self::coord($x['lat'] ?? null, 90), 'lng' => self::coord($x['lng'] ?? null, 180), 'notes' => self::str($x['notes'] ?? null, 5000),
                     'collector_id' => $collectorId($x['collector'] ?? null),
                     'updated_at' => $now];
+                if (array_key_exists('template', $x)) {
+                    $row['template_id'] = $tplId($x['template']);
+                }
+                if (is_array($x['macros'] ?? null)) {
+                    $row['macros'] = json_encode((object) collect($x['macros'])->filter(fn ($v, $k) => preg_match(\App\Services\TemplateSync::MACRO_RE, (string) $k) && is_scalar($v))
+                        ->map(fn ($v) => mb_substr((string) $v, 0, 200))->all());
+                }
                 if (is_array($x['exporter'] ?? null)) {
                     $eu = self::str($x['exporter']['url'] ?? null, 255);
                     $pu = $eu ? parse_url($eu) : false;
@@ -572,6 +631,7 @@ class ConfigTransfer
                     'op' => $t['op'], 'threshold' => (float) $t['threshold'], 'duration_min' => self::int($t['duration_min'] ?? 5, 0, 1440, 5),
                     'scope' => $t['scope'], 'site_id' => $t['scope'] === 'site' ? $siteId($t['site'] ?? null) : null,
                     'category' => $t['scope'] === 'category' ? self::str($t['category'] ?? null, 24) : null,
+                    'template_id' => $t['scope'] === 'template' ? $tplId($t['template'] ?? null) : null,
                     'days' => self::int($t['days'] ?? 127, 1, 127, 127), 'start_min' => $sm !== null && $em !== null ? $sm : null, 'end_min' => $sm !== null && $em !== null ? $em : null,
                     'note' => self::str($t['note'] ?? null, 500), 'updated_at' => $now];
                 $tid = DB::table('triggers')->where('name', $name)->value('id');
@@ -600,6 +660,23 @@ class ConfigTransfer
                 $ex ? DB::table('service_checks')->where('id', $ex)->update($row + ['updated_at' => $now])
                     : DB::table('service_checks')->insert($row + ['device_id' => $dev, 'created_at' => $now, 'updated_at' => $now]);
                 $res['checks']++;
+            }
+
+            // Aturan log (dicocokkan lewat nama)
+            foreach ($d['syslog_rules'] as $r) {
+                $name = self::str($r['name'] ?? null, 80);
+                $pat = self::str($r['pattern'] ?? null, 300);
+                if (! $name || ! $pat || ($r['is_regex'] ?? false) && @preg_match('~' . str_replace('~', '\~', $pat) . '~iu', '') === false) {
+                    $res['skipped']++;
+                    continue;
+                }
+                DB::table('syslog_rules')->updateOrInsert(['name' => $name], ['pattern' => $pat, 'is_regex' => (bool) ($r['is_regex'] ?? false),
+                    'max_severity' => self::int($r['max_severity'] ?? 7, 0, 7, 7), 'app' => self::str($r['app'] ?? null, 64), 'site_id' => $siteId($r['site'] ?? null),
+                    'device_id' => is_array($r['device'] ?? null) ? $devId($r['device']) : null, 'min_count' => self::int($r['min_count'] ?? 1, 1, 10000, 1),
+                    'window_s' => self::int($r['window_s'] ?? 300, 60, 86400, 300), 'clear_s' => self::int($r['clear_s'] ?? 900, 60, 604800, 900),
+                    'severity' => isset(\App\Models\Problem::SEVERITIES[$r['severity'] ?? '']) ? $r['severity'] : 'warning', 'enabled' => (bool) ($r['enabled'] ?? true),
+                    'updated_at' => $now]);
+                $res['syslog_rules']++;
             }
 
             // Runbook (dicocokkan lewat judul)
@@ -631,6 +708,10 @@ class ConfigTransfer
                 $res['settings']++;
             }
         });
+        // perangkat bertemplat: pasang cek layanan dan exporter dari templat
+        foreach (Device::whereNotNull('template_id')->get() as $dev) {
+            \App\Services\TemplateSync::apply($dev);
+        }
 
         return $res;
     }

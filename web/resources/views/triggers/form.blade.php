@@ -40,7 +40,9 @@
     <div class="section-title">Berlaku untuk</div>
     <div class="row">
         <div class="field"><label for="scope">Perangkat</label><select class="input" id="scope" name="scope">
-            @foreach(['all' => 'Semua perangkat', 'site' => 'Satu site', 'category' => 'Satu kategori', 'devices' => 'Perangkat terpilih'] as $k => $lbl)<option value="{{ $k }}" @selected(old('scope', $t->scope) === $k)>{{ $lbl }}</option>@endforeach</select></div>
+            @foreach(['all' => 'Semua perangkat', 'site' => 'Satu site', 'category' => 'Satu kategori', 'devices' => 'Perangkat terpilih', 'template' => 'Perangkat bertemplat'] as $k => $lbl)<option value="{{ $k }}" @selected(old('scope', $t->scope) === $k)>{{ $lbl }}</option>@endforeach</select></div>
+        <div class="field" data-show-if="scope=template"><label for="template_id">Templat</label><select class="input @error('template_id') is-err @enderror" id="template_id" name="template_id"><option value="">Pilih templat</option>
+            @foreach(\App\Models\DeviceTemplate::orderBy('name')->get(['id', 'name']) as $tp)<option value="{{ $tp->id }}" @selected((int) old('template_id', $t->template_id) === $tp->id)>{{ $tp->name }}</option>@endforeach</select><x-field-error name="template_id"/></div>
         <div class="field" data-show-if="scope=site"><label for="site_id">Site</label><select class="input @error('site_id') is-err @enderror" id="site_id" name="site_id"><option value="">Pilih site</option>
             @foreach($sites as $s)<option value="{{ $s->id }}" @selected((int) old('site_id', $t->site_id) === $s->id)>{{ $s->code }} ({{ $s->name }})</option>@endforeach</select><x-field-error name="site_id"/></div>
         <div class="field" data-show-if="scope=category"><label for="category">Kategori</label><select class="input @error('category') is-err @enderror" id="category" name="category"><option value="">Pilih kategori</option>

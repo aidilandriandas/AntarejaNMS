@@ -40,7 +40,7 @@ type Store struct{ DB *pgxpool.Pool }
 
 const deviceCols = `id, name, host, ping_enabled, snmp_enabled, snmp_version, snmp_port,
 	snmp_community_enc, snmp_v3_user, snmp_v3_level, snmp_v3_auth_proto, snmp_v3_auth_enc, snmp_v3_priv_proto, snmp_v3_priv_enc,
-	status, status_changed_at, fail_streak, last_rtt_ms, snmp_ok, last_snmp_at, uptime_seconds, sys_object_id, category, thresholds, collector_id`
+	status, status_changed_at, fail_streak, last_rtt_ms, snmp_ok, last_snmp_at, uptime_seconds, sys_object_id, category, (COALESCE((SELECT t.thresholds FROM device_templates t WHERE t.id = devices.template_id), '{}'::jsonb) || devices.thresholds), collector_id`
 
 func scanDevice(r pgx.Row) (Device, error) {
 	var d Device

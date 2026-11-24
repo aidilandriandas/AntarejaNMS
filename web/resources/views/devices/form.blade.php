@@ -36,6 +36,14 @@
             </select>
             <div class="hint">Perangkat yang dilewati untuk menjangkau perangkat ini (mis. radio PTP atau switch distribusi). Bila induk down, problem perangkat ini ditandai <em>terdampak</em> dan tidak membanjiri notifikasi.</div>
             <x-field-error name="parent_id"/></div>
+        @if($templates->isNotEmpty())
+        <div class="field"><label for="template_id">Templat</label>
+            <select class="input @error('template_id') is-err @enderror" id="template_id" name="template_id"><option value="">Tanpa templat</option>
+                @foreach($templates as $tp)<option value="{{ $tp->id }}" @selected(old('template_id', $device->template_id) == $tp->id)>{{ $tp->name }}</option>@endforeach</select>
+            <div class="hint">Ambang, cek layanan, exporter, dan trigger dari <a href="{{ route('templates.index') }}">templat</a>. Ambang yang diisi di bawah menang atas ambang templat.</div><x-field-error name="template_id"/></div>
+        <div class="field"><label for="macros">Makro perangkat <span class="muted">(opsional)</span></label><textarea class="input mono @error('macros') is-err @enderror" id="macros" name="macros" rows="2" placeholder="PORT_WEB=8443">{{ old('macros', \App\Services\TemplateSync::macroText($device->macros)) }}</textarea>
+            <div class="hint">NAMA=nilai per baris, menimpa makro templat.</div><x-field-error name="macros"/></div>
+        @endif
         @if($collectors->isNotEmpty())
         <div class="field"><label for="collector_id">Dipantau dari</label>
             <select class="input @error('collector_id') is-err @enderror" id="collector_id" name="collector_id">
@@ -117,21 +125,7 @@
         <details class="thr" @if($errors->has('thr.*') || ! empty($device->thresholds)) open @endif>
             <summary class="section-title" style="cursor:pointer;list-style:none">Ambang khusus perangkat ini {{ ! empty($device->thresholds) ? '(' . count($device->thresholds) . ' diatur)' : '' }}</summary>
             <p class="hint muted" style="margin:10px 0">Kosongkan untuk memakai ambang bawaan. Contoh: radio PTP jarak jauh boleh latensi & sinyal lebih longgar daripada core switch.</p>
-            <div class="thr-grid">
-                @foreach(\App\Models\Device::THRESHOLDS as $k => [$label, $unit, $def, $type])
-                    @php($cur = $device->thresholds[$k] ?? null)
-                    <div class="field"><label>{{ $label }} <span class="muted">({{ $unit }})</span></label>
-                        @if($type === 'single')
-                            <input class="input" type="number" step="any" name="thr[{{ $k }}]" value="{{ old("thr.$k", $cur) }}" placeholder="bawaan {{ $def }}">
-                        @else
-                            <div class="row" style="gap:6px">
-                                <input class="input" type="number" step="any" name="thr[{{ $k }}][warn]" value="{{ old("thr.$k.warn", $cur[0] ?? null) }}" placeholder="peringatan" aria-label="{{ $label }} peringatan">
-                                <input class="input" type="number" step="any" name="thr[{{ $k }}][crit]" value="{{ old("thr.$k.crit", $cur[1] ?? null) }}" placeholder="kritis" aria-label="{{ $label }} kritis">
-                            </div><div class="hint">bawaan {{ $def }}</div>
-                        @endif
-                        <x-field-error :name="'thr.'.$k"/></div>
-                @endforeach
-            </div>
+            @include('partials.thresholds', ['values' => $device->thresholds ?? [], 'inherited' => $device->template?->thresholds ?? []])
         </details>
 
         @if($editing)

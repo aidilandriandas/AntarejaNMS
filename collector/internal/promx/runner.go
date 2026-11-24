@@ -157,7 +157,7 @@ type target struct {
 }
 
 func (r *Runner) load(ctx context.Context, onlyID int64, central bool) ([]target, error) {
-	rows, err := r.DB.Query(ctx, `SELECT id, name, exporter_url, exporter_services, thresholds FROM devices
+	rows, err := r.DB.Query(ctx, `SELECT id, name, exporter_url, exporter_services, (COALESCE((SELECT t.thresholds FROM device_templates t WHERE t.id = devices.template_id), '{}'::jsonb) || devices.thresholds) FROM devices
 		WHERE enabled AND exporter_url IS NOT NULL AND ($1 = 0 OR id = $1) AND (NOT $2 OR collector_id IS NULL) ORDER BY id`, onlyID, central)
 	if err != nil {
 		return nil, err

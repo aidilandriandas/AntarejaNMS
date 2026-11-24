@@ -21,6 +21,7 @@ class DeviceBulkController extends Controller
         'category' => 'Ubah kategori',
         'snmp' => 'Atur kredensial SNMP',
         'collector' => 'Pantau dari',
+        'template' => 'Pasang templat',
         'enable' => 'Aktifkan pemantauan',
         'disable' => 'Nonaktifkan pemantauan',
         'delete' => 'Hapus',
@@ -35,6 +36,7 @@ class DeviceBulkController extends Controller
             'site_id' => ['nullable', 'integer', 'exists:sites,id'],
             'parent_id' => ['nullable', 'integer', 'exists:devices,id'],
             'collector_id' => ['nullable', 'integer', 'exists:site_collectors,id'],
+            'template_id' => ['nullable', 'integer', 'exists:device_templates,id'],
             'category' => ['required_if:action,category', 'nullable', Rule::in(array_keys(Device::CATEGORIES))],
             'snmp_version' => ['required_if:action,snmp', 'nullable', Rule::in(['1', '2c', '3'])],
             'snmp_port' => ['nullable', 'integer', 'between:1,65535'],
@@ -88,6 +90,9 @@ class DeviceBulkController extends Controller
                         }
                         $dev->parent_id = $p;
                         break;
+                    case 'template':
+                        $dev->template_id = isset($d['template_id']) ? (int) $d['template_id'] : null;
+                        break;
                     case 'collector':
                         $dev->collector_id = isset($d['collector_id']) ? (int) $d['collector_id'] : null;
                         break;
@@ -124,6 +129,12 @@ class DeviceBulkController extends Controller
         });
 
         $msg = self::ACTIONS[$action] . ": {$changed} dari {$devices->count()} perangkat berubah.";
+        $warn = [];
+        if ($action === 'template') {
+            foreach ($devices as $dev) {
+                $warn = array_merge($warn, \App\Services\TemplateSync::apply($dev->fresh()));
+            }
+        }
         if ($skipped) {
             $msg .= ' Dilewati karena akan membuat rantai induk melingkar: ' . implode(', ', array_slice($skipped, 0, 10)) . (count($skipped) > 10 ? ', dan lainnya' : '') . '.';
         }
@@ -131,7 +142,7 @@ class DeviceBulkController extends Controller
             $msg .= ' Hasil SNMP muncul setelah putaran pemeriksaan berikutnya.';
         }
 
-        return back()->with('ok', $msg);
+        return back()->with('ok', $msg)->with('error', $warn ? implode(' ', array_slice($warn, 0, 5)) . (count($warn) > 5 ? ' Dan ' . (count($warn) - 5) . ' lainnya.' : '') : null);
     }
 
     /** Kredensial wajib lengkap, karena diterapkan ke perangkat yang belum tentu punya kredensial lama. */

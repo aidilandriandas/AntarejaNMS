@@ -44,7 +44,7 @@ class DeviceController extends Controller
     {
         return view('devices.form', ['device' => new Device(['enabled' => true, 'ping_enabled' => true, 'snmp_version' => '2c', 'snmp_port' => 161, 'category' => 'other']),
             'sites' => Site::orderBy('code')->get(), 'parents' => Device::orderBy('name')->get(['id', 'name', 'host']),
-            'collectors' => \App\Models\SiteCollector::with('site')->orderBy('name')->get()]);
+            'collectors' => \App\Models\SiteCollector::with('site')->orderBy('name')->get(), 'templates' => \App\Models\DeviceTemplate::orderBy('name')->get(['id', 'name'])]);
     }
 
     public function store(Request $request, Collector $collector)
@@ -53,9 +53,11 @@ class DeviceController extends Controller
         $this->fill($device, $request);
         $device->save();
         Audit::log('created', "Perangkat {$device->name} ({$device->host}) ditambahkan", $device);
+        $warn = \App\Services\TemplateSync::apply($device);
         $collector->pollNow($device->id);
 
-        return redirect()->route('devices.show', $device)->with('ok', "{$device->name} ditambahkan. Data pertama muncul dalam beberapa detik.");
+        return redirect()->route('devices.show', $device)->with('ok', "{$device->name} ditambahkan. Data pertama muncul dalam beberapa detik.")
+            ->with('error', $warn ? implode(' ', $warn) : null);
     }
 
     public function show(Device $device, Metrics $metrics)
@@ -109,7 +111,7 @@ class DeviceController extends Controller
     {
         return view('devices.form', ['device' => $device, 'sites' => Site::orderBy('code')->get(),
             'parents' => Device::whereKeyNot($device->id)->orderBy('name')->get(['id', 'name', 'host']),
-            'collectors' => \App\Models\SiteCollector::with('site')->orderBy('name')->get()]);
+            'collectors' => \App\Models\SiteCollector::with('site')->orderBy('name')->get(), 'templates' => \App\Models\DeviceTemplate::orderBy('name')->get(['id', 'name'])]);
     }
 
     public function update(Request $request, Device $device, Collector $collector)
@@ -118,9 +120,11 @@ class DeviceController extends Controller
         $changes = Audit::diff($device);
         $device->save();
         Audit::log('updated', "Perangkat {$device->name} diubah", $device, $changes);
+        $warn = \App\Services\TemplateSync::apply($device);
         $collector->pollNow($device->id);
 
-        return redirect()->route('devices.show', $device)->with('ok', "Perubahan {$device->name} disimpan.");
+        return redirect()->route('devices.show', $device)->with('ok', "Perubahan {$device->name} disimpan.")
+            ->with('error', $warn ? implode(' ', $warn) : null);
     }
 
     public function destroy(Device $device)
@@ -271,7 +275,7 @@ class DeviceController extends Controller
     }
 
     /** Ambang khusus dari form: kosong = pakai bawaan. Pasangan [peringatan, kritis] harus berbeda. */
-    private function thresholds(Request $r): array
+    public static function parseThresholds(Request $r): array
     {
         $out = [];
         foreach (Device::THRESHOLDS as $k => [$label, , , $type]) {
@@ -335,6 +339,8 @@ class DeviceController extends Controller
             'site_id' => ['nullable', 'integer', 'exists:sites,id'],
             'parent_id' => ['nullable', 'integer', 'exists:devices,id', Rule::notIn(array_filter([$device->id]))],
             'collector_id' => ['nullable', 'integer', 'exists:site_collectors,id'],
+            'template_id' => ['nullable', 'integer', 'exists:device_templates,id'],
+            'macros' => ['nullable', 'string', 'max:5000'],
             'category' => ['required', Rule::in(array_keys(Device::CATEGORIES))],
             'notes' => ['nullable', 'string', 'max:2000'],
             'enabled' => ['boolean'],
@@ -363,7 +369,12 @@ class DeviceController extends Controller
         if (! empty($d['parent_id']) && $device->exists && self::wouldLoop($device->id, (int) $d['parent_id'])) {
             throw \Illuminate\Validation\ValidationException::withMessages(['parent_id' => 'Perangkat induk tidak boleh berada di bawah perangkat ini (rantai melingkar).']);
         }
-        $device->thresholds = $this->thresholds($request);
+        $device->thresholds = self::parseThresholds($request);
+        [$macros, $badMacro] = \App\Services\TemplateSync::parseMacros($d['macros'] ?? '');
+        if ($badMacro) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['macros' => 'Baris makro tidak sah: ' . implode('; ', array_slice($badMacro, 0, 3)) . '. Format: NAMA=nilai.']);
+        }
+        $d['macros'] = $macros;
         foreach (['enabled', 'ping_enabled', 'snmp_enabled'] as $b) {
             $d[$b] = $request->boolean($b);
         }
