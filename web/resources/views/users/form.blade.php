@@ -16,6 +16,12 @@
         <div class="field"><label for="role">Peran</label><select class="input" id="role" name="role">
             @foreach(\App\Models\User::ROLES as $k => $v)<option value="{{ $k }}" @selected(old('role', $user->role) === $k)>{{ $v }}</option>@endforeach</select></div>
     </div>
+    @if($sites->isNotEmpty())
+    <fieldset class="field"><legend>Site yang boleh dilihat</legend>
+        <div class="check-grid">@foreach($sites as $s)<label class="check"><input type="checkbox" name="sites[]" value="{{ $s->id }}" @checked(in_array($s->id, old('sites', $userSites)))><span>{{ $s->code }}<small>{{ $s->name }}</small></span></label>@endforeach</div>
+        <div class="hint">Kosongkan untuk semua site. Akun terbatas hanya melihat Ringkasan, Problem, Perangkat, Sensor, dan Kejadian site terpilih; engineer terbatas bisa ACK problem tetapi tidak mengubah perangkat. Admin selalu melihat semua site.</div>
+        <x-field-error name="sites"/></fieldset>
+    @endif
     <div class="row">
         <div class="field"><label for="telegram_chat_id">Chat ID Telegram <span class="muted">(opsional)</span></label><input class="input @error('telegram_chat_id') is-err @enderror" id="telegram_chat_id" name="telegram_chat_id" inputmode="numeric" value="{{ old('telegram_chat_id', $user->telegram_chat_id) }}">
             <div class="hint">Dipakai kanal Telegram yang dikirim ke yang sedang piket.</div><x-field-error name="telegram_chat_id"/></div>

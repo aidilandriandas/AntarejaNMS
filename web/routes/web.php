@@ -73,6 +73,10 @@ Route::middleware('auth')->group(function () {
     Route::put('ringkasan/susunan', [DashboardController::class, 'layout'])->name('dashboard.layout');
 
     Route::get('perangkat', [DeviceController::class, 'index'])->name('devices.index');
+    Route::middleware('can:ack-problems')->group(function () {
+        Route::post('problem/{problem}/ack', [ProblemController::class, 'ack'])->name('problems.ack');
+        Route::delete('problem/{problem}/ack', [ProblemController::class, 'unack'])->name('problems.unack');
+    });
     Route::middleware('can:manage-devices')->group(function () {
         Route::get('perangkat/tambah', [DeviceController::class, 'create'])->name('devices.create');
         Route::get('perangkat/impor', [DeviceImportController::class, 'form'])->name('devices.import');
@@ -138,8 +142,6 @@ Route::middleware('auth')->group(function () {
         Route::post('insiden/{incident}/analisis', [IncidentController::class, 'rca'])->name('incidents.rca')->whereNumber('incident');
         Route::post('insiden/{incident}/tutup', [IncidentController::class, 'close'])->name('incidents.close')->whereNumber('incident');
         Route::post('insiden/{incident}/buka', [IncidentController::class, 'reopen'])->name('incidents.reopen')->whereNumber('incident');
-        Route::post('problem/{problem}/ack', [ProblemController::class, 'ack'])->name('problems.ack');
-        Route::delete('problem/{problem}/ack', [ProblemController::class, 'unack'])->name('problems.unack');
 
         Route::post('maintenance', [MaintenanceController::class, 'store'])->name('maintenance.store');
         Route::post('maintenance/{maintenance}/akhiri', [MaintenanceController::class, 'finish'])->name('maintenance.finish');

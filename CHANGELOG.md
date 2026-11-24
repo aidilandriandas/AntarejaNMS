@@ -16,6 +16,9 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - **Flow trafik** (NetFlow v5, v9, IPFIX di 2055/UDP; sFlow v5 di 6343/UDP): siapa dan aplikasi apa yang memakai
   bandwidth per port dan arah, ringkasan 5 menit (50 percakapan terbesar + lainnya), disimpan 7 hari; pemakai terbesar
   di halaman port. Hanya dari perangkat terdaftar. **Buka 2055/UDP dan 6343/UDP** dari subnet manajemen bila dipakai.
+- **Akun terbatas per site** (Pengguna, ubah akun, *Site yang boleh dilihat*): viewer atau engineer hanya melihat
+  Ringkasan, Problem, Perangkat, Sensor, dan Kejadian site terpilih; halaman lain ditolak. Engineer terbatas bisa
+  ACK problem site-nya tetapi tidak mengubah perangkat. Admin selalu melihat semua site. Migrasi 0041.
 - **Exporter Prometheus**: server Linux (node_exporter) dan Windows (windows_exporter) dipantau tanpa SNMP. CPU,
   memori, disk per mount atau drive, dan status layanan pilihan (unit systemd, layanan Windows) jadi sensor dan
   problem. Diatur di halaman perangkat, *Uji scrape* untuk mencoba, ikut ekspor/impor dan collector site. API

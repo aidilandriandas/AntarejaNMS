@@ -26,7 +26,7 @@
             <span class="badge warn plain">belum ACK</span>
         @endif
     </td>
-    @can('manage-devices')
+    @can('ack-problems')
     <td class="right">
         @if(! $p->resolved_at && ! $p->acked_at)
             <details class="ack">

@@ -9,7 +9,7 @@
     @foreach($users as $u)
         <tr class="{{ $u->active ? '' : 'is-off' }}">
             <td class="name">{{ $u->name }}<small class="mono">{{ $u->username }}{{ $u->email ? ', ' . $u->email : '' }}</small></td>
-            <td><span class="badge plain {{ $u->role === 'admin' ? 'info' : '' }}">{{ $u->roleLabel() }}</span> @if($u->auth_source === 'ldap')<span class="badge plain">LDAP</span>@endif</td>
+            <td><span class="badge plain {{ $u->role === 'admin' ? 'info' : '' }}">{{ $u->roleLabel() }}</span> @if($u->auth_source === 'ldap')<span class="badge plain">LDAP</span>@endif @if(isset($limits[$u->id]))<span class="badge warn plain" title="Hanya melihat site ini">{{ $limits[$u->id]->pluck('code')->implode(', ') }}</span>@endif</td>
             <td>{!! $u->active ? '<span class="badge ok">aktif</span>' : '<span class="badge">nonaktif</span>' !!}</td>
             <td>{!! $u->totp_enabled_at ? '<span class="badge ok">aktif</span>' : '<span class="muted">tidak</span>' !!}</td>
             <td>{{ $u->last_login_at?->diffForHumans() ?? 'belum pernah' }}</td>

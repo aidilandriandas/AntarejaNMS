@@ -17,6 +17,10 @@ class DashboardController extends Controller
     public function __invoke(Request $request)
     {
         $layout = Dashboard::normalize($request->user()->dashboard);
+        if (\App\Support\SiteScope::current() !== null) {
+            // akun terbatas site: hanya widget yang datanya ikut terfilter
+            $layout = array_values(array_filter($layout, fn ($w) => in_array($w['k'], ['problems', 'slow', 'events', 'sites'], true)));
+        }
         $on = array_flip(array_column($layout, 'k'));
         $active = Device::where('enabled', true);
         $counts = (clone $active)->selectRaw("count(*) total, count(*) filter (where status = 'up') up, count(*) filter (where status = 'down') down,

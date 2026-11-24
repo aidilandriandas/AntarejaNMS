@@ -43,7 +43,7 @@ class AuthorizationAuditTest extends TestCase
             if (! $methods || str_starts_with($r->uri(), 'api/') || in_array($r->uri(), self::OPEN_WRITE, true)) {
                 continue;
             }
-            if (! in_array($gate, ['can:manage-devices', 'can:admin'], true)) {
+            if (! in_array($gate, ['can:manage-devices', 'can:admin', 'can:ack-problems'], true)) {
                 $bad[] = implode('|', $methods) . ' ' . $r->uri();
             }
         }
@@ -87,7 +87,7 @@ class AuthorizationAuditTest extends TestCase
         $fail = [];
         $checked = 0;
         foreach ($this->gated() as [$r, $gate]) {
-            if (! in_array($gate, ['can:manage-devices', 'can:admin'], true)) {
+            if (! in_array($gate, ['can:manage-devices', 'can:admin', 'can:ack-problems'], true)) {
                 continue;
             }
             $uri = preg_replace_callback('/\{(\w+)\??\}/', function ($m) use ($ids, &$fail, $r) {

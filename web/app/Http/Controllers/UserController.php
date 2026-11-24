@@ -13,17 +13,24 @@ class UserController extends Controller
 {
     public function index()
     {
-        return view('users.index', ['users' => User::orderBy('username')->get()]);
+        return view('users.index', ['users' => User::orderBy('username')->get(),
+            'limits' => DB::table('user_sites as us')->join('sites as s', 's.id', '=', 'us.site_id')->orderBy('s.code')->get(['us.user_id', 's.code'])->groupBy('user_id')]);
     }
 
     public function create()
     {
-        return view('users.form', ['user' => new User(['role' => 'viewer', 'active' => true])]);
+        return view('users.form', ['user' => new User(['role' => 'viewer', 'active' => true]), 'sites' => \App\Models\Site::orderBy('code')->get(), 'userSites' => []]);
     }
 
     public function store(Request $request)
     {
-        $user = User::create($this->validated($request));
+        $sites = $this->sites($request);
+        $user = DB::transaction(function () use ($request, $sites) {
+            $user = User::create($this->validated($request));
+            $this->syncSites($user, $sites);
+
+            return $user;
+        });
         Audit::log('created', "Akun {$user->username} ({$user->roleLabel()}) dibuat", $user);
 
         return redirect()->route('users.index')->with('ok', "Akun {$user->username} dibuat.");
@@ -31,16 +38,18 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        return view('users.form', ['user' => $user]);
+        return view('users.form', ['user' => $user, 'sites' => \App\Models\Site::orderBy('code')->get(),
+            'userSites' => DB::table('user_sites')->where('user_id', $user->id)->pluck('site_id')->map(fn ($v) => (int) $v)->all()]);
     }
 
     public function update(Request $request, User $user)
     {
         $data = $this->validated($request, $user);
+        $sites = $this->sites($request);
         if (($data['password'] ?? '') === '' || $user->auth_source === 'ldap') {
             unset($data['password']);
         }
-        DB::transaction(function () use ($user, $data) {
+        DB::transaction(function () use ($user, $data, $sites) {
             $user->fill($data);
             // Jangan sampai tidak ada admin aktif sama sekali
             if ($user->getOriginal('role') === 'admin' && $user->getOriginal('active') && (! $user->active || $user->role !== 'admin')
@@ -49,6 +58,11 @@ class UserController extends Controller
             }
             $changes = Audit::diff($user);
             $user->save();
+            $old = DB::table('user_sites')->where('user_id', $user->id)->orderBy('site_id')->pluck('site_id')->map(fn ($v) => (int) $v)->all();
+            $this->syncSites($user, $sites);
+            if ($old !== $sites) {
+                $changes['sites'] = [$old, $sites];
+            }
             Audit::log('updated', "Akun {$user->username} diubah", $user, $changes);
         });
 
@@ -67,6 +81,26 @@ class UserController extends Controller
             'telegram_chat_id' => ['nullable', 'string', 'max:32', 'regex:/^-?\d{3,20}$/'],
             'phone' => ['nullable', 'string', 'max:32', 'regex:/^\+?[0-9 ()]{6,30}$/'],
         ];
+    }
+
+    /** Site yang boleh dilihat (kosong = semua). Admin tidak bisa dibatasi. */
+    private function sites(Request $r): array
+    {
+        $ids = $r->validate(['sites' => ['array', 'max:200'], 'sites.*' => ['integer', 'exists:sites,id']])['sites'] ?? [];
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        sort($ids);
+        if ($ids && $r->input('role') === 'admin') {
+            throw \Illuminate\Validation\ValidationException::withMessages(['sites' => 'Admin selalu melihat semua site. Pilih peran engineer atau viewer untuk akun terbatas.']);
+        }
+
+        return $ids;
+    }
+
+    private function syncSites(User $user, array $ids): void
+    {
+        DB::table('user_sites')->where('user_id', $user->id)->delete();
+        DB::table('user_sites')->insert(array_map(fn ($s) => ['user_id' => $user->id, 'site_id' => $s], $ids));
+        \App\Support\SiteScope::forget($user->id);
     }
 
     private function validated(Request $r, ?User $user = null): array

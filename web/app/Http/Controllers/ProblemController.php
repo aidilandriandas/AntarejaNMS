@@ -30,7 +30,7 @@ class ProblemController extends Controller
         $problems = $q->paginate(50)->withQueryString();
         $impactLines = [];
         $downIds = $problems->filter(fn ($p) => $p->kind === 'down' && ! $p->resolved_at && ! $p->suppressed)->pluck('device_id')->unique();
-        if ($downIds->isNotEmpty()) {
+        if ($downIds->isNotEmpty() && \App\Support\SiteScope::current() === null) { // dampak lintas site tidak ditampilkan ke akun terbatas
             $impact = new \App\Services\Impact;
             foreach ($downIds as $id) {
                 $impactLines[$id] = \App\Services\Impact::line($impact->of([$id]));

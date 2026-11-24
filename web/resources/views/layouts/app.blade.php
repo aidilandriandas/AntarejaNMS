@@ -2,7 +2,8 @@
     $u = auth()->user();
     $downCount = \App\Models\Device::where('enabled', true)->where('status', 'down')->count();
     $probCount = \App\Models\Problem::whereNull('resolved_at')->whereNull('acked_at')->whereNull('suppressed')->count();
-    $incCount = \App\Models\Incident::where('status', 'open')->count();
+    $limited = \App\Support\SiteScope::current() !== null;
+    $incCount = $limited ? 0 : \App\Models\Incident::where('status', 'open')->count();
     [$sysStale, $sysAlerts, $sysBeat] = \App\Http\Controllers\SystemController::brief();
     $sysIssue = $sysStale || $sysAlerts > 0;
     $nav = fn (string $pattern) => request()->routeIs($pattern) ? 'on' : '';
@@ -26,6 +27,17 @@
         <a class="brand" href="{{ route('dashboard') }}"><img class="mark" src="/brand/logo.png" alt="" width="34" height="34"><span><b>ANTAREJA</b><small>NETWORK MONITORING</small></span></a>
         <nav class="nav">
             <a href="{{ route('dashboard') }}" class="{{ $nav('dashboard') }}"><x-icon name="home"/>Ringkasan</a>
+            @if($limited)
+            <a href="{{ route('problems.index') }}" class="{{ $nav('problems.*') }}"><x-icon name="alert"/>Problem
+                @if($probCount)<span class="count" title="{{ $probCount }} problem belum di-ACK">{{ $probCount }}</span>@endif</a>
+            <a href="{{ route('devices.index') }}" class="{{ $nav('devices.*') }}"><x-icon name="server"/>Perangkat
+                @if($downCount)<span class="count" title="{{ $downCount }} perangkat down">{{ $downCount }}</span>@endif</a>
+            <a href="{{ route('sensors.index') }}" class="{{ $nav('sensors.*') }}"><x-icon name="gauge"/>Sensor</a>
+            <a href="{{ route('events.index') }}" class="{{ $nav('events.*') }}"><x-icon name="pulse"/>Kejadian</a>
+            <a href="{{ route('help') }}" class="{{ $nav('help') }}"><x-icon name="info"/>Panduan</a>
+            <div class="grp">Akses terbatas</div>
+            <p class="nav-note">Akun ini hanya melihat site {{ \App\Models\Site::orderBy('code')->pluck('code')->implode(', ') }}.</p>
+            @else
             <a href="{{ route('noc') }}"><x-icon name="monitor"/>Layar NOC</a>
             <a href="{{ route('problems.index') }}" class="{{ $nav('problems.*') }}"><x-icon name="alert"/>Problem
                 @if($probCount)<span class="count" title="{{ $probCount }} problem belum di-ACK">{{ $probCount }}</span>@endif</a>
@@ -74,6 +86,7 @@
                 <a href="{{ route('system.index') }}" class="{{ $nav('system.*') }}"><x-icon name="pulse"/>Kesehatan sistem
                     @if($sysIssue)<span class="count" title="Ada masalah sistem">!</span>@endif</a>
             @endcan
+            @endif
         </nav>
         <div class="side-foot">ANTAREJA NMS v{{ config('antareja.version') }}</div>
     </aside>

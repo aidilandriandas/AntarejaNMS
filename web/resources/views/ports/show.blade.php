@@ -74,7 +74,7 @@
         @if($neighbors->isEmpty() && $links->isEmpty())<div class="empty">Tidak ada tetangga LLDP/CDP atau sambungan manual di port ini.</div>@else
         <ul class="feed">
             @foreach($neighbors as $n)
-            <li><span class="ic info"><x-icon name="share"/></span><div class="msg">@if($n->remote_device_id)<a href="{{ route('devices.show', $n->remote_device_id) }}">{{ $n->dev_name }}</a>@else{{ $n->remote_name ?: $n->remote_ip }}@endif
+            <li><span class="ic info"><x-icon name="share"/></span><div class="msg">@if($n->remote_device_id && $n->dev_name)<a href="{{ route('devices.show', $n->remote_device_id) }}">{{ $n->dev_name }}</a>@else{{ $n->remote_name ?: $n->remote_ip }}@endif
                 {{ $n->remote_port ? ', ' . $n->remote_port : '' }}<small>{{ strtoupper($n->protocol) }}{{ $n->remote_ip ? ', ' . $n->remote_ip : '' }}{{ $n->remote_platform ? ', ' . \Illuminate\Support\Str::limit($n->remote_platform, 60) : '' }}{{ $n->remote_device_id ? '' : ', belum terdaftar' }}</small></div></li>
             @endforeach
             @foreach($links as $l)

@@ -572,3 +572,7 @@ table.t.logs td:nth-child(4) { font-size: var(--text-xs); white-space: nowrap; }
     .card, .kpi { break-inside: avoid; }
     .g-main { grid-template-columns: 1fr; }
 }
+.nav-note { margin: 0; padding: 0 var(--space-sm) var(--space-sm); font-size: 12px; color: var(--color-side-muted); }
+fieldset.field { border: 0; margin: 0; padding: 0; min-width: 0; }
+fieldset.field > legend { font-weight: 600; font-size: var(--text-sm); margin-bottom: var(--space-2xs); padding: 0; }
+.check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--space-2xs) var(--space-md); }

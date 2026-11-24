@@ -110,6 +110,14 @@ terpisah dari berkasnya. Impor & ekspor khusus admin dan tercatat di jejak audit
   ANTAREJA, dan letakkan di jaringan manajemen.
 - Hanya engineer dan admin yang mengatur titik baca; perubahan tercatat di jejak audit.
 
+## 6b2. Akun terbatas per site
+
+- Pembatasan dipasang di model (perangkat, site, problem, sensor, kejadian), jadi perangkat site lain tidak bisa
+  dibuka walau ID-nya ditebak (jawaban 404). Akun terbatas hanya boleh membuka daftar halaman yang datanya ikut
+  terfilter; halaman lain (IPAM, topologi, NOC, log, laporan, dll.) dijawab 403.
+- Nama perangkat site lain di halaman port (tetangga, MAC, sambungan) dan peta dampak lintas site tidak ditampilkan.
+- Notifikasi Telegram/email ke yang piket tidak ikut dibatasi site; atur kanal per site bila kontraktor ikut piket.
+
 ## 6c. Exporter Prometheus
 
 - Collector hanya melakukan GET ke URL yang diisi engineer (http/https, tanpa pengalihan, batas waktu 10 detik,
