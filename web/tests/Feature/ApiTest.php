@@ -79,6 +79,37 @@ class ApiTest extends TestCase
         $this->getJson('/api/v1/devices', $h)->assertStatus(401);
     }
 
+    public function test_cek_sensor_dan_mac(): void
+    {
+        $dev = DB::table('devices')->insertGetId(['name' => 'srv-fms', 'host' => '10.2.0.5']);
+        $sw = DB::table('devices')->insertGetId(['name' => 'sw-a', 'host' => '10.2.0.1', 'category' => 'access']);
+        DB::table('service_checks')->insert([
+            ['name' => 'Login', 'device_id' => $dev, 'type' => 'http', 'url' => 'https://nms:SandiRahasia9@fms.local/login', 'port' => null, 'status' => 'down', 'last_error' => 'kode HTTP 503'],
+            ['name' => 'DB', 'device_id' => $dev, 'type' => 'tcp', 'url' => null, 'port' => 3306, 'status' => 'up', 'last_error' => null],
+        ]);
+        DB::table('device_sensors')->insert([
+            ['device_id' => $dev, 'key' => 'mb:5', 'class' => 'voltage', 'grp' => 'daya', 'label' => 'Baterai', 'unit' => 'V', 'value' => 11.9, 'status' => 'warn'],
+            ['device_id' => $dev, 'key' => 'cpu', 'class' => 'cpu', 'grp' => 'sistem', 'label' => 'CPU', 'unit' => '%', 'value' => 12, 'status' => 'ok'],
+        ]);
+        DB::table('interfaces')->insert(['device_id' => $sw, 'if_index' => 4, 'name' => 'ether4']);
+        DB::table('mac_locations')->insert(['mac' => '00:11:22:33:44:55', 'device_id' => $sw, 'if_index' => 4, 'vlan' => 20]);
+        DB::table('arp_entries')->insert(['reporter_id' => $sw, 'if_index' => 1, 'ip' => '10.2.0.77', 'mac' => '00:11:22:33:44:55']);
+        $h = ['Authorization' => 'Bearer ' . $this->token()];
+
+        $r = $this->getJson('/api/v1/checks?status=down', $h)->assertOk();
+        $this->assertSame(['Login'], array_column($r->json('data'), 'name'));
+        $this->assertSame('https://fms.local/login', $r->json('data.0.target'));
+        $this->assertStringNotContainsString('SandiRahasia9', $r->getContent());
+        $this->assertSame('10.2.0.5:3306', $this->getJson('/api/v1/checks?status=up', $h)->json('data.0.target'));
+
+        $r = $this->getJson('/api/v1/sensors?source=modbus', $h)->assertOk();
+        $this->assertSame([['modbus', 'warn', 11.9]], array_map(fn ($x) => [$x['source'], $x['status'], $x['value']], $r->json('data')));
+
+        $this->assertSame('ether4', $this->getJson('/api/v1/macs?q=10.2.0.77', $h)->json('data.0.port'));
+        $this->assertSame('10.2.0.77', $this->getJson('/api/v1/macs?q=0011.2233', $h)->json('data.0.ip'));
+        $this->assertSame([], $this->getJson('/api/v1/macs?q=aa:bb:cc', $h)->json('data'));
+    }
+
     public function test_batas_ip_dan_hanya_admin(): void
     {
         $t = $this->token(['allowed_ips' => '10.99.0.0/16']);

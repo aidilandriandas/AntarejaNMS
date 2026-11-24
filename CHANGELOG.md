@@ -13,6 +13,7 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
   admin atau semua akun, reset oleh admin.
 - **Login LDAP / Active Directory** (opsional): akun dibuat otomatis, peran dari grup direktori; akun lokal tetap bisa
   masuk walau server direktori mati.
+- **API**: `/api/v1/checks` (cek layanan, URL tanpa kredensial), `/api/v1/sensors` (SNMP & Modbus), `/api/v1/macs` (lokasi MAC).
 - **Ekspor/impor konfigurasi** kini memuat collector site (tanpa token; collector hasil impor perlu *Ganti token*),
   penempatan perangkat ke collector, setelan dan titik Modbus, cek layanan, dan runbook.
 - **Collector site menjalankan cek layanan dan Modbus** untuk perangkat miliknya (diantrekan saat jalur putus, kiriman

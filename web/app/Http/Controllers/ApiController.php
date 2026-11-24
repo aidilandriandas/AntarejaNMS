@@ -49,7 +49,8 @@ class ApiController extends Controller
     public function index(): JsonResponse
     {
         return response()->json(['name' => 'ANTAREJA NMS API', 'version' => 1, 'app_version' => config('antareja.version'), 'time' => now()->toIso8601String(),
-            'endpoints' => ['/api/v1/sites', '/api/v1/devices', '/api/v1/devices/{id}', '/api/v1/problems', '/api/v1/incidents', '/api/v1/events', '/api/v1/anomalies', '/api/v1/services', '/api/v1/downtime']]);
+            'endpoints' => ['/api/v1/sites', '/api/v1/devices', '/api/v1/devices/{id}', '/api/v1/problems', '/api/v1/incidents', '/api/v1/events', '/api/v1/anomalies', '/api/v1/services', '/api/v1/downtime',
+                '/api/v1/checks', '/api/v1/sensors', '/api/v1/macs']]);
     }
 
     public function sites(): JsonResponse
@@ -176,6 +177,61 @@ class ApiController extends Controller
             'unit' => $a->metric === 'latency' ? 'ms' : 'bps', 'if_index' => $a->if_index, 'if_name' => $a->if_name, 'direction' => $a->direction,
             'value' => (float) $a->value, 'baseline' => (float) $a->baseline, 'score' => round((float) $a->score, 2),
             'started_at' => self::ts($a->started_at), 'ended_at' => self::ts($a->ended_at), 'dismissed' => $a->dismissed_by !== null]);
+    }
+
+    public function checks(Request $r): JsonResponse
+    {
+        $q = DB::table('service_checks as c')->join('devices as d', 'd.id', '=', 'c.device_id')
+            ->select(['c.id', 'c.name', 'c.device_id', 'd.name as device', 'd.host', 'c.type', 'c.url', 'c.port', 'c.query', 'c.status', 'c.last_ms', 'c.last_error',
+                'c.last_at', 'c.status_changed_at', 'c.cert_expires_at', 'c.severity', 'c.enabled', 'c.interval_s'])
+            ->when(in_array($r->query('status'), ['up', 'slow', 'down', 'unknown'], true), fn ($q) => $q->where('c.status', $r->query('status')))
+            ->when($r->integer('device_id'), fn ($q, $id) => $q->where('c.device_id', $id));
+
+        return $this->page($r, $q, 'c.id', fn ($c) => ['id' => $c->id, 'name' => $c->name, 'device_id' => $c->device_id, 'device' => $c->device,
+            'type' => $c->type, 'target' => match ($c->type) {
+                // kredensial di URL (user:pass@) tidak pernah dikirim
+                'http' => preg_replace('#^(https?://)[^/@\s]*@#i', '$1', (string) $c->url),
+                'tcp' => $c->host . ':' . $c->port, default => $c->query . ' @ ' . $c->host . ($c->port ? ':' . $c->port : ''),
+            },
+            'status' => $c->status, 'enabled' => (bool) $c->enabled, 'severity' => $c->severity, 'interval_s' => $c->interval_s,
+            'last_ms' => $c->last_ms !== null ? round((float) $c->last_ms, 1) : null, 'last_error' => $c->last_error, 'last_at' => self::ts($c->last_at),
+            'status_changed_at' => self::ts($c->status_changed_at), 'cert_expires_at' => self::ts($c->cert_expires_at)]);
+    }
+
+    /** Sensor SNMP & Modbus (tanpa kursor, maks. 2000 baris; saring untuk data besar). */
+    public function sensors(Request $r): JsonResponse
+    {
+        $q = DB::table('device_sensors as s')->join('devices as d', 'd.id', '=', 's.device_id')->where('d.enabled', true)
+            ->select(['s.device_id', 'd.name as device', 's.key', 's.class', 's.grp', 's.label', 's.unit', 's.value', 's.text', 's.status', 's.updated_at'])
+            ->when($r->integer('device_id'), fn ($q, $id) => $q->where('s.device_id', $id))
+            ->when($r->query('class'), fn ($q, $c) => $q->where('s.class', (string) $c))
+            ->when(in_array($r->query('status'), ['ok', 'warn', 'crit'], true), fn ($q) => $q->where('s.status', $r->query('status')))
+            ->when($r->query('source') === 'modbus', fn ($q) => $q->where('s.key', 'like', 'mb:%'))
+            ->when($r->query('source') === 'snmp', fn ($q) => $q->where('s.key', 'not like', 'mb:%'))
+            ->orderBy('s.device_id')->orderBy('s.key')->limit(2000);
+
+        return response()->json(['data' => $q->get()->map(fn ($s) => ['device_id' => $s->device_id, 'device' => $s->device, 'key' => $s->key,
+            'source' => str_starts_with($s->key, 'mb:') ? 'modbus' : 'snmp', 'class' => $s->class, 'group' => $s->grp, 'label' => $s->label, 'unit' => $s->unit,
+            'value' => $s->value !== null ? (float) $s->value : null, 'text' => $s->text, 'status' => $s->status, 'updated_at' => self::ts($s->updated_at)])->values()]);
+    }
+
+    /** Lokasi MAC di port switch. q = MAC atau IP (boleh sebagian); tanpa q: 500 yang terakhir terlihat. */
+    public function macs(Request $r): JsonResponse
+    {
+        $term = trim((string) $r->query('q'));
+        $hex = strtolower(preg_replace('/[^0-9a-fA-F]/', '', $term));
+        $isIp = (bool) preg_match('/^\d{1,3}(\.\d{1,3}){0,3}\.?$/', $term);
+        $rows = DB::table('mac_locations as m')->join('devices as d', 'd.id', '=', 'm.device_id')
+            ->leftJoin('interfaces as i', fn ($j) => $j->on('i.device_id', '=', 'm.device_id')->on('i.if_index', '=', 'm.if_index'))
+            ->selectRaw('m.mac, m.device_id, d.name AS switch, m.if_index, i.name AS port, m.vlan, m.first_seen, m.last_seen,
+                (SELECT host(a.ip) FROM arp_entries a WHERE a.mac = m.mac ORDER BY a.last_seen DESC LIMIT 1) AS ip')
+            ->when($term !== '' && $isIp, fn ($q) => $q->whereExists(fn ($e) => $e->from('arp_entries as a')->whereColumn('a.mac', 'm.mac')->whereRaw('host(a.ip) LIKE ?', [$term . '%'])))
+            ->when($term !== '' && ! $isIp && strlen($hex) >= 4, fn ($q) => $q->whereRaw("replace(m.mac, ':', '') LIKE ?", ['%' . $hex . '%']))
+            ->when($r->integer('device_id'), fn ($q, $id) => $q->where('m.device_id', $id))
+            ->orderByDesc('m.last_seen')->limit(500)->get();
+
+        return response()->json(['data' => $rows->map(fn ($m) => ['mac' => $m->mac, 'ip' => $m->ip, 'switch_id' => $m->device_id, 'switch' => $m->switch,
+            'if_index' => $m->if_index, 'port' => $m->port, 'vlan' => $m->vlan ?: null, 'since' => self::ts($m->first_seen), 'last_seen' => self::ts($m->last_seen)])->values()]);
     }
 
     public function services(): JsonResponse

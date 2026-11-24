@@ -18,6 +18,9 @@ Route::prefix('v1')->middleware([ApiToken::class, 'throttle:120,1'])->group(func
     Route::get('anomalies', [ApiController::class, 'anomalies']);
     Route::get('services', [ApiController::class, 'services']);
     Route::get('downtime', [ApiController::class, 'downtime']);
+    Route::get('checks', [ApiController::class, 'checks']);
+    Route::get('sensors', [ApiController::class, 'sensors']);
+    Route::get('macs', [ApiController::class, 'macs']);
     // Metode lain dijawab 405 oleh ApiToken (API ini tidak pernah mengubah data)
     Route::any('{any}', fn () => response()->json(['error' => 'tidak ditemukan'], 404))->where('any', '.*');
 });
