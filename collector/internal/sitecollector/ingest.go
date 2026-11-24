@@ -99,6 +99,9 @@ func Ingest(ctx context.Context, p *poller.Poller, collectorID int64, b Batch) (
 		p.ApplySNMP(ctx, d, s)
 		res.SNMP++
 	}
+	if res.SNMP > 0 {
+		p.RecomputeMACs(ctx)
+	}
 
 	var newest *time.Time
 	if len(times) > 0 {

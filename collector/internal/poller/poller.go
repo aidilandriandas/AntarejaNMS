@@ -41,6 +41,7 @@ type Poller struct {
 	lastPing atomic.Int64 // unix detik putaran ping terakhir selesai
 	lastSNMP atomic.Int64
 	snmpMu   sync.Mutex // satu putaran SNMP pada satu waktu (terjadwal atau sinkron manual)
+	macMu    sync.Mutex
 }
 
 func New(cfg config.Config, st store.Store, box *secret.Box, log *slog.Logger) *Poller {
@@ -107,6 +108,9 @@ func (p *Poller) Run(ctx context.Context) {
 	go loop("perawatan", 24*time.Hour, func(ctx context.Context) error {
 		if err := p.Store.PruneIPAM(ctx); err != nil {
 			p.Log.Warn("pembersihan IPAM gagal", "galat", err)
+		}
+		if err := p.Store.PruneFDB(ctx); err != nil {
+			p.Log.Warn("pembersihan tabel MAC gagal", "galat", err)
 		}
 		if _, err := p.Store.PrunePortChanges(ctx, time.Now().Add(-eventKeep)); err != nil {
 			p.Log.Warn("pembersihan riwayat port gagal", "galat", err)
@@ -321,9 +325,22 @@ func (p *Poller) snmpCycle(ctx context.Context) error {
 	if err := p.Store.RematchNeighbors(mctx); err != nil {
 		p.Log.Warn("cocokkan ulang tetangga gagal", "galat", err)
 	}
+	p.RecomputeMACs(mctx)
 	p.lastSNMP.Store(time.Now().Unix())
 	p.Log.Info("putaran SNMP", "berhasil", ok.Load(), "gagal", fail.Load())
 	return ctx.Err()
+}
+
+// RecomputeMACs memperbarui lokasi MAC (dipanggil setelah putaran SNMP dan kiriman collector site).
+func (p *Poller) RecomputeMACs(ctx context.Context) {
+	p.macMu.Lock()
+	defer p.macMu.Unlock()
+	n, err := p.Store.RecomputeMACLocations(ctx)
+	if err != nil {
+		p.Log.Warn("hitung lokasi MAC gagal", "galat", err)
+	} else if n > 0 {
+		p.Log.Info("MAC pindah port", "jumlah", n)
+	}
 }
 
 // Credentials membuka kredensial terenkripsi perangkat.

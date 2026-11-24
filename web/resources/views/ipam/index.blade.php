@@ -55,6 +55,16 @@
             </form>
         </div></section>
         @endcan
+        <section class="card"><div class="hd"><h2>MAC pindah port</h2><span class="sub">7 hari, {{ number_format($tracked, 0, ',', '.') }} MAC terlacak</span></div><div class="bd flush">
+            @if(empty($moves))<div class="empty">Tidak ada perangkat yang pindah port. Lokasi MAC dibaca dari tabel MAC switch kategori Core, Distribution, dan Access.</div>@else
+            <table class="t"><tbody>
+            @foreach($moves as $m)
+                <tr><td class="name"><a class="mono" href="{{ route('ipam.search', ['q' => $m->mac]) }}">{{ $m->mac }}</a>@if($m->ip) <span class="mono muted">{{ $m->ip }}</span>@endif
+                    <small>{{ $m->from_name ?? 'perangkat dihapus' }}{{ $m->from_port ? ', ' . $m->from_port : '' }} ke {{ $m->to_name ?? 'perangkat dihapus' }}{{ $m->to_port ? ', ' . $m->to_port : '' }}</small></td>
+                    <td class="right nowrap muted">{{ \Illuminate\Support\Carbon::parse($m->at)->format('d/m H.i') }}</td></tr>
+            @endforeach
+            </tbody></table>@endif
+        </div></section>
         <section class="card"><div class="hd"><h2>Pergantian MAC 24 jam</h2></div><div class="bd flush">
             @if($changes->isEmpty())<div class="empty">Tidak ada.</div>@else
             <table class="t"><tbody>

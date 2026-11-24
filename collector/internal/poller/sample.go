@@ -57,6 +57,7 @@ type SNMPSample struct {
 	Addrs   []snmp.IfAddr   `json:"addrs,omitempty"`
 	AddrsOK bool            `json:"addrs_ok,omitempty"`
 	ARP     []snmp.ARPEntry `json:"arp,omitempty"`
+	FDB     []snmp.FDBEntry `json:"fdb,omitempty"` // tabel MAC switch
 }
 
 // ProfileFunc menentukan profil sensor perangkat: ids dipisah koma, detected = baru dideteksi ulang,
@@ -105,6 +106,11 @@ func (p *Poller) MeasureSNMP(d store.Device, cr snmp.Credentials, credErr error,
 	if arpCategories[d.Category] || strings.HasPrefix(sys.ObjectID, ".1.3.6.1.4.1.14988") {
 		if arp, err := p.SNMP.ARP(d.Host, cr); err == nil {
 			s.ARP = arp
+		}
+	}
+	if fdbCategories[d.Category] {
+		if fdb, err := p.SNMP.FDB(d.Host, cr); err == nil {
+			s.FDB = fdb
 		}
 	}
 	return s
@@ -300,6 +306,16 @@ func (p *Poller) ApplySNMP(ctx context.Context, d store.Device, s SNMPSample) bo
 			p.Log.Warn("simpan ARP gagal", "perangkat", d.ID, "galat", err)
 		} else if n > 0 {
 			p.Log.Info("pergantian MAC di tabel ARP", "router", d.ID, "jumlah", n)
+		}
+	}
+
+	if len(s.FDB) > 0 {
+		rows := make([]store.FDBRow, 0, len(s.FDB))
+		for _, f := range s.FDB {
+			rows = append(rows, store.FDBRow{IfIndex: f.IfIndex, VLAN: f.VLAN, MAC: f.MAC})
+		}
+		if err := p.Store.SaveFDB(ctx, d.ID, rows); err != nil {
+			p.Log.Warn("simpan tabel MAC gagal", "perangkat", d.ID, "galat", err)
 		}
 	}
 

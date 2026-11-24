@@ -82,6 +82,13 @@ class DeviceController extends Controller
         return view('devices.show', [
             'device' => $device,
             'impact' => $impact,
+            'pluggedIn' => \Illuminate\Support\Facades\DB::select(<<<'SQL'
+                SELECT DISTINCT ON (ml.device_id, ml.if_index) ml.device_id, ml.if_index, sw.name AS sw_name, si.name AS sw_port, ml.vlan, ml.first_seen
+                FROM interfaces i JOIN mac_locations ml ON ml.mac = i.mac JOIN devices sw ON sw.id = ml.device_id
+                LEFT JOIN interfaces si ON si.device_id = ml.device_id AND si.if_index = ml.if_index
+                WHERE i.device_id = ? AND i.mac IS NOT NULL AND ml.device_id <> ? AND ml.last_seen > now() - interval '1 day'
+                ORDER BY ml.device_id, ml.if_index, ml.first_seen
+            SQL, [$device->id, $device->id]),
             'checks' => \App\Models\ServiceCheck::where('device_id', $device->id)->orderBy('name')->get(),
             'runbooks' => \App\Models\Runbook::where('enabled', true)->with('site', 'device')->get()->filter(fn ($r) => $r->matches($device, null))
                 ->sortByDesc(fn ($r) => $r->score())->values(),

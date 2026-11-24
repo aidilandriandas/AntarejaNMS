@@ -180,6 +180,7 @@
         <section class="card"><div class="hd"><h2>Informasi</h2></div><div class="bd">
             <dl class="facts">
                 <dt>Site</dt><dd>{{ $device->site ? $device->site->code . ' (' . $device->site->name . ')' : 'tidak ada' }}</dd>
+                @if($pluggedIn)<dt>Terpasang di</dt><dd>@foreach($pluggedIn as $pi)<a href="{{ route('ports.show', [$pi->device_id, $pi->if_index]) }}">{{ $pi->sw_name }}, {{ $pi->sw_port ?? 'port ' . $pi->if_index }}</a>{{ $pi->vlan ? ' (VLAN ' . $pi->vlan . ')' : '' }}@if(! $loop->last); @endif @endforeach</dd>@endif
                 <dt>Induk</dt><dd>@if($device->parent)<a href="{{ route('devices.show', $device->parent) }}">{{ $device->parent->name }}</a>@else<span class="nil">tidak ada</span>@endif</dd>
                 @if($device->children->isNotEmpty())<dt>Di bawahnya</dt><dd>@foreach($device->children as $ch)<a href="{{ route('devices.show', $ch) }}">{{ $ch->name }}</a>@if(! $loop->last), @endif @endforeach</dd>@endif
                 <dt>Ping</dt><dd>{{ $device->ping_enabled ? 'aktif, tiap menit' : 'dimatikan' }}</dd>

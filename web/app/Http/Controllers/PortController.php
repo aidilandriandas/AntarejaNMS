@@ -35,6 +35,14 @@ class PortController extends Controller
                 ->where('n.device_id', $device->id)->where('n.local_if_index', $ifIndex)
                 ->get(['n.protocol', 'n.remote_name', 'n.remote_port', 'n.remote_ip', 'n.remote_platform', 'n.remote_device_id', 'd.name as dev_name']),
             'ips' => DB::table('device_ips')->where('device_id', $device->id)->where('if_index', $ifIndex)->orderBy('ip')->get(['ip', 'prefix']),
+            'attached' => DB::select(<<<'SQL'
+                SELECT ml.mac, ml.vlan, ml.first_seen, ml.last_seen,
+                    (SELECT host(a.ip) FROM arp_entries a WHERE a.mac = ml.mac ORDER BY a.last_seen DESC LIMIT 1) AS ip,
+                    (SELECT d.id FROM interfaces i JOIN devices d ON d.id = i.device_id WHERE i.mac = ml.mac LIMIT 1) AS dev_id,
+                    (SELECT d.name FROM interfaces i JOIN devices d ON d.id = i.device_id WHERE i.mac = ml.mac LIMIT 1) AS dev_name
+                FROM mac_locations ml WHERE ml.device_id = ? AND ml.if_index = ? AND ml.last_seen > now() - interval '1 day'
+                ORDER BY ml.first_seen DESC LIMIT 50
+            SQL, [$device->id, $ifIndex]),
             'links' => DB::table('device_links as l')->join('devices as d', fn ($j) => $j->on('d.id', '=', DB::raw("CASE WHEN l.a_device_id = {$device->id} THEN l.b_device_id ELSE l.a_device_id END")))
                 ->where(fn ($q) => $q->where(fn ($q) => $q->where('l.a_device_id', $device->id)->where('l.a_if_index', $ifIndex))
                     ->orWhere(fn ($q) => $q->where('l.b_device_id', $device->id)->where('l.b_if_index', $ifIndex)))

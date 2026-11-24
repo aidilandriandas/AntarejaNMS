@@ -34,6 +34,15 @@ class IpamController extends Controller
             'conflicts' => Problem::open()->where('kind', 'ip_conflict')->with('device')->orderByDesc('started_at')->get(),
             'changes' => DB::table('arp_changes as c')->join('devices as d', 'd.id', '=', 'c.reporter_id')->where('c.at', '>', now()->subDay())
                 ->orderByDesc('c.at')->limit(30)->get(['c.at', DB::raw('host(c.ip) as ip'), 'c.old_mac', 'c.new_mac', 'd.name as reporter']),
+            'moves' => DB::select(<<<'SQL'
+                SELECT m.at, m.mac, fd.name AS from_name, fi.name AS from_port, td.name AS to_name, m.to_device_id, m.to_if_index, ti.name AS to_port,
+                    (SELECT host(a.ip) FROM arp_entries a WHERE a.mac = m.mac ORDER BY a.last_seen DESC LIMIT 1) AS ip
+                FROM mac_moves m LEFT JOIN devices fd ON fd.id = m.from_device_id LEFT JOIN devices td ON td.id = m.to_device_id
+                LEFT JOIN interfaces fi ON fi.device_id = m.from_device_id AND fi.if_index = m.from_if_index
+                LEFT JOIN interfaces ti ON ti.device_id = m.to_device_id AND ti.if_index = m.to_if_index
+                WHERE m.at > now() - interval '7 days' ORDER BY m.at DESC LIMIT 30
+            SQL),
+            'tracked' => (int) DB::table('mac_locations')->where('last_seen', '>', now()->subDay())->count(),
             'stats' => DB::selectOne("SELECT (SELECT count(DISTINCT ip) FROM arp_entries WHERE last_seen > now() - interval '7 days') AS ips,
                 (SELECT count(DISTINCT mac) FROM arp_entries WHERE last_seen > now() - interval '7 days') AS macs,
                 (SELECT count(DISTINCT reporter_id) FROM arp_entries) AS routers"),
@@ -115,15 +124,40 @@ class IpamController extends Controller
             $results = collect(DB::select(<<<'SQL'
                 SELECT host(a.ip) AS ip, a.mac, a.last_seen, a.first_seen, r.name AS reporter, r.id AS reporter_id, i.name AS port,
                     (SELECT d.name FROM devices d WHERE d.host = host(a.ip) LIMIT 1) AS device,
-                    (SELECT s.cidr::text FROM subnets s WHERE a.ip << s.cidr ORDER BY masklen(s.cidr) DESC LIMIT 1) AS subnet
+                    (SELECT s.cidr::text FROM subnets s WHERE a.ip << s.cidr ORDER BY masklen(s.cidr) DESC LIMIT 1) AS subnet,
+                    ml.device_id AS sw_id, sw.name AS sw_name, ml.if_index AS sw_if, si.name AS sw_port, ml.vlan AS sw_vlan, ml.first_seen AS sw_since
                 FROM arp_entries a JOIN devices r ON r.id = a.reporter_id
                 LEFT JOIN interfaces i ON i.device_id = a.reporter_id AND i.if_index = a.if_index
+                LEFT JOIN mac_locations ml ON ml.mac = a.mac
+                LEFT JOIN devices sw ON sw.id = ml.device_id
+                LEFT JOIN interfaces si ON si.device_id = ml.device_id AND si.if_index = ml.if_index
                 WHERE (?::boolean AND replace(a.mac, ':', '') LIKE ?) OR (NOT ?::boolean AND host(a.ip) LIKE ?)
                 ORDER BY a.last_seen DESC LIMIT 200
             SQL, [$isMac, '%' . $mac . '%', $isMac, $q . '%']));
+            if ($isMac) {
+                // MAC yang hanya terlihat di switch (perangkat L2, atau router-nya tidak dipantau)
+                $l2 = collect(DB::select(<<<'SQL'
+                    SELECT ml.mac, ml.device_id AS sw_id, sw.name AS sw_name, ml.if_index AS sw_if, si.name AS sw_port, ml.vlan AS sw_vlan,
+                        ml.first_seen AS sw_since, ml.last_seen
+                    FROM mac_locations ml JOIN devices sw ON sw.id = ml.device_id
+                    LEFT JOIN interfaces si ON si.device_id = ml.device_id AND si.if_index = ml.if_index
+                    WHERE replace(ml.mac, ':', '') LIKE ? AND NOT EXISTS (SELECT 1 FROM arp_entries a WHERE a.mac = ml.mac)
+                    ORDER BY ml.last_seen DESC LIMIT 200
+                SQL, ['%' . $mac . '%']));
+                if (strlen($mac) === 12) {
+                    $full = implode(':', str_split($mac, 2));
+                    $moves = collect(DB::select(<<<'SQL'
+                        SELECT m.at, fd.name AS from_name, m.from_device_id, fi.name AS from_port, td.name AS to_name, m.to_device_id, ti.name AS to_port
+                        FROM mac_moves m LEFT JOIN devices fd ON fd.id = m.from_device_id LEFT JOIN devices td ON td.id = m.to_device_id
+                        LEFT JOIN interfaces fi ON fi.device_id = m.from_device_id AND fi.if_index = m.from_if_index
+                        LEFT JOIN interfaces ti ON ti.device_id = m.to_device_id AND ti.if_index = m.to_if_index
+                        WHERE m.mac = ? ORDER BY m.at DESC LIMIT 50
+                    SQL, [$full]));
+                }
+            }
         }
 
-        return view('ipam.search', ['q' => $q, 'results' => $results]);
+        return view('ipam.search', ['q' => $q, 'results' => $results, 'l2' => $l2 ?? collect(), 'moves' => $moves ?? collect()]);
     }
 
     public function store(Request $request)

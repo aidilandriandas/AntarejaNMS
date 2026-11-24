@@ -82,6 +82,16 @@
             @endforeach
         </ul>@endif
     </div></section>
+    <section class="card"><div class="hd"><h2>Terpasang di port ini</h2><span class="sub">dari tabel MAC switch, 24 jam</span></div><div class="bd flush">
+        @if(empty($attached))<div class="empty">Tidak ada MAC terlacak di port ini. Port uplink (punya tetangga LLDP/CDP atau berisi lebih dari 12 MAC) tidak dihitung.</div>@else
+        <table class="t"><tbody>
+        @foreach($attached as $a)
+            <tr><td class="name">@if($a->dev_id)<a href="{{ route('devices.show', $a->dev_id) }}">{{ $a->dev_name }}</a>@else<a class="mono" href="{{ route('ipam.search', ['q' => $a->mac]) }}">{{ $a->mac }}</a>@endif
+                <small class="mono">{{ $a->dev_id ? $a->mac : '' }}{{ $a->dev_id && $a->ip ? ', ' : '' }}{{ $a->ip }}{{ $a->vlan ? ', VLAN ' . $a->vlan : '' }}</small></td>
+                <td class="right muted nowrap">sejak {{ \Illuminate\Support\Carbon::parse($a->first_seen)->format('d/m H.i') }}</td></tr>
+        @endforeach
+        </tbody></table>@endif
+    </div></section>
     <section class="card"><div class="hd"><h2>Riwayat putus-sambung</h2><span class="sub">7 hari, {{ ($changes24->t ?: $changes24->p) }} perubahan dalam 24 jam</span></div><div class="bd flush">
         @if($changes->isEmpty())<div class="empty">Tidak ada perubahan status dalam 7 hari terakhir.</div>@else
         <ul class="feed">@foreach($changes as $c)

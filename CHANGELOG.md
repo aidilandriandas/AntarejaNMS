@@ -13,6 +13,9 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
   admin atau semua akun, reset oleh admin.
 - **Login LDAP / Active Directory** (opsional): akun dibuat otomatis, peran dari grup direktori; akun lokal tetap bisa
   masuk walau server direktori mati.
+- **Lacak MAC ke port switch**: tabel MAC switch Core/Distribution/Access (Q-BRIDGE-MIB, cadangan BRIDGE-MIB) dibaca
+  tiap putaran SNMP; tiap MAC diberi lokasi port tepi (bukan uplink), dengan riwayat pindah port 90 hari. Tampil di
+  pencarian IPAM, halaman port (*Terpasang di port ini*), dan halaman perangkat (*Terpasang di*).
 - **Runbook** (menu *Runbook*): langkah penanganan per jenis problem, kategori, site, atau perangkat; yang paling
   spesifik dipakai. Tampil di daftar problem, halaman perangkat, dan lima langkah pertama ikut di pesan Telegram/email.
 - **Cek layanan** (menu *Cek layanan*): HTTP(S) dengan kode status dan teks wajib, port TCP, dan DNS dari server
