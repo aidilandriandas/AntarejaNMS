@@ -13,6 +13,8 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
   admin atau semua akun, reset oleh admin.
 - **Login LDAP / Active Directory** (opsional): akun dibuat otomatis, peran dari grup direktori; akun lokal tetap bisa
   masuk walau server direktori mati.
+- **Collector site menjalankan cek layanan dan Modbus** untuk perangkat miliknya (diantrekan saat jalur putus, kiriman
+  ganda dilewati); konfigurasi dicoba ulang tiap 30 detik bila pusat belum terjangkau.
 - **Modbus TCP (hanya baca)** untuk solar controller, baterai, genset, dan sensor daya di menara: titik baca per
   perangkat (register input/holding, tipe 16/32-bit dan float, skala, ambang warning/kritis), dibaca tiap menit dan
   menjadi sensor biasa (halaman Sensor tab Daya, grafik, problem, trigger). *Uji baca* dan salin titik antar perangkat.
