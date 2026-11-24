@@ -29,6 +29,6 @@ class TopologySyncTest extends TestCase
         $viewer = $this->user('viewer');
         $this->flushSession();
         $this->actingAs($viewer)->post('/topologi/sinkron')->assertForbidden();
-        $this->actingAs($viewer)->get('/topologi')->assertDontSee('Sinkron LLDP sekarang');
+        $this->actingAs($viewer)->get('/topologi')->assertDontSee('Sinkron LLDP sekarang')->assertSee('Peta beban')->assertSee('70 sampai 90%');
     }
 }

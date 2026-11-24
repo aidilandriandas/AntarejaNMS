@@ -459,6 +459,14 @@ if (topoRoot) {
         topo.every(30);
         siteSel.addEventListener('change', () => { try { localStorage.setItem('ant-topo-site', siteSel.value); } catch (e) { /* abaikan */ } topo.load().then(() => topo.fit()); });
         $('[data-topo-live]', topoRoot).addEventListener('change', (e) => (e.target.checked ? topo.startLive(5) : topo.stopLive()));
+        const loadBox = $('[data-topo-load]', topoRoot);
+        const loadScale = $('[data-topo-load-scale]', topoRoot);
+        const setLoad = (on) => { topo.setLoadMode(on); if (loadScale) loadScale.hidden = !on; try { localStorage.setItem('ant-topo-load', on ? '1' : '0'); } catch (e) { /* abaikan */ } };
+        if (loadBox) {
+            try { loadBox.checked = localStorage.getItem('ant-topo-load') === '1'; } catch (e) { /* abaikan */ }
+            setLoad(loadBox.checked);
+            loadBox.addEventListener('change', () => setLoad(loadBox.checked));
+        }
         $('[data-topo-fit]', topoRoot).addEventListener('click', () => topo.fit());
         $('[data-topo-unlock]', topoRoot)?.addEventListener('click', () => topo.setPhysics(true));
         const save = $('[data-topo-save]', topoRoot);

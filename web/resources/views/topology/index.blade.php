@@ -14,6 +14,7 @@
                 @foreach($sites as $s)<option value="{{ $s->id }}">{{ $s->code }} ({{ $s->name }})</option>@endforeach
             </select>
             <label class="check"><input type="checkbox" data-topo-live checked><span>Trafik live</span></label>
+            <label class="check" title="Warnai sambungan menurut pemakaian dan tampilkan persentase tiap arah"><input type="checkbox" data-topo-load><span>Peta beban</span></label>
             <div class="seg" role="tablist" aria-label="Tampilan">
                 <button type="button" role="tab" class="on" aria-selected="true" data-topo-view="map">Peta</button>
                 <button type="button" role="tab" aria-selected="false" data-topo-view="list">Daftar sambungan</button>
@@ -53,6 +54,10 @@
                 <li><svg width="34" height="8" aria-hidden="true"><line x1="0" y1="4" x2="34" y2="4" class="lg-ln mut" stroke-dasharray="2 4"/></svg>Ke tetangga belum terdaftar</li>
             </ul>
             <p>Label kecil di ujung garis adalah nama port di perangkat itu. Label tampil saat peta cukup dekat.</p>
+        </div>
+        <div class="load-scale" data-topo-load-scale hidden aria-label="Skala peta beban">
+            <span>Pemakaian</span><i class="ld1"></i>&lt; 30%<i class="ld2"></i>30 sampai 50%<i class="ld3"></i>50 sampai 70%<i class="ld4"></i>70 sampai 90%<i class="ld5"></i>90% ke atas
+            <span class="muted">Angka di garis: masuk / keluar di port ujung pertama.</span>
         </div>
         <div class="topo-foot"><span class="muted" data-topo-stats></span><span class="muted">Klik perangkat untuk detail. Peta dimuat ulang tiap 30 detik.</span></div>
     </section>

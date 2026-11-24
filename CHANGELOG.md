@@ -16,6 +16,9 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - **Flow trafik** (NetFlow v5, v9, IPFIX di 2055/UDP; sFlow v5 di 6343/UDP): siapa dan aplikasi apa yang memakai
   bandwidth per port dan arah, ringkasan 5 menit (50 percakapan terbesar + lainnya), disimpan 7 hari; pemakai terbesar
   di halaman port. Hanya dari perangkat terdaftar. **Buka 2055/UDP dan 6343/UDP** dari subnet manajemen bila dipakai.
+- **Peta beban link**: pilihan *Peta beban* di Topologi mewarnai sambungan dengan skala pemakaian (di bawah 30%, 30
+  sampai 50, 50 sampai 70, 70 sampai 90, 90% ke atas), menebalkan garis, dan menampilkan persentase masuk/keluar di
+  tiap garis; pilihan diingat per browser. Garis di Peta lokasi memakai skala yang sama dengan keterangan pemakaian.
 - **VLAN dan STP** (Pemantauan, *VLAN & STP*): VLAN per switch (Q-BRIDGE-MIB, atau VTP untuk Cisco) dengan penanda
   nama yang beda antar switch, VLAN bawaan dan status STP per port di halaman port, root bridge dan jumlah perubahan
   topologi per switch. Perubahan topologi dan pergantian root bridge jadi kejadian *STP berubah*; perubahan di 3

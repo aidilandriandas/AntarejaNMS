@@ -27,6 +27,8 @@
   --color-muted: #5d6a76;      /* 5,3:1 di atas kertas */
   --color-rule: #dde3e8;
   --color-rule-strong: #b9c3cc;
+  /* skala beban link (peta beban): sepi ke penuh, berurutan terang ke pekat lalu hangat */
+  --color-load-1: #8fc3bc; --color-load-2: #0b6b63; --color-load-3: #b07a00; --color-load-4: #c9561c; --color-load-5: #c4232f;
   --color-field: #7d8995;      /* tepi field 3,5:1 di atas putih */
 
   /* merek & aksen */
@@ -71,6 +73,7 @@
   --color-muted: #93a2b0;
   --color-rule: #1f2b35;
   --color-rule-strong: #34434f;
+  --color-load-1: #2c6b64; --color-load-2: #4fc7b9; --color-load-3: #e7b24c; --color-load-4: #f08a4b; --color-load-5: #ff7a83;
   --color-field: #66757f;
   --color-accent: #4fc7b9;
   --color-accent-ink: #062320;
@@ -98,6 +101,7 @@
   --ok: var(--color-ok); --ok-soft: var(--color-ok-soft); --warn: var(--color-warn); --warn-soft: var(--color-warn-soft);
   --crit: var(--color-crit); --crit-soft: var(--color-crit-soft); --info: var(--color-info); --info-soft: var(--color-info-soft);
   --off: var(--color-off); --off-soft: var(--color-off-soft);
+  --load-1: var(--color-load-1); --load-2: var(--color-load-2); --load-3: var(--color-load-3); --load-4: var(--color-load-4); --load-5: var(--color-load-5);
   --side: var(--color-side); --side-ink: var(--color-side-ink); --side-muted: var(--color-side-muted); --side-active: var(--color-side-2);
   --radius: var(--radius-card); --sans: var(--font-body); --mono: var(--font-outlier);
 }

@@ -134,8 +134,11 @@ export function createMap(el, { csrf, onSelect }) {
         for (const [k, m] of devMarkers) if (!keepD.has(k)) { m.remove(); devMarkers.delete(k); }
         linkLayer.clearLayers();
         j.links.forEach((l) => {
-            const color = l.down ? 'var(--crit)' : (l.util >= 90 ? 'var(--warn)' : 'var(--accent)');
-            L.polyline([l.a, l.b], { color, weight: l.down ? 4 : 3, opacity: 0.85, dashArray: l.logical ? '6 6' : null, className: l.down ? 'lk-down' : '' }).addTo(linkLayer);
+            // warna mengikuti skala peta beban (--load-1..5); tanpa data trafik memakai aksen
+            const band = l.util == null ? null : (l.util >= 90 ? 5 : l.util >= 70 ? 4 : l.util >= 50 ? 3 : l.util >= 30 ? 2 : 1);
+            const color = l.down ? 'var(--crit)' : band ? `var(--load-${band})` : 'var(--accent)';
+            const line = L.polyline([l.a, l.b], { color, weight: l.down ? 4 : (band ? 3 + band : 3), opacity: 0.85, dashArray: l.logical ? '6 6' : null, className: l.down ? 'lk-down' : '' }).addTo(linkLayer);
+            if (l.util != null && !l.down) line.bindTooltip(`Pemakaian ${Math.round(l.util)}%`, { sticky: true });
         });
         allPts = pts;
         renderJump(j.sites);

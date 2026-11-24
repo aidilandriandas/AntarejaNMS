@@ -51,6 +51,12 @@ const CARD_H = 48;
  * @param {{dataUrl: () => string, liveUrl?: string, positionsUrl?: string, dark?: boolean, live?: boolean,
  *          onStats?: (s, g) => void, onSelect?: (node) => void, onData?: (g) => void}} opt
  */
+// Pita beban link: <10, 10-30, 30-50, 50-70, 70-90, >=90 persen -> indeks warna --load-1..5 (di bawah 10 memakai pita 1)
+export function loadBand(util) {
+    return util >= 90 ? 4 : util >= 70 ? 3 : util >= 50 ? 2 : util >= 30 ? 1 : 0;
+}
+const pct = (b, speed) => (b == null || !speed ? '?' : `${Math.round(Math.min(100, b / speed * 100))}%`);
+
 export function createTopology(el, opt) {
     const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
     const dark = () => opt.dark || document.documentElement.dataset.theme === 'dark' || !css('--surface');
@@ -68,6 +74,8 @@ export function createTopology(el, opt) {
         };
     };
     let P = palette();
+    const loadColors = () => [1, 2, 3, 4, 5].map((i) => css(`--load-${i}`) || P.accent);
+    let LC = loadColors();
     const nodes = new DataSet();
     const edges = new DataSet();
     let graph = { nodes: [], edges: [] };
@@ -194,7 +202,10 @@ export function createTopology(el, opt) {
         let width = 1.5;
         if (e.down) { color = P.down; width = 2; }
         else if (e.logical || e.external) color = P.muted;
-        else if (util != null) {
+        else if (util != null && opt.loadMode) {
+            color = LC[loadBand(util)];
+            width = 2.5 + Math.min(6, util / 14);
+        } else if (util != null) {
             color = util >= 90 ? P.down : util >= 70 ? P.problem : P.accent;
             width = 2 + Math.min(5, util / 18);
         } else if (inB != null || e.sources.includes('lldp') || e.sources.includes('cdp')) color = P.accent;
@@ -204,7 +215,9 @@ export function createTopology(el, opt) {
             color: { color, highlight: P.ink, hover: P.ink, opacity: e.logical || e.external ? 0.7 : 1 },
             width,
             dashes: e.down ? [8, 5] : e.logical ? [5, 5] : e.external ? [2, 4] : false,
-            label: opt.live && (inB != null || outB != null) && !e.down ? `↓${bps(inB)} ↑${bps(outB)}bps` : undefined,
+            label: opt.loadMode && util != null && !e.down && t(e).speed
+                ? `${pct(inB, t(e).speed)} / ${pct(outB, t(e).speed)}`
+                : opt.live && (inB != null || outB != null) && !e.down ? `↓${bps(inB)} ↑${bps(outB)}bps` : undefined,
             font: { color: P.ink2, strokeColor: P.bg, background: undefined },
             title: [ports || (e.logical ? 'Hubungan induk (tanpa data port)' : 'Port tidak diketahui'),
                 `Sumber: ${e.sources.join(', ').replace('induk', 'perangkat induk')}`,
@@ -339,7 +352,7 @@ export function createTopology(el, opt) {
     network.on('click', (p) => {
         if (p.nodes.length) opt.onSelect?.(byId.get(p.nodes[0]));
     });
-    window.addEventListener('ant-theme', () => { P = palette(); render(); network.redraw(); });
+    window.addEventListener('ant-theme', () => { P = palette(); LC = loadColors(); render(); network.redraw(); });
 
     function fit(animate = true) {
         network.fit({ animation: animate ? { duration: 400 } : false, maxZoomLevel: 1.4, minZoomLevel: 0.05 });
@@ -361,6 +374,7 @@ export function createTopology(el, opt) {
             liveTimer = setInterval(() => { if (!document.hidden) pollLive().catch(() => {}); }, sec * 1000);
         },
         stopLive() { opt.live = false; clearInterval(liveTimer); live.clear(); render(); },
+        setLoadMode(on) { opt.loadMode = on; edges.update(graph.edges.map(edgeStyle)); },
         setPhysics(on) { freeLayout = on; nodes.update(graph.nodes.map(nodeStyle)); if (on) network.stabilize(200); },
         async savePositions() {
             const pos = network.getPositions();
