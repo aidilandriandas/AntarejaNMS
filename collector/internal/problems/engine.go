@@ -75,6 +75,11 @@ func (e *Engine) Run(ctx context.Context) (Outcome, error) {
 	} else {
 		res.Conds = append(res.Conds, LogConds(lh, devs)...)
 	}
+	if fc, err := e.loadForecasts(ctx); err != nil {
+		return out, err
+	} else {
+		res.Conds = append(res.Conds, ForecastConds(fc, devs, time.Now())...)
+	}
 	out.Summary = Summary(res)
 
 	tx, err := e.DB.Begin(ctx)

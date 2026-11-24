@@ -24,6 +24,7 @@ use App\Http\Controllers\MapController;
 use App\Http\Controllers\ModbusController;
 use App\Http\Controllers\ExporterController;
 use App\Http\Controllers\FlowController;
+use App\Http\Controllers\ForecastController;
 use App\Http\Controllers\SyslogRuleController;
 use App\Http\Controllers\VersionController;
 use App\Http\Controllers\ImpactController;
@@ -192,6 +193,7 @@ Route::middleware('auth')->group(function () {
     Route::get('cek-layanan', [CheckController::class, 'index'])->name('checks.index');
     Route::get('flow', [FlowController::class, 'index'])->name('flow.index');
     Route::get('versi', [VersionController::class, 'index'])->name('versions.index');
+    Route::get('prediksi', [ForecastController::class, 'index'])->name('forecast.index');
     Route::get('runbook', [RunbookController::class, 'index'])->name('runbooks.index');
     Route::get('runbook/{runbook}', [RunbookController::class, 'show'])->name('runbooks.show')->whereNumber('runbook');
     Route::get('kejadian', [EventController::class, 'index'])->name('events.index');

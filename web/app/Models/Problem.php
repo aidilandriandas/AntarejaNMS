@@ -34,6 +34,7 @@ class Problem extends Model
         'port_flap' => 'Port naik-turun',
         'check' => 'Cek layanan',
         'log' => 'Pola log',
+        'forecast' => 'Prediksi habis',
     ];
 
     protected function casts(): array

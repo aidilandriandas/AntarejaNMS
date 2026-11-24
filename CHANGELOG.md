@@ -16,6 +16,9 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - **Flow trafik** (NetFlow v5, v9, IPFIX di 2055/UDP; sFlow v5 di 6343/UDP): siapa dan aplikasi apa yang memakai
   bandwidth per port dan arah, ringkasan 5 menit (50 percakapan terbesar + lainnya), disimpan 7 hari; pemakai terbesar
   di halaman port. Hanya dari perangkat terdaftar. **Buka 2055/UDP dan 6343/UDP** dari subnet manajemen bila dipakai.
+- **Prediksi habis** (Laporan, *Prediksi habis*): kapan disk penuh (tren 7 hari) dan bahan bakar genset habis (sejak
+  isi ulang terakhir), dihitung tiap jam dari VictoriaMetrics. Disk penuh dalam 7 hari (Warning) atau 2 hari (Average)
+  dan bahan bakar habis dalam 24 jam (Average) atau 6 jam (High) menjadi problem. Migrasi 0044.
 - **Templat pesan notifikasi** per kanal (Notifikasi, ubah kanal, *Templat pesan*): isi pesan problem baru dan pulih
   bisa diubah dengan penanda `{judul}`, `{site}`, `{dampak}`, `{runbook}`, dll.; baris yang penandanya kosong
   dibuang, baris pertama jadi subjek email. Tombol Uji mengirim contoh dengan templat. Migrasi 0043.

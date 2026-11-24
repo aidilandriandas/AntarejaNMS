@@ -71,6 +71,7 @@
             <a href="{{ route('reports.downtime') }}" class="{{ $nav('reports.downtime*') }}"><x-icon name="arrow-down"/>Down bulanan</a>
             <a href="{{ route('reports.incidents') }}" class="{{ $nav('reports.incidents*') }}"><x-icon name="flag"/>Insiden bulanan</a>
             <a href="{{ route('capacity.index') }}" class="{{ $nav('capacity.*') }}"><x-icon name="gauge"/>Kapasitas port</a>
+            <a href="{{ route('forecast.index') }}" class="{{ $nav('forecast.*') }}"><x-icon name="clock"/>Prediksi habis</a>
             @can('admin')<a href="{{ route('reports.schedules') }}" class="{{ $nav('reports.schedules*') }}"><x-icon name="bell"/>Laporan terjadwal</a>@endcan
             <a href="{{ route('help') }}" class="{{ $nav('help') }}"><x-icon name="info"/>Panduan</a>
             @can('admin')

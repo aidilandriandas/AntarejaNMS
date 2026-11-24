@@ -36,6 +36,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/configbak"
 	"github.com/aidilandriandas/antarejanms/collector/internal/discovery"
 	"github.com/aidilandriandas/antarejanms/collector/internal/flow"
+	"github.com/aidilandriandas/antarejanms/collector/internal/forecast"
 	"github.com/aidilandriandas/antarejanms/collector/internal/incidents"
 	"github.com/aidilandriandas/antarejanms/collector/internal/migrate"
 	"github.com/aidilandriandas/antarejanms/collector/internal/modbus"
@@ -224,6 +225,29 @@ func run() error {
 
 		// Deteksi anomali: tiap 5 menit, mulai 2 menit setelah start supaya metrik 15 menit terakhir sudah ada
 		if cfg.VMURL != "" {
+			fc := &forecast.Runner{DB: db, VMURL: cfg.VMURL, Log: log}
+			go func() {
+				// prediksi disk penuh / bahan bakar habis tiap jam (mulai 3 menit setelah jalan)
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(3 * time.Minute):
+				}
+				t := time.NewTicker(time.Hour)
+				defer t.Stop()
+				for {
+					rctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+					if err := fc.Run(rctx); err != nil && ctx.Err() == nil {
+						log.Warn("prediksi sensor gagal", "galat", err)
+					}
+					cancel()
+					select {
+					case <-ctx.Done():
+						return
+					case <-t.C:
+					}
+				}
+			}()
 			an := &anomaly.Runner{DB: db, VMURL: cfg.VMURL, Log: log}
 			go func() {
 				select {
