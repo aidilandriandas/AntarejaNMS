@@ -16,6 +16,10 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - **Flow trafik** (NetFlow v5, v9, IPFIX di 2055/UDP; sFlow v5 di 6343/UDP): siapa dan aplikasi apa yang memakai
   bandwidth per port dan arah, ringkasan 5 menit (50 percakapan terbesar + lainnya), disimpan 7 hari; pemakai terbesar
   di halaman port. Hanya dari perangkat terdaftar. **Buka 2055/UDP dan 6343/UDP** dari subnet manajemen bila dipakai.
+- **VLAN dan STP** (Pemantauan, *VLAN & STP*): VLAN per switch (Q-BRIDGE-MIB, atau VTP untuk Cisco) dengan penanda
+  nama yang beda antar switch, VLAN bawaan dan status STP per port di halaman port, root bridge dan jumlah perubahan
+  topologi per switch. Perubahan topologi dan pergantian root bridge jadi kejadian *STP berubah*; perubahan di 3
+  pembacaan dalam 1 jam jadi problem *STP tidak stabil*. Migrasi 0046.
 - **BGP dan OSPF** (Pemantauan, *Routing*; juga di detail perangkat): sesi BGP (BGP4-MIB) dan tetangga OSPF (OSPF-MIB)
   router Core/Distribution/Firewall dan MikroTik tiap putaran SNMP. Sesi BGP yang di-start tetapi tidak established
   dan tetangga OSPF yang tidak full/2-way jadi problem High; yang hilang dari tabel router tetap dipantau sampai

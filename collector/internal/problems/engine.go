@@ -85,6 +85,11 @@ func (e *Engine) Run(ctx context.Context) (Outcome, error) {
 	} else {
 		res.Conds = append(res.Conds, RoutingConds(rt, devs)...)
 	}
+	if sf, err := e.loadSTP(ctx); err != nil {
+		return out, err
+	} else {
+		res.Conds = append(res.Conds, STPConds(sf, devs)...)
+	}
 	out.Summary = Summary(res)
 
 	tx, err := e.DB.Begin(ctx)

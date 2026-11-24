@@ -50,6 +50,7 @@
                 @if($downCount)<span class="count" title="{{ $downCount }} perangkat down">{{ $downCount }}</span>@endif</a>
             <a href="{{ route('topology.index') }}" class="{{ $nav('topology.*') }}"><x-icon name="share"/>Topologi</a>
             <a href="{{ route('routing.index') }}" class="{{ $nav('routing.*') }}"><x-icon name="layers"/>Routing</a>
+            <a href="{{ route('vlans.index') }}" class="{{ $nav('vlans.*') }}"><x-icon name="grid"/>VLAN &amp; STP</a>
             <a href="{{ route('map.index') }}" class="{{ $nav('map.*') }}"><x-icon name="map-pin"/>Peta lokasi</a>
             <a href="{{ route('quality.index') }}" class="{{ $nav('quality.*') }}"><x-icon name="pulse"/>Kualitas jaringan</a>
             <a href="{{ route('checks.index') }}" class="{{ $nav('checks.*') }}"><x-icon name="check"/>Cek layanan</a>

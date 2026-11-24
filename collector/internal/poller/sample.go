@@ -60,6 +60,7 @@ type SNMPSample struct {
 	FDB     []snmp.FDBEntry `json:"fdb,omitempty"` // tabel MAC switch
 
 	Routing *snmp.Routing   `json:"routing,omitempty"` // sesi BGP & tetangga OSPF (router)
+	L2      *snmp.L2        `json:"l2,omitempty"`      // VLAN, PVID, STP (switch)
 	Clock   *snmp.Clock     `json:"clock,omitempty"`   // selisih jam perangkat
 	Inv     *snmp.Inventory `json:"inv,omitempty"`     // versi & model, dibaca tiap 24 jam
 }
@@ -168,6 +169,9 @@ func (p *Poller) MeasureSNMP(d store.Device, cr snmp.Credentials, credErr error,
 	if fdbCategories[d.Category] {
 		if fdb, err := p.SNMP.FDB(d.Host, cr); err == nil {
 			s.FDB = fdb
+		}
+		if l2, err := p.SNMP.L2(d.Host, cr); err == nil {
+			s.L2 = &l2
 		}
 	}
 	return s
@@ -351,6 +355,15 @@ func (p *Poller) ApplySNMP(ctx context.Context, d store.Device, s SNMPSample) bo
 		}
 		for _, m := range evs {
 			_ = p.Store.Event(ctx, d.ID, "routing", m, nil, now)
+		}
+	}
+	if s.L2 != nil && s.IfErr == "" { // setelah interface tersimpan, supaya PVID/STP menempel ke baris port
+		evs, err := p.Store.SaveL2(ctx, d.ID, *s.L2, now)
+		if err != nil {
+			p.Log.Warn("simpan VLAN/STP gagal", "perangkat", d.ID, "galat", err)
+		}
+		for _, m := range evs {
+			_ = p.Store.Event(ctx, d.ID, "stp", m, nil, now)
 		}
 	}
 	if s.Inv != nil {

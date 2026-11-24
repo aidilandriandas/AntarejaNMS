@@ -84,3 +84,14 @@ Kode: `collector/internal/snmp/routing.go`. Dibaca dari router kategori Core, Di
   (1 = stop), 9 remote AS, 16 FsmEstablishedTime; `bgpLocalAs` .1.3.6.1.2.1.15.2.0. Hanya peer IPv4 (indeks alamat).
 - OSPF-MIB (RFC 4750) `ospfNbrTable` .1.3.6.1.2.1.14.10.1: kolom 3 router ID, 6 state (8 = full, 4 = 2-way).
 - Walk yang berhasil tetapi tidak lagi memuat peer lama menandai peer itu hilang (bukan dihapus).
+
+## VLAN dan STP
+
+Kode: `collector/internal/snmp/l2.go`. Dibaca dari switch kategori Core, Distribution, dan Access.
+
+- Q-BRIDGE-MIB (RFC 4363): `dot1qVlanStaticName` .1.3.6.1.2.1.17.7.1.4.3.1.1 (indeks VLAN ID), `dot1qPvid`
+  .1.3.6.1.2.1.17.7.1.4.5.1.1 (indeks base port, dipetakan ke ifIndex lewat `dot1dBasePortIfIndex`).
+- Bila Q-BRIDGE kosong: CISCO-VTP-MIB `vtpVlanName` .1.3.6.1.4.1.9.9.46.1.3.1.1.4 dan `vtpVlanState` (.2, hanya
+  operational); VLAN 1002 sampai 1005 dilewati.
+- BRIDGE-MIB (RFC 4188): `dot1dStpTimeSinceTopologyChange` .2.3, `dot1dStpTopChanges` .2.4, `dot1dStpDesignatedRoot`
+  .2.5, `dot1dStpRootPort` .2.7, `dot1dStpPortState` .2.15.1.3 (di bawah .1.3.6.1.2.1.17).

@@ -24,6 +24,7 @@ use App\Http\Controllers\MapController;
 use App\Http\Controllers\ModbusController;
 use App\Http\Controllers\ExporterController;
 use App\Http\Controllers\FlowController;
+use App\Http\Controllers\VlanController;
 use App\Http\Controllers\RoutingController;
 use App\Http\Controllers\ForecastController;
 use App\Http\Controllers\SyslogRuleController;
@@ -196,6 +197,7 @@ Route::middleware('auth')->group(function () {
     Route::get('flow', [FlowController::class, 'index'])->name('flow.index');
     Route::get('versi', [VersionController::class, 'index'])->name('versions.index');
     Route::get('routing', [RoutingController::class, 'index'])->name('routing.index');
+    Route::get('vlan', [VlanController::class, 'index'])->name('vlans.index');
     Route::get('prediksi', [ForecastController::class, 'index'])->name('forecast.index');
     Route::get('runbook', [RunbookController::class, 'index'])->name('runbooks.index');
     Route::get('runbook/{runbook}', [RunbookController::class, 'show'])->name('runbooks.show')->whereNumber('runbook');

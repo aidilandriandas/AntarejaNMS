@@ -11,6 +11,8 @@
             <span>{{ $port->speed_bps ? \App\Support\Fmt::bps((float) $port->speed_bps) : 'Kecepatan tak diketahui' }}</span>
             @if($port->mac)<span class="mono">{{ $port->mac }}</span>@endif
             <span>ifIndex {{ $port->if_index }}</span>
+            @if($port->pvid)<span>VLAN bawaan {{ $port->pvid }}</span>@endif
+            @if($port->stp_state)<span class="{{ in_array((int) $port->stp_state, [2, 6], true) ? 'txt-warn' : '' }}">STP {{ \App\Http\Controllers\VlanController::STP[$port->stp_state] ?? $port->stp_state }}{{ (int) $device->stp_root_port === (int) $port->if_index ? ', port ke root' : '' }}</span>@endif
             @if($port->last_change_at)<span>Status berubah {{ $port->last_change_at->diffForHumans() }}</span>@endif
         </div></div>
     <div class="actions">

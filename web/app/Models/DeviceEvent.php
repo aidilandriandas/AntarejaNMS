@@ -29,6 +29,7 @@ class DeviceEvent extends Model
         'check_slow' => ['Cek lambat', 'warn', 'gauge'],
         'firmware' => ['Versi berubah', 'info', 'rotate'],
         'routing' => ['Routing berubah', 'warn', 'share'],
+        'stp' => ['STP berubah', 'warn', 'share'],
     ];
 
     protected function casts(): array

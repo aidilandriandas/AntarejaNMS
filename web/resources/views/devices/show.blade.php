@@ -191,6 +191,8 @@
                 @if($device->sys_name)<dt>sysName</dt><dd>{{ $device->sys_name }}</dd>@endif
                 @if($device->os_version || $device->hw_model)<dt>Versi</dt><dd>{{ $device->os_version ?: 'tidak terbaca' }}@if($device->hw_model), <span class="muted">{{ $device->hw_model }}</span>@endif @if($device->serial_no)<span class="muted mono">, SN {{ $device->serial_no }}</span>@endif</dd>@endif
                 @if($device->sys_descr)<dt>Deskripsi</dt><dd>{{ \Illuminate\Support\Str::limit($device->sys_descr, 220) }}</dd>@endif
+                @if($device->stp_root)<dt>STP</dt><dd>root {{ $device->stp_root }}{{ (int) $device->stp_root_port === 0 ? ' (switch ini)' : '' }}, berubah {{ $device->stp_top_changes }} kali{{ $device->stp_last_change_at ? ', terakhir ' . \Illuminate\Support\Carbon::parse($device->stp_last_change_at)->diffForHumans() : '' }}</dd>@endif
+                @if($vlans->isNotEmpty())<dt>VLAN</dt><dd><a href="{{ route('vlans.index') }}">{{ $vlans->count() }} VLAN</a>: {{ $vlans->take(12)->implode(', ') }}{{ $vlans->count() > 12 ? ' dan lainnya' : '' }}</dd>@endif
                 @if($device->sys_location)<dt>Lokasi SNMP</dt><dd>{{ $device->sys_location }}</dd>@endif
                 @if($device->profiles)<dt>Profil</dt><dd>{{ collect(explode(',', $device->profiles))->map(fn ($x) => \App\Models\DeviceSensor::PROFILES[$x] ?? $x)->implode(', ') }}</dd>@endif
                 @if($device->sys_object_id)<dt>sysObjectID</dt><dd class="mono">{{ $device->sys_object_id }}</dd>@endif

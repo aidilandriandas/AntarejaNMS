@@ -34,3 +34,11 @@ func TestRoutingConds(t *testing.T) {
 		t.Fatal("router down ditekan")
 	}
 }
+
+func TestSTPConds(t *testing.T) {
+	devs := []Device{{ID: 1, Name: "sw-core"}, {ID: 2, Name: "sw-pit", InMaintenance: "ganti UPS"}}
+	cs := STPConds([]STPFlap{{1, 4}, {2, 5}, {1, 2}}, devs)
+	if len(cs) != 2 || cs[0].Kind != "stp" || cs[1].Suppressed != "maintenance" {
+		t.Fatalf("%+v", cs)
+	}
+}
