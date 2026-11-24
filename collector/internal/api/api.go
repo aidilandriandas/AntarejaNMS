@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/aidilandriandas/antarejanms/collector/internal/checks"
+	"github.com/aidilandriandas/antarejanms/collector/internal/modbus"
 	"github.com/aidilandriandas/antarejanms/collector/internal/notify"
 	"github.com/aidilandriandas/antarejanms/collector/internal/offsite"
 	"github.com/aidilandriandas/antarejanms/collector/internal/poller"
@@ -48,6 +49,8 @@ type Server struct {
 	Offsite *offsite.Runner
 	// Cek layanan (opsional)
 	Checks *checks.Runner
+	// Modbus (opsional)
+	Modbus *modbus.Runner
 	Token  string
 	Log    *slog.Logger
 
@@ -63,6 +66,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /v1/devices/{id}/tools", s.auth(s.tools))
 	mux.HandleFunc("POST /v1/backup/offsite/test", s.auth(s.offsiteTest))
 	mux.HandleFunc("POST /v1/checks/{id}/run", s.auth(s.checkRun))
+	mux.HandleFunc("POST /v1/devices/{id}/modbus/test", s.auth(s.modbusTest))
 	mux.HandleFunc("POST /v1/channels/{id}/test", s.auth(s.testChannel))
 	mux.HandleFunc("POST /v1/live", s.auth(s.live))
 	mux.HandleFunc("GET /v1/reports/{id}/preview", s.auth(s.reportPreview))
@@ -434,4 +438,25 @@ func (s *Server) checkRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": res.OK, "ms": res.MS, "error": res.Error, "status": res.Status})
+}
+
+// modbusTest membaca semua titik Modbus satu perangkat sekarang (alamat & titik dari database, bukan dari permintaan).
+func (s *Server) modbusTest(w http.ResponseWriter, r *http.Request) {
+	if s.Modbus == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "Modbus tidak aktif di collector ini"})
+		return
+	}
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil || id <= 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "id tidak valid"})
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+	res, err := s.Modbus.Test(ctx, id)
+	if err != nil {
+		writeJSON(w, http.StatusOK, map[string]any{"ok": false, "error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "readings": res})
 }

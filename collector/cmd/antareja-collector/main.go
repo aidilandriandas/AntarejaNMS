@@ -37,6 +37,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/discovery"
 	"github.com/aidilandriandas/antarejanms/collector/internal/incidents"
 	"github.com/aidilandriandas/antarejanms/collector/internal/migrate"
+	"github.com/aidilandriandas/antarejanms/collector/internal/modbus"
 	"github.com/aidilandriandas/antarejanms/collector/internal/notify"
 	"github.com/aidilandriandas/antarejanms/collector/internal/offsite"
 	"github.com/aidilandriandas/antarejanms/collector/internal/ping"
@@ -264,6 +265,25 @@ func run() error {
 			}
 		}()
 
+		// Modbus TCP (hanya baca) tiap menit: daya menara, baterai, genset
+		modbusRunner := &modbus.Runner{DB: db, Log: log, Writer: p.Writer, Store: store.Store{DB: db}}
+		go func() {
+			t := time.NewTicker(time.Minute)
+			defer t.Stop()
+			for {
+				rctx, cancel := context.WithTimeout(ctx, 50*time.Second)
+				if err := modbusRunner.Run(rctx); err != nil && ctx.Err() == nil {
+					log.Warn("putaran Modbus gagal", "galat", err)
+				}
+				cancel()
+				select {
+				case <-ctx.Done():
+					return
+				case <-t.C:
+				}
+			}
+		}()
+
 		// Salinan backup NMS ke luar server (SFTP / S3), dicek tiap menit
 		off := &offsite.Runner{DB: db, Box: box, Log: log, Dir: cfg.BackupDir}
 		go func() {
@@ -319,7 +339,7 @@ func run() error {
 		}()
 
 		if cfg.APIAddr != "" {
-			api := &http.Server{Addr: cfg.APIAddr, Handler: (&apiserver.Server{Poller: p, Notify: disp, Report: reports.Preview, Offsite: off, Checks: checkRunner, Token: apiserver.Token(box.Key()), Log: log}).Handler(),
+			api := &http.Server{Addr: cfg.APIAddr, Handler: (&apiserver.Server{Poller: p, Notify: disp, Report: reports.Preview, Offsite: off, Checks: checkRunner, Modbus: modbusRunner, Token: apiserver.Token(box.Key()), Log: log}).Handler(),
 				ReadHeaderTimeout: 5 * time.Second, WriteTimeout: 60 * time.Second}
 			go func() {
 				if err := api.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

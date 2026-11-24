@@ -17,7 +17,8 @@ class SensorController extends Controller
             ['Noise', 'noise', 'first'], ['TX', 'rate', 'first'], ['Klien', 'clients', 'sum'], ['Frekuensi', 'frequency', 'first'], ['Jarak', 'distance', 'first'],
         ]],
         'daya' => ['label' => 'Daya & UPS', 'cols' => [
-            ['Status', 'ups_status', 'worst'], ['Baterai', 'battery', 'worst'], ['Cadangan', 'runtime', 'worst'], ['Beban', 'load', 'max'], ['Tegangan', 'voltage', 'first'],
+            ['Status', 'ups_status', 'worst'], ['Baterai', 'battery', 'worst'], ['Cadangan', 'runtime', 'worst'], ['Beban', 'load', 'max'], ['Tegangan', 'voltage', 'worst'],
+            ['Arus', 'current', 'first'], ['Daya', 'power', 'first'], ['Bahan bakar', 'fuel', 'worst'],
         ]],
         'sistem' => ['label' => 'Sistem & suhu', 'cols' => [
             ['CPU', 'cpu', 'worst'], ['Memori', 'memory', 'worst'], ['Disk', 'disk', 'worst'], ['Suhu', 'temperature', 'max'], ['Kipas', 'fan', 'first'],

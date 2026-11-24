@@ -120,6 +120,17 @@ class Collector
         return $res->json();
     }
 
+    /** Baca semua titik Modbus satu perangkat sekarang (tanpa menyimpan). */
+    public function modbusTest(int $deviceId): array
+    {
+        $res = $this->http()->timeout(40)->post("/v1/devices/{$deviceId}/modbus/test");
+        if (! $res->successful()) {
+            throw new RuntimeException($res->json('error') ?? ('collector menjawab ' . $res->status()));
+        }
+
+        return $res->json();
+    }
+
     /** Jalankan satu cek layanan sekarang. @return array{ok: bool, ms: float, error: string, status: int} */
     public function runCheck(int $checkId): array
     {

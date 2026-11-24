@@ -101,6 +101,14 @@ terpisah dari berkasnya. Impor & ekspor khusus admin dan tercatat di jejak audit
 - *Uji sekarang* hanya menjalankan cek yang sudah tersimpan, bukan alamat bebas.
 - Verifikasi sertifikat HTTPS bisa dimatikan per cek untuk perangkat dengan sertifikat bawaan; tetap aktif secara bawaan.
 
+## 6b. Modbus TCP
+
+- Klien Modbus ANTAREJA hanya mengimplementasikan fungsi baca 03 dan 04; permintaan fungsi lain ditolak sebelum
+  dikirim, jadi tidak ada jalur untuk menulis register perangkat lapangan.
+- Modbus TCP tidak punya autentikasi atau enkripsi. Batasi port 502 di perangkat/gateway hanya untuk IP server
+  ANTAREJA, dan letakkan di jaringan manajemen.
+- Hanya engineer dan admin yang mengatur titik baca; perubahan tercatat di jejak audit.
+
 ## 7. Batasan yang diketahui
 
 - **CSP masih mengizinkan gaya (CSS) inline** (atribut `style` di template & Leaflet). Skrip inline sudah tidak diizinkan.

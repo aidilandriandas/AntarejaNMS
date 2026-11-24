@@ -62,6 +62,7 @@ class Device extends Model
             'lat' => 'float',
             'lng' => 'float',
             'enabled' => 'boolean',
+            'modbus_at' => 'datetime',
             'ping_enabled' => 'boolean',
             'snmp_enabled' => 'boolean',
             'snmp_ok' => 'boolean',

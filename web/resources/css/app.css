@@ -499,6 +499,7 @@ table.t.logs td:nth-child(4) { font-size: var(--text-xs); white-space: nowrap; }
 .tr-vb summary { cursor: pointer; font-family: var(--font-outlier); }
 .tr-vb .facts { margin-top: var(--space-xs); font-size: var(--text-xs); }
 .txt-warn { color: var(--color-warn); font-weight: 600; }
+.txt-crit { color: var(--color-crit); font-weight: 600; }
 .tool-bar { display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: center; }
 .tool-port { display: inline-flex; gap: var(--space-xs); align-items: center; }
 .tool-port .input { width: 88px; }
@@ -521,6 +522,7 @@ table.t.logs td:nth-child(4) { font-size: var(--text-xs); white-space: nowrap; }
 .runbook-tag { display: block; margin-top: var(--space-3xs); font-weight: 600; }
 .row-actions { display: flex; gap: var(--space-2xs); justify-content: flex-end; align-items: center; flex-wrap: wrap; }
 .row-actions form { margin: 0; }
+.row-actions.nowrap { flex-wrap: nowrap; }
 .check-err { font-size: var(--text-xs); max-width: 260px; overflow-wrap: anywhere; margin-top: var(--space-3xs); }
 .impact-tag { display: block; color: var(--color-crit); font-weight: 600; margin-top: var(--space-3xs); }
 .impact-sum { margin: 0 0 var(--space-md); }

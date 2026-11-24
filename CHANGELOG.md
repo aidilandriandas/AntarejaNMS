@@ -13,6 +13,9 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
   admin atau semua akun, reset oleh admin.
 - **Login LDAP / Active Directory** (opsional): akun dibuat otomatis, peran dari grup direktori; akun lokal tetap bisa
   masuk walau server direktori mati.
+- **Modbus TCP (hanya baca)** untuk solar controller, baterai, genset, dan sensor daya di menara: titik baca per
+  perangkat (register input/holding, tipe 16/32-bit dan float, skala, ambang warning/kritis), dibaca tiap menit dan
+  menjadi sensor biasa (halaman Sensor tab Daya, grafik, problem, trigger). *Uji baca* dan salin titik antar perangkat.
 - **Lacak MAC ke port switch**: tabel MAC switch Core/Distribution/Access (Q-BRIDGE-MIB, cadangan BRIDGE-MIB) dibaca
   tiap putaran SNMP; tiap MAC diberi lokasi port tepi (bukan uplink), dengan riwayat pindah port 90 hari. Tampil di
   pencarian IPAM, halaman port (*Terpasang di port ini*), dan halaman perangkat (*Terpasang di*).

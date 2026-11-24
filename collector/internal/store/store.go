@@ -341,7 +341,32 @@ func (s Store) SaveSensors(ctx context.Context, deviceID int64, rows []SensorRow
 			return err
 		}
 	}
-	if _, err := tx.Exec(ctx, `DELETE FROM device_sensors WHERE device_id = $1 AND NOT (key = ANY($2))`, deviceID, keys); err != nil {
+	// sensor Modbus (kunci "mb:") dikelola SaveModbusSensors, jangan ikut terhapus putaran SNMP
+	if _, err := tx.Exec(ctx, `DELETE FROM device_sensors WHERE device_id = $1 AND NOT (key = ANY($2)) AND key NOT LIKE 'mb:%'`, deviceID, keys); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+// SaveModbusSensors menyimpan sensor dari Modbus; titik yang dihapus/dimatikan ikut hilang dari daftar sensor.
+func (s Store) SaveModbusSensors(ctx context.Context, deviceID int64, rows []SensorRow) error {
+	tx, err := s.DB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+	for _, r := range rows {
+		if _, err := tx.Exec(ctx, `INSERT INTO device_sensors (device_id, key, class, grp, label, unit, value, status, updated_at)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8, now())
+			ON CONFLICT (device_id, key) DO UPDATE SET class = EXCLUDED.class, grp = EXCLUDED.grp, label = EXCLUDED.label, unit = EXCLUDED.unit,
+				value = EXCLUDED.value, status = EXCLUDED.status, updated_at = now()`,
+			deviceID, r.Key, r.Class, r.Group, cut(r.Label), r.Unit, r.Value, r.Status); err != nil {
+			return err
+		}
+	}
+	// titik yang dihapus atau dimatikan: sensornya ikut dihapus
+	if _, err := tx.Exec(ctx, `DELETE FROM device_sensors s WHERE s.device_id = $1 AND s.key LIKE 'mb:%'
+		AND NOT EXISTS (SELECT 1 FROM modbus_points p WHERE p.device_id = $1 AND p.enabled AND 'mb:' || p.id = s.key)`, deviceID); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)

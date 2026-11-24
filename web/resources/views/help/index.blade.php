@@ -25,6 +25,7 @@
     <a href="#topologi">Sinkron LLDP & diagnosa SNMP</a>
     <a href="#api">Integrasi lewat API</a>
     <a href="#diag">Alat diagnosa & down bulanan</a>
+    <a href="#daya">Daya menara (Modbus)</a>
     <a href="#runbook">Runbook</a>
     <a href="#cek">Cek layanan</a>
     <a href="#dampak">Peta dampak</a>
@@ -191,6 +192,14 @@
     <ul class="help-list">
         <li><b>Alat diagnosa</b> di halaman perangkat menjalankan ping, traceroute, atau cek port TCP dari server ANTAREJA ke perangkat itu. Bila traceroute berhenti sebelum tujuan, hop terakhir yang menjawab adalah titik yang perlu diperiksa (radio, switch, atau router di lokasi itu). Cek port berguna untuk kamera (554 RTSP), web perangkat (80/443), atau SSH (22).</li>
         <li><b>Down bulanan</b> (menu Laporan) menunjukkan persen waktu down tiap perangkat per bulan, dengan rumus yang sama seperti SLA perangkat. Waktu di dalam maintenance tidak dihitung down. Angka bulan berjalan masih sementara dan dikunci setelah bulan berganti.</li>
+    </ul>
+</div></section>
+
+<section class="card" id="daya"><div class="hd"><h2>Daya menara (Modbus)</h2></div><div class="bd">
+    <ul class="help-list">
+        <li>Menara dan panel yang memakai solar controller, baterai, atau genset bisa dibaca lewat Modbus: tegangan baterai, arus panel surya, kapasitas baterai, bahan bakar. Nilainya ada di halaman <b>Sensor</b> tab <i>Daya &amp; UPS</i> dan di halaman perangkat.</li>
+        <li>Tegangan baterai yang terus turun di malam hari adalah tanda menara akan mati sebelum pagi. Laporkan ke engineer sebelum perangkatnya down.</li>
+        <li>Perangkat menara down padahal radio tidak bermasalah? Cek dulu tegangan baterai dan arus panel surya terakhir sebelum down.</li>
     </ul>
 </div></section>
 
