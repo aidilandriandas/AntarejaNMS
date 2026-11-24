@@ -49,6 +49,16 @@ class SiteCollectorTest extends TestCase
         $this->assertSame([$mine], array_column($r->json('devices'), 'id'));
         $this->assertSame('RahasiaSite1', $r->json('devices.0.snmp.community'));
         $this->assertStringNotContainsString('RahasiaPusat1', $r->getContent());
+        // cek layanan & Modbus perangkat milik collector ikut dikirim
+        $central = DB::table('devices')->where('name', 'sw-pusat')->value('id');
+        DB::table('service_checks')->insert([['name' => 'web', 'device_id' => $mine, 'type' => 'tcp', 'port' => 80], ['name' => 'pusat', 'device_id' => $central, 'type' => 'tcp', 'port' => 81]]);
+        DB::table('devices')->where('id', $mine)->update(['modbus_port' => 502, 'modbus_unit' => 3]);
+        DB::table('modbus_points')->insert(['device_id' => $mine, 'label' => 'Baterai', 'class' => 'voltage', 'address' => 7, 'scale' => 0.01]);
+        $r = $this->getJson('/api/site/v1/config', ['Authorization' => "Bearer {$token}"])->assertOk();
+        $this->assertSame([80], array_column($r->json('checks'), 'port'));
+        $this->assertSame('10.60.0.1', $r->json('checks.0.host'));
+        $this->assertSame(3, $r->json('modbus.0.unit'));
+        $this->assertSame(7, $r->json('modbus.0.points.0.address'));
         $this->assertNotNull(DB::table('site_collectors')->where('id', $c->id)->value('last_seen_at'));
         // collector dinonaktifkan: ditolak
         DB::table('site_collectors')->where('id', $c->id)->update(['enabled' => false]);

@@ -2,12 +2,14 @@ package checks
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/aidilandriandas/antarejanms/collector/internal/metrics"
@@ -51,7 +53,7 @@ func (r *Runner) Run(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	rows, err := r.DB.Query(ctx, `SELECT `+selectCols+` FROM service_checks c JOIN devices d ON d.id = c.device_id
-		WHERE c.enabled AND d.enabled AND (c.last_at IS NULL OR c.last_at <= now() - make_interval(secs => c.interval_s - 5))
+		WHERE c.enabled AND d.enabled AND d.collector_id IS NULL AND (c.last_at IS NULL OR c.last_at <= now() - make_interval(secs => c.interval_s - 5))
 		ORDER BY c.last_at NULLS FIRST LIMIT 500`)
 	if err != nil {
 		return err
@@ -80,9 +82,28 @@ func (r *Runner) RunOne(ctx context.Context, id int64) (Result, error) {
 	}
 	res := Run(ctx, x.Spec)
 	var batch metrics.Batch
-	r.save(ctx, x, res, &batch)
+	r.save(ctx, x, res, &batch, time.Now())
 	_ = r.Writer.Write(ctx, &batch)
 	return res, nil
+}
+
+// ApplySample menerapkan hasil cek dari collector site. Hanya cek aktif milik perangkat collector itu, dan hanya bila
+// lebih baru dari hasil yang tersimpan (kiriman ulang dilewati). applied=false bila dilewati.
+func (r *Runner) ApplySample(ctx context.Context, collectorID, checkID int64, res Result, at time.Time) (bool, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	x, err := scan(r.DB.QueryRow(ctx, `SELECT `+selectCols+` FROM service_checks c JOIN devices d ON d.id = c.device_id
+		WHERE c.id = $1 AND d.collector_id = $2 AND c.enabled AND d.enabled AND (c.last_at IS NULL OR c.last_at < $3)`, checkID, collectorID, at))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	var batch metrics.Batch
+	r.save(ctx, x, res, &batch, at)
+	_ = r.Writer.Write(ctx, &batch)
+	return true, nil
 }
 
 func (r *Runner) runAll(ctx context.Context, due []row) {
@@ -100,7 +121,7 @@ func (r *Runner) runAll(ctx context.Context, due []row) {
 			for x := range jobs {
 				res := Run(ctx, x.Spec)
 				mu.Lock()
-				r.save(ctx, x, res, &batch)
+				r.save(ctx, x, res, &batch, time.Now())
 				mu.Unlock()
 			}
 		}()
@@ -133,9 +154,8 @@ func Judge(prev string, fails int, res Result, slowMS *int) (status string, newF
 	return "up", 0
 }
 
-func (r *Runner) save(ctx context.Context, x row, res Result, batch *metrics.Batch) {
+func (r *Runner) save(ctx context.Context, x row, res Result, batch *metrics.Batch, now time.Time) {
 	status, fails := Judge(x.Status, x.Fails, res, x.SlowMS)
-	now := time.Now()
 	var errText *string
 	if res.Error != "" {
 		e := trim(res.Error, 300)

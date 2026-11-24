@@ -18,7 +18,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/aidilandriandas/antarejanms/collector/internal/checks"
 	"github.com/aidilandriandas/antarejanms/collector/internal/config"
+	"github.com/aidilandriandas/antarejanms/collector/internal/modbus"
 	"github.com/aidilandriandas/antarejanms/collector/internal/poller"
 )
 
@@ -34,6 +36,9 @@ type Agent struct {
 
 	mu      sync.RWMutex
 	devices []DeviceConfig
+	checks  []CheckConfig
+	modbus  []ModbusConfig
+	lastChk map[int64]time.Time // waktu terakhir tiap cek dijalankan
 	name    string
 	prof    poller.ProfileCache
 
@@ -77,9 +82,6 @@ func (a *Agent) Run(ctx context.Context) error {
 		return fmt.Errorf("folder antrean %s tidak bisa dibuat: %w", a.Spool.Dir, err)
 	}
 	a.loadCache()
-	if err := a.fetchConfig(ctx); err != nil {
-		a.Log.Warn("daftar perangkat dari pusat belum bisa diambil, memakai salinan terakhir (ping saja sampai pusat terjangkau)", "galat", err)
-	}
 	var wg sync.WaitGroup
 	every := func(d time.Duration, fn func(context.Context)) {
 		wg.Add(1)
@@ -99,13 +101,22 @@ func (a *Agent) Run(ctx context.Context) error {
 			}
 		}()
 	}
-	every(configEvery, func(c context.Context) {
-		if err := a.fetchConfig(c); err != nil {
-			a.Log.Warn("ambil daftar perangkat gagal", "galat", err)
+	// konfigurasi diambil tiap 5 menit; setelah gagal dicoba lagi tiap 30 detik sampai berhasil
+	var lastOK time.Time
+	every(30*time.Second, func(c context.Context) {
+		if time.Since(lastOK) < configEvery {
+			return
 		}
+		if err := a.fetchConfig(c); err != nil {
+			a.Log.Warn("daftar perangkat dari pusat belum bisa diambil, memakai salinan terakhir; dicoba lagi 30 detik", "galat", err)
+			return
+		}
+		lastOK = time.Now()
 	})
 	every(a.Cfg.PingInterval, a.pingCycle)
 	every(a.Cfg.SNMPInterval, a.snmpCycle)
+	every(15*time.Second, a.checkCycle)
+	every(time.Minute, a.modbusCycle)
 	wg.Add(1)
 	go func() { defer wg.Done(); a.sendLoop(ctx) }()
 	wg.Wait()
@@ -183,7 +194,7 @@ func (a *Agent) fetchConfig(ctx context.Context) error {
 	}
 	a.mu.Lock()
 	changed := a.name != c.Collector.Name || len(a.devices) != len(c.Devices)
-	a.devices, a.name = c.Devices, c.Collector.Name
+	a.devices, a.name, a.checks, a.modbus = c.Devices, c.Collector.Name, c.Checks, c.Modbus
 	a.mu.Unlock()
 	if raw, err := json.Marshal(withoutSecrets(c.Devices)); err == nil {
 		_ = os.WriteFile(a.cachePath(), raw, 0o600)
@@ -294,6 +305,71 @@ func (a *Agent) snmpCycle(ctx context.Context) {
 	if n > 0 {
 		a.Log.Info("putaran SNMP", "perangkat", n, "gagal", fail)
 	}
+}
+
+// checkCycle menjalankan cek layanan yang jatuh tempo (interval per cek), maks. 16 sekaligus.
+func (a *Agent) checkCycle(ctx context.Context) {
+	a.mu.Lock()
+	if a.lastChk == nil {
+		a.lastChk = map[int64]time.Time{}
+	}
+	var due []CheckConfig
+	now := time.Now()
+	for _, c := range a.checks {
+		if last, ok := a.lastChk[c.ID]; !ok || now.Sub(last) >= time.Duration(c.IntervalS)*time.Second-5*time.Second {
+			due = append(due, c)
+			a.lastChk[c.ID] = now
+		}
+	}
+	a.mu.Unlock()
+	if len(due) == 0 {
+		return
+	}
+	out := make([]CheckSample, len(due))
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 16)
+	for i, c := range due {
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(i int, c CheckConfig) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			at := time.Now().Truncate(time.Second)
+			out[i] = CheckSample{CheckID: c.ID, At: at, Result: checks.Run(ctx, c.spec())}
+		}(i, c)
+	}
+	wg.Wait()
+	a.enqueue(Batch{Version: a.Version, Checks: out})
+}
+
+// modbusCycle membaca semua perangkat ber-Modbus milik site ini.
+func (a *Agent) modbusCycle(ctx context.Context) {
+	a.mu.RLock()
+	list := a.modbus
+	a.mu.RUnlock()
+	if len(list) == 0 {
+		return
+	}
+	out := make([]ModbusSample, len(list))
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 8)
+	for i, m := range list {
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(i int, m ModbusConfig) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			s := ModbusSample{DeviceID: m.DeviceID, At: time.Now().Truncate(time.Second)}
+			rd, err := modbus.ReadAll(ctx, m.Host, m.Port, m.Unit, m.Points, 5*time.Second)
+			if err != nil && len(rd) == 0 {
+				s.Error = err.Error()
+			}
+			s.Readings = rd
+			out[i] = s
+		}(i, m)
+	}
+	wg.Wait()
+	a.enqueue(Batch{Version: a.Version, Modbus: out})
 }
 
 func (a *Agent) enqueue(b Batch) {

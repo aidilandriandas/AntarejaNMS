@@ -5,6 +5,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/aidilandriandas/antarejanms/collector/internal/checks"
+	"github.com/aidilandriandas/antarejanms/collector/internal/modbus"
 	"github.com/aidilandriandas/antarejanms/collector/internal/ping"
 	"github.com/aidilandriandas/antarejanms/collector/internal/poller"
 	"github.com/aidilandriandas/antarejanms/collector/internal/store"
@@ -14,6 +16,8 @@ import (
 type IngestResult struct {
 	Pings    int   `json:"pings"`
 	SNMP     int   `json:"snmp"`
+	Checks   int   `json:"checks"`
+	Modbus   int   `json:"modbus"`
 	Skipped  int   `json:"skipped"` // sampel ganda, terlalu lama, atau milik perangkat lain
 	SkewSecs int64 `json:"skew_s"`
 }
@@ -25,6 +29,19 @@ const maxSkew = 30 * time.Second
 // Hanya perangkat aktif milik collector ini yang diterima. Sampel diterapkan berurutan waktu, dan sampel yang
 // sudah pernah diterapkan (kiriman ulang setelah jawaban hilang) dilewati supaya hitungan gagal tidak ganda.
 func Ingest(ctx context.Context, p *poller.Poller, collectorID int64, b Batch) (IngestResult, error) {
+	return IngestAll(ctx, Appliers{Poller: p}, collectorID, b)
+}
+
+// Appliers penerap hasil di pusat. Checks/Modbus nil: sampel jenis itu dilewati.
+type Appliers struct {
+	Poller *poller.Poller
+	Checks *checks.Runner
+	Modbus *modbus.Runner
+}
+
+// IngestAll seperti Ingest, ditambah hasil cek layanan dan Modbus.
+func IngestAll(ctx context.Context, ap Appliers, collectorID int64, b Batch) (IngestResult, error) {
+	p := ap.Poller
 	var res IngestResult
 	now := time.Now()
 	var shift time.Duration
@@ -103,6 +120,40 @@ func Ingest(ctx context.Context, p *poller.Poller, collectorID int64, b Batch) (
 		p.RecomputeMACs(ctx)
 	}
 
+	// Cek layanan dan Modbus: diterapkan berurutan waktu, kepemilikan & kiriman ganda diperiksa penerapnya.
+	cks := append([]CheckSample(nil), b.Checks...)
+	sort.SliceStable(cks, func(i, j int) bool { return cks[i].At.Before(cks[j].At) })
+	for _, c := range cks {
+		ok := false
+		if ap.Checks != nil {
+			var err error
+			if ok, err = ap.Checks.ApplySample(ctx, collectorID, c.CheckID, c.Result, fix(c.At)); err != nil {
+				return res, err
+			}
+		}
+		if ok {
+			res.Checks++
+		} else {
+			res.Skipped++
+		}
+	}
+	mbs := append([]ModbusSample(nil), b.Modbus...)
+	sort.SliceStable(mbs, func(i, j int) bool { return mbs[i].At.Before(mbs[j].At) })
+	for _, m := range mbs {
+		ok := false
+		if ap.Modbus != nil {
+			var err error
+			if ok, err = ap.Modbus.ApplySample(ctx, collectorID, m.DeviceID, m.Readings, m.Error, fix(m.At)); err != nil {
+				return res, err
+			}
+		}
+		if ok {
+			res.Modbus++
+		} else {
+			res.Skipped++
+		}
+	}
+
 	var newest *time.Time
 	if len(times) > 0 {
 		t := times[len(times)-1]
@@ -116,7 +167,7 @@ func Ingest(ctx context.Context, p *poller.Poller, collectorID int64, b Batch) (
 	}
 	_, err := p.Store.DB.Exec(ctx, `UPDATE site_collectors SET newest_sample_at = GREATEST(newest_sample_at, $2), clock_skew_s = $3,
 		queued = $4, version = NULLIF($5, ''), updated_at = now() WHERE id = $1`, collectorID, newest, res.SkewSecs, b.Queued, trimTo(b.Version, 32))
-	if res.Pings > 0 && p.AfterPing != nil {
+	if (res.Pings > 0 || res.Checks > 0 || res.Modbus > 0) && p.AfterPing != nil {
 		p.AfterPing(ctx) // problem & notifikasi dinilai ulang dengan status baru
 	}
 	return res, err

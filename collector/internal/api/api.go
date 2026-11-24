@@ -407,7 +407,7 @@ func (s *Server) siteIngest(w http.ResponseWriter, r *http.Request) {
 	defer s.ingestMu.Unlock()
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Minute)
 	defer cancel()
-	res, err := sitecollector.Ingest(ctx, s.Poller, id, b)
+	res, err := sitecollector.IngestAll(ctx, sitecollector.Appliers{Poller: s.Poller, Checks: s.Checks, Modbus: s.Modbus}, id, b)
 	if err != nil {
 		s.Log.Error("kiriman collector site gagal diterapkan", "collector", id, "galat", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "gagal diterapkan, akan dicoba lagi"})

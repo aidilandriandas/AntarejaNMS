@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/aidilandriandas/antarejanms/collector/internal/checks"
+	"github.com/aidilandriandas/antarejanms/collector/internal/modbus"
 	"github.com/aidilandriandas/antarejanms/collector/internal/poller"
 	"github.com/aidilandriandas/antarejanms/collector/internal/snmp"
 	"github.com/aidilandriandas/antarejanms/collector/internal/store"
@@ -20,6 +22,53 @@ type Batch struct {
 	Queued  int                 `json:"queued"` // berkas antrean yang masih menunggu di site
 	Pings   []poller.PingSample `json:"pings,omitempty"`
 	SNMP    []poller.SNMPSample `json:"snmp,omitempty"`
+	Checks  []CheckSample       `json:"checks,omitempty"`
+	Modbus  []ModbusSample      `json:"modbus,omitempty"`
+}
+
+// CheckSample hasil satu cek layanan di site.
+type CheckSample struct {
+	CheckID int64         `json:"check_id"`
+	At      time.Time     `json:"at"`
+	Result  checks.Result `json:"result"`
+}
+
+// ModbusSample hasil baca Modbus satu perangkat di site.
+type ModbusSample struct {
+	DeviceID int64            `json:"device_id"`
+	At       time.Time        `json:"at"`
+	Readings []modbus.Reading `json:"readings,omitempty"`
+	Error    string           `json:"error,omitempty"` // koneksi gagal
+}
+
+// CheckConfig cek layanan yang dijalankan site.
+type CheckConfig struct {
+	ID           int64  `json:"id"`
+	Type         string `json:"type"`
+	Host         string `json:"host"`
+	URL          string `json:"url,omitempty"`
+	Port         int    `json:"port,omitempty"`
+	Query        string `json:"query,omitempty"`
+	ExpectStatus string `json:"expect_status,omitempty"`
+	ExpectText   string `json:"expect_text,omitempty"`
+	ExpectAnswer string `json:"expect_answer,omitempty"`
+	VerifyTLS    bool   `json:"verify_tls"`
+	TimeoutS     int    `json:"timeout_s"`
+	IntervalS    int    `json:"interval_s"`
+}
+
+func (c CheckConfig) spec() checks.Spec {
+	return checks.Spec{ID: c.ID, Type: c.Type, Host: c.Host, URL: c.URL, Port: c.Port, Query: c.Query, ExpectStatus: c.ExpectStatus,
+		ExpectText: c.ExpectText, ExpectAnswer: c.ExpectAnswer, VerifyTLS: c.VerifyTLS, Timeout: time.Duration(c.TimeoutS) * time.Second}
+}
+
+// ModbusConfig perangkat ber-Modbus yang dibaca site.
+type ModbusConfig struct {
+	DeviceID int64          `json:"device_id"`
+	Host     string         `json:"host"`
+	Port     int            `json:"port"`
+	Unit     int            `json:"unit"`
+	Points   []modbus.Point `json:"points"`
 }
 
 // Config jawaban pusat untuk GET konfigurasi: daftar perangkat yang dipantau collector site ini.
@@ -29,6 +78,8 @@ type Config struct {
 		Name string `json:"name"`
 	} `json:"collector"`
 	Devices []DeviceConfig `json:"devices"`
+	Checks  []CheckConfig  `json:"checks,omitempty"`
+	Modbus  []ModbusConfig `json:"modbus,omitempty"`
 }
 
 // DeviceConfig perangkat yang harus diukur. Kredensial hanya disimpan di memori site, tidak pernah di disk.

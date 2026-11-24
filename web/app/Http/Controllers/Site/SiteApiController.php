@@ -42,7 +42,22 @@ class SiteApiController extends Controller
             ], fn ($v) => $v !== null && $v !== '') : null,
         ])->values();
 
-        return response()->json(['collector' => ['id' => $c->id, 'name' => $c->name], 'devices' => $devices]);
+        $checks = \App\Models\ServiceCheck::with('device:id,host')->where('enabled', true)
+            ->whereHas('device', fn ($q) => $q->where('collector_id', $c->id)->where('enabled', true))->get()
+            ->map(fn ($k) => array_filter([
+                'id' => $k->id, 'type' => $k->type, 'host' => $k->device->host, 'url' => $k->url, 'port' => $k->port, 'query' => $k->query,
+                'expect_status' => $k->expect_status, 'expect_text' => $k->expect_text, 'expect_answer' => $k->expect_answer,
+                'verify_tls' => (bool) $k->verify_tls, 'timeout_s' => $k->timeout_s, 'interval_s' => $k->interval_s,
+            ], fn ($v) => $v !== null))->values();
+        $modbus = Device::where('collector_id', $c->id)->where('enabled', true)->whereNotNull('modbus_port')->get(['id', 'host', 'modbus_port', 'modbus_unit'])
+            ->map(fn ($d) => ['device_id' => $d->id, 'host' => $d->host, 'port' => $d->modbus_port, 'unit' => $d->modbus_unit,
+                'points' => \App\Models\ModbusPoint::where('device_id', $d->id)->where('enabled', true)->orderBy('position')->orderBy('id')->get()
+                    ->map(fn ($p) => ['id' => $p->id, 'label' => $p->label, 'class' => $p->class, 'unit' => $p->unit, 'dtype' => $p->dtype, 'fn' => $p->fn,
+                        'address' => $p->address, 'word_swap' => $p->word_swap, 'scale' => $p->scale, 'offset' => $p->offset_value,
+                        'warn_low' => $p->warn_low, 'warn_high' => $p->warn_high, 'crit_low' => $p->crit_low, 'crit_high' => $p->crit_high])->values()])
+            ->filter(fn ($m) => $m['points']->isNotEmpty())->values();
+
+        return response()->json(['collector' => ['id' => $c->id, 'name' => $c->name], 'devices' => $devices, 'checks' => $checks, 'modbus' => $modbus]);
     }
 
     public function results(Request $request, Collector $collector): JsonResponse

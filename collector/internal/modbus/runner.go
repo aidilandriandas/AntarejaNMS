@@ -2,6 +2,7 @@ package modbus
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"strconv"
 	"sync"
@@ -15,13 +16,20 @@ import (
 
 // Point satu titik baca.
 type Point struct {
-	ID                                   int64
-	Label, Class, Unit, DType            string
-	Fn                                   int
-	Address                              int
-	Swap                                 bool
-	Scale, Offset                        float64
-	WarnLow, WarnHigh, CritLow, CritHigh *float64
+	ID       int64    `json:"id"`
+	Label    string   `json:"label"`
+	Class    string   `json:"class"`
+	Unit     string   `json:"unit"`
+	DType    string   `json:"dtype"`
+	Fn       int      `json:"fn"`
+	Address  int      `json:"address"`
+	Swap     bool     `json:"word_swap"`
+	Scale    float64  `json:"scale"`
+	Offset   float64  `json:"offset"`
+	WarnLow  *float64 `json:"warn_low"`
+	WarnHigh *float64 `json:"warn_high"`
+	CritLow  *float64 `json:"crit_low"`
+	CritHigh *float64 `json:"crit_high"`
 }
 
 // Reading hasil baca satu titik.
@@ -95,11 +103,16 @@ type target struct {
 
 // Load perangkat aktif ber-Modbus (collectorID nil = semua) beserta titik aktifnya; onlyID > 0 untuk satu perangkat.
 func (r *Runner) load(ctx context.Context, onlyID int64) ([]target, error) {
+	return r.loadWhere(ctx, onlyID, false)
+}
+
+// loadWhere: central = true hanya perangkat yang dipantau pusat (bukan collector site).
+func (r *Runner) loadWhere(ctx context.Context, onlyID int64, central bool) ([]target, error) {
 	rows, err := r.DB.Query(ctx, `SELECT d.id, d.name, d.host, d.modbus_port, d.modbus_unit, p.id, p.label, p.class, p.unit, p.fn, p.address, p.dtype,
 			p.word_swap, p.scale, p.offset_value, p.warn_low, p.warn_high, p.crit_low, p.crit_high
 		FROM devices d JOIN modbus_points p ON p.device_id = d.id AND p.enabled
-		WHERE d.enabled AND d.modbus_port IS NOT NULL AND ($1 = 0 OR d.id = $1)
-		ORDER BY d.id, p.position, p.id`, onlyID)
+		WHERE d.enabled AND d.modbus_port IS NOT NULL AND ($1 = 0 OR d.id = $1) AND (NOT $2 OR d.collector_id IS NULL)
+		ORDER BY d.id, p.position, p.id`, onlyID, central)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +137,7 @@ func (r *Runner) load(ctx context.Context, onlyID int64) ([]target, error) {
 
 // Run satu putaran untuk semua perangkat (paralel, maks. 16).
 func (r *Runner) Run(ctx context.Context) error {
-	ts, err := r.load(ctx, 0)
+	ts, err := r.loadWhere(ctx, 0, true)
 	if err != nil {
 		return err
 	}
@@ -141,7 +154,7 @@ func (r *Runner) Run(ctx context.Context) error {
 			res, err := ReadAll(ctx, t.host, t.port, t.unit, t.points, 5*time.Second)
 			mu.Lock()
 			defer mu.Unlock()
-			r.save(ctx, t, res, err, &batch)
+			r.save(ctx, t, res, err, &batch, time.Now())
 		}(t)
 	}
 	wg.Wait()
@@ -165,8 +178,40 @@ func (r *Runner) Test(ctx context.Context, deviceID int64) ([]Reading, error) {
 
 var groupOf = map[string]string{"voltage": "daya", "current": "daya", "power": "daya", "battery": "daya", "fuel": "daya", "temperature": "lingkungan"}
 
-func (r *Runner) save(ctx context.Context, t target, res []Reading, err error, batch *metrics.Batch) {
-	now := time.Now()
+// ApplySample menerapkan hasil baca dari collector site: hanya perangkat aktif milik collector itu, dan hanya bila
+// lebih baru dari pembacaan terakhir yang tersimpan. applied=false bila dilewati.
+func (r *Runner) ApplySample(ctx context.Context, collectorID, deviceID int64, readings []Reading, errText string, at time.Time) (bool, error) {
+	var ok bool
+	if err := r.DB.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM devices WHERE id = $1 AND collector_id = $2 AND enabled
+		AND modbus_port IS NOT NULL AND (modbus_at IS NULL OR modbus_at < $3))`, deviceID, collectorID, at).Scan(&ok); err != nil || !ok {
+		return false, err
+	}
+	ts, err := r.load(ctx, deviceID)
+	if err != nil || len(ts) == 0 {
+		return false, err
+	}
+	// hanya titik yang masih ada dan aktif di pusat
+	known := map[int64]bool{}
+	for _, p := range ts[0].points {
+		known[p.ID] = true
+	}
+	var keep []Reading
+	for _, rd := range readings {
+		if known[rd.PointID] {
+			keep = append(keep, rd)
+		}
+	}
+	var batch metrics.Batch
+	var rerr error
+	if errText != "" {
+		rerr = errors.New(errText)
+	}
+	r.save(ctx, ts[0], keep, rerr, &batch, at)
+	_ = r.Writer.Write(ctx, &batch)
+	return true, nil
+}
+
+func (r *Runner) save(ctx context.Context, t target, res []Reading, err error, batch *metrics.Batch, now time.Time) {
 	if err != nil {
 		msg := err.Error()
 		if len(msg) > 300 {
