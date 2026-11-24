@@ -80,6 +80,11 @@ func (e *Engine) Run(ctx context.Context) (Outcome, error) {
 	} else {
 		res.Conds = append(res.Conds, ForecastConds(fc, devs, time.Now())...)
 	}
+	if rt, err := e.loadRouting(ctx); err != nil {
+		return out, err
+	} else {
+		res.Conds = append(res.Conds, RoutingConds(rt, devs)...)
+	}
 	out.Summary = Summary(res)
 
 	tx, err := e.DB.Begin(ctx)

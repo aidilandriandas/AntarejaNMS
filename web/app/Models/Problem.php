@@ -35,6 +35,7 @@ class Problem extends Model
         'check' => 'Cek layanan',
         'log' => 'Pola log',
         'forecast' => 'Prediksi habis',
+        'routing' => 'BGP / OSPF',
     ];
 
     protected function casts(): array

@@ -97,6 +97,8 @@ class DeviceController extends Controller
             'monitored' => $device->monitoredPorts(),
             'problems' => $device->problems()->whereNull('resolved_at')->triage()->get(),
             'sensors' => $device->sensors()->get()->groupBy('grp'),
+            'bgp' => RoutingController::bgp($device->id),
+            'ospf' => RoutingController::ospf($device->id),
             'configs' => \Illuminate\Support\Facades\DB::table('device_configs')->where('device_id', $device->id)->orderByDesc('taken_at')->limit(8)
                 ->get(['id', 'taken_at', 'lines', 'added', 'removed']),
         ]);

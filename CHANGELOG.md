@@ -16,6 +16,10 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - **Flow trafik** (NetFlow v5, v9, IPFIX di 2055/UDP; sFlow v5 di 6343/UDP): siapa dan aplikasi apa yang memakai
   bandwidth per port dan arah, ringkasan 5 menit (50 percakapan terbesar + lainnya), disimpan 7 hari; pemakai terbesar
   di halaman port. Hanya dari perangkat terdaftar. **Buka 2055/UDP dan 6343/UDP** dari subnet manajemen bila dipakai.
+- **BGP dan OSPF** (Pemantauan, *Routing*; juga di detail perangkat): sesi BGP (BGP4-MIB) dan tetangga OSPF (OSPF-MIB)
+  router Core/Distribution/Firewall dan MikroTik tiap putaran SNMP. Sesi BGP yang di-start tetapi tidak established
+  dan tetangga OSPF yang tidak full/2-way jadi problem High; yang hilang dari tabel router tetap dipantau sampai
+  dilupakan. Perubahan status jadi kejadian *Routing berubah*. Migrasi 0045.
 - **Prediksi habis** (Laporan, *Prediksi habis*): kapan disk penuh (tren 7 hari) dan bahan bakar genset habis (sejak
   isi ulang terakhir), dihitung tiap jam dari VictoriaMetrics. Disk penuh dalam 7 hari (Warning) atau 2 hari (Average)
   dan bahan bakar habis dalam 24 jam (Average) atau 6 jam (High) menjadi problem. Migrasi 0044.

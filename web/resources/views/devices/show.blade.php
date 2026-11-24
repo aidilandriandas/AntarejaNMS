@@ -152,6 +152,7 @@
             </div></section>
         @endif
         @endcan
+        @include('routing._tables', ['showDevice' => false])
         @if($runbooks->isNotEmpty() || auth()->user()->can('manage-devices'))
         <section class="card"><div class="hd"><h2>Runbook</h2>@can('manage-devices')<a class="sub" href="{{ route('runbooks.create', ['device' => $device->id]) }}">Tambah runbook</a>@endcan</div><div class="bd">
             @if($runbooks->isEmpty())<p class="muted" style="margin:0">Belum ada langkah penanganan untuk perangkat ini.</p>@else

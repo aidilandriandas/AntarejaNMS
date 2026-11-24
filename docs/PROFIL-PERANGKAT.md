@@ -75,3 +75,12 @@ Kode: `collector/internal/snmp/inventory.go`. Hanya GET/WALK.
 - **Selisih jam**: `hrSystemDate` (.1.3.6.1.2.1.25.1.2.0, DateAndTime) dibanding jam collector di titik tengah
   permintaan. Bila perangkat tidak menyertakan zona waktu (8 oktet), selisih kelipatan 15 menit dibuang karena
   perangkat bisa memakai WIB, WITA, atau WIT. Sensor `clock` kelas `clock_skew`: peringatan 60 detik, kritis 300 detik.
+
+## BGP dan OSPF
+
+Kode: `collector/internal/snmp/routing.go`. Dibaca dari router kategori Core, Distribution, Firewall, atau MikroTik.
+
+- BGP4-MIB (RFC 4273) `bgpPeerTable` .1.3.6.1.2.1.15.3.1: kolom 2 state (6 = established), 3 admin status
+  (1 = stop), 9 remote AS, 16 FsmEstablishedTime; `bgpLocalAs` .1.3.6.1.2.1.15.2.0. Hanya peer IPv4 (indeks alamat).
+- OSPF-MIB (RFC 4750) `ospfNbrTable` .1.3.6.1.2.1.14.10.1: kolom 3 router ID, 6 state (8 = full, 4 = 2-way).
+- Walk yang berhasil tetapi tidak lagi memuat peer lama menandai peer itu hilang (bukan dihapus).

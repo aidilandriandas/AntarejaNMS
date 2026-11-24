@@ -59,8 +59,9 @@ type SNMPSample struct {
 	ARP     []snmp.ARPEntry `json:"arp,omitempty"`
 	FDB     []snmp.FDBEntry `json:"fdb,omitempty"` // tabel MAC switch
 
-	Clock *snmp.Clock     `json:"clock,omitempty"` // selisih jam perangkat
-	Inv   *snmp.Inventory `json:"inv,omitempty"`   // versi & model, dibaca tiap 24 jam
+	Routing *snmp.Routing   `json:"routing,omitempty"` // sesi BGP & tetangga OSPF (router)
+	Clock   *snmp.Clock     `json:"clock,omitempty"`   // selisih jam perangkat
+	Inv     *snmp.Inventory `json:"inv,omitempty"`     // versi & model, dibaca tiap 24 jam
 }
 
 // Ambang selisih jam (detik, nilai mutlak). Log, sertifikat, dan korelasi kejadian kacau bila jam perangkat meleset.
@@ -157,6 +158,11 @@ func (p *Poller) MeasureSNMP(d store.Device, cr snmp.Credentials, credErr error,
 	if arpCategories[d.Category] || strings.HasPrefix(sys.ObjectID, ".1.3.6.1.4.1.14988") {
 		if arp, err := p.SNMP.ARP(d.Host, cr); err == nil {
 			s.ARP = arp
+		}
+	}
+	if arpCategories[d.Category] || strings.HasPrefix(sys.ObjectID, ".1.3.6.1.4.1.14988") {
+		if rt, err := p.SNMP.Routing(d.Host, cr); err == nil {
+			s.Routing = &rt
 		}
 	}
 	if fdbCategories[d.Category] {
@@ -338,6 +344,15 @@ func (p *Poller) ApplySNMP(ctx context.Context, d store.Device, s SNMPSample) bo
 		}
 	}
 
+	if s.Routing != nil {
+		evs, err := p.Store.SaveRouting(ctx, d.ID, *s.Routing)
+		if err != nil {
+			p.Log.Warn("simpan BGP/OSPF gagal", "perangkat", d.ID, "galat", err)
+		}
+		for _, m := range evs {
+			_ = p.Store.Event(ctx, d.ID, "routing", m, nil, now)
+		}
+	}
 	if s.Inv != nil {
 		if old, changed, err := p.Store.SaveInventory(ctx, d.ID, s.Inv.Version, s.Inv.Model, s.Inv.Serial); err != nil {
 			p.Log.Warn("simpan versi perangkat gagal", "perangkat", d.ID, "galat", err)
