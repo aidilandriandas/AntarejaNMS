@@ -26,6 +26,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/notify"
 	"github.com/aidilandriandas/antarejanms/collector/internal/offsite"
 	"github.com/aidilandriandas/antarejanms/collector/internal/poller"
+	"github.com/aidilandriandas/antarejanms/collector/internal/promx"
 	"github.com/aidilandriandas/antarejanms/collector/internal/sitecollector"
 	"github.com/aidilandriandas/antarejanms/collector/internal/snmp"
 	"github.com/aidilandriandas/antarejanms/collector/internal/tools"
@@ -50,9 +51,10 @@ type Server struct {
 	// Cek layanan (opsional)
 	Checks *checks.Runner
 	// Modbus (opsional)
-	Modbus *modbus.Runner
-	Token  string
-	Log    *slog.Logger
+	Modbus   *modbus.Runner
+	Exporter *promx.Runner
+	Token    string
+	Log      *slog.Logger
 
 	ingestMu sync.Mutex // kiriman collector site diterapkan satu per satu
 }
@@ -67,6 +69,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /v1/backup/offsite/test", s.auth(s.offsiteTest))
 	mux.HandleFunc("POST /v1/checks/{id}/run", s.auth(s.checkRun))
 	mux.HandleFunc("POST /v1/devices/{id}/modbus/test", s.auth(s.modbusTest))
+	mux.HandleFunc("POST /v1/devices/{id}/exporter/test", s.auth(s.exporterTest))
 	mux.HandleFunc("POST /v1/channels/{id}/test", s.auth(s.testChannel))
 	mux.HandleFunc("POST /v1/live", s.auth(s.live))
 	mux.HandleFunc("GET /v1/reports/{id}/preview", s.auth(s.reportPreview))
@@ -407,7 +410,7 @@ func (s *Server) siteIngest(w http.ResponseWriter, r *http.Request) {
 	defer s.ingestMu.Unlock()
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Minute)
 	defer cancel()
-	res, err := sitecollector.IngestAll(ctx, sitecollector.Appliers{Poller: s.Poller, Checks: s.Checks, Modbus: s.Modbus}, id, b)
+	res, err := sitecollector.IngestAll(ctx, sitecollector.Appliers{Poller: s.Poller, Checks: s.Checks, Modbus: s.Modbus, Exporter: s.Exporter}, id, b)
 	if err != nil {
 		s.Log.Error("kiriman collector site gagal diterapkan", "collector", id, "galat", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "gagal diterapkan, akan dicoba lagi"})
@@ -459,4 +462,25 @@ func (s *Server) modbusTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "readings": res})
+}
+
+// exporterTest scrape exporter satu perangkat sekarang (URL dari database, bukan dari permintaan), tanpa menyimpan.
+func (s *Server) exporterTest(w http.ResponseWriter, r *http.Request) {
+	if s.Exporter == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "exporter tidak aktif di collector ini"})
+		return
+	}
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil || id <= 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "id tidak valid"})
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
+	defer cancel()
+	res, kind, err := s.Exporter.Test(ctx, id)
+	if err != nil {
+		writeJSON(w, http.StatusOK, map[string]any{"ok": false, "error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "kind": kind, "readings": res})
 }

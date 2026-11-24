@@ -207,11 +207,12 @@ class ApiController extends Controller
             ->when($r->query('class'), fn ($q, $c) => $q->where('s.class', (string) $c))
             ->when(in_array($r->query('status'), ['ok', 'warn', 'crit'], true), fn ($q) => $q->where('s.status', $r->query('status')))
             ->when($r->query('source') === 'modbus', fn ($q) => $q->where('s.key', 'like', 'mb:%'))
-            ->when($r->query('source') === 'snmp', fn ($q) => $q->where('s.key', 'not like', 'mb:%'))
+            ->when($r->query('source') === 'exporter', fn ($q) => $q->where('s.key', 'like', 'px:%'))
+            ->when($r->query('source') === 'snmp', fn ($q) => $q->where('s.key', 'not like', 'mb:%')->where('s.key', 'not like', 'px:%'))
             ->orderBy('s.device_id')->orderBy('s.key')->limit(2000);
 
         return response()->json(['data' => $q->get()->map(fn ($s) => ['device_id' => $s->device_id, 'device' => $s->device, 'key' => $s->key,
-            'source' => str_starts_with($s->key, 'mb:') ? 'modbus' : 'snmp', 'class' => $s->class, 'group' => $s->grp, 'label' => $s->label, 'unit' => $s->unit,
+            'source' => str_starts_with($s->key, 'mb:') ? 'modbus' : (str_starts_with($s->key, 'px:') ? 'exporter' : 'snmp'), 'class' => $s->class, 'group' => $s->grp, 'label' => $s->label, 'unit' => $s->unit,
             'value' => $s->value !== null ? (float) $s->value : null, 'text' => $s->text, 'status' => $s->status, 'updated_at' => self::ts($s->updated_at)])->values()]);
     }
 

@@ -131,6 +131,17 @@ class Collector
         return $res->json();
     }
 
+    /** Scrape exporter satu perangkat sekarang (URL dari database). */
+    public function exporterTest(int $deviceId): array
+    {
+        $res = $this->http()->timeout(30)->post("/v1/devices/{$deviceId}/exporter/test");
+        if (! $res->successful()) {
+            throw new RuntimeException($res->json('error') ?? ('collector menjawab ' . $res->status()));
+        }
+
+        return $res->json();
+    }
+
     /** Jalankan satu cek layanan sekarang. @return array{ok: bool, ms: float, error: string, status: int} */
     public function runCheck(int $checkId): array
     {

@@ -65,6 +65,7 @@ class Device extends Model
             'lng' => 'float',
             'enabled' => 'boolean',
             'modbus_at' => 'datetime',
+            'exporter_at' => 'datetime',
             'ping_enabled' => 'boolean',
             'snmp_enabled' => 'boolean',
             'snmp_ok' => 'boolean',

@@ -110,6 +110,15 @@ terpisah dari berkasnya. Impor & ekspor khusus admin dan tercatat di jejak audit
   ANTAREJA, dan letakkan di jaringan manajemen.
 - Hanya engineer dan admin yang mengatur titik baca; perubahan tercatat di jejak audit.
 
+## 6c. Exporter Prometheus
+
+- Collector hanya melakukan GET ke URL yang diisi engineer (http/https, tanpa pengalihan, batas waktu 10 detik,
+  jawaban maks. 16 MB, hanya metrik yang dipakai disimpan). Permintaan tidak lewat proxy.
+- URL dengan nama pengguna atau kata sandi ditolak, jadi tidak ada kredensial exporter di database. Batasi port
+  exporter (9100, 9182) di firewall server hanya untuk IP ANTAREJA.
+- Nama layanan dibatasi huruf, angka, dan beberapa tanda baca; ANTAREJA hanya membaca status layanan dan tidak bisa
+  menyalakan atau mematikan layanan.
+
 ## 7. Batasan yang diketahui
 
 - **CSP masih mengizinkan gaya (CSS) inline** (atribut `style` di template & Leaflet). Skrip inline sudah tidak diizinkan.

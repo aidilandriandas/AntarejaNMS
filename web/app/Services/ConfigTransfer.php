@@ -77,6 +77,7 @@ class ConfigTransfer
                     'parent' => $d->parent_id ? ($devKey[$d->parent_id] ?? null) : null, 'thresholds' => json_decode($d->thresholds ?: '{}', true) ?: (object) [],
                     'cfg_type' => $d->cfg_type, 'ssh_port' => $d->ssh_port, 'ssh_user' => $d->ssh_user, 'lat' => $d->lat, 'lng' => $d->lng, 'notes' => $d->notes,
                     'collector' => $d->collector_id ? ($collectorName[$d->collector_id] ?? null) : null,
+                    'exporter' => $d->exporter_url ? ['url' => $d->exporter_url, 'services' => $d->exporter_services] : null,
                     'modbus' => ($d->modbus_port || isset($points[$d->id])) ? ['port' => $d->modbus_port, 'unit' => $d->modbus_unit,
                         'points' => ($points[$d->id] ?? collect())->map(fn ($p) => ['label' => $p->label, 'class' => $p->class, 'unit' => $p->unit, 'fn' => $p->fn,
                             'address' => $p->address, 'dtype' => $p->dtype, 'word_swap' => (bool) $p->word_swap, 'scale' => (float) $p->scale,
@@ -399,6 +400,12 @@ class ConfigTransfer
                     'lat' => self::coord($x['lat'] ?? null, 90), 'lng' => self::coord($x['lng'] ?? null, 180), 'notes' => self::str($x['notes'] ?? null, 5000),
                     'collector_id' => $collectorId($x['collector'] ?? null),
                     'updated_at' => $now];
+                if (is_array($x['exporter'] ?? null)) {
+                    $eu = self::str($x['exporter']['url'] ?? null, 255);
+                    $pu = $eu ? parse_url($eu) : false;
+                    $row['exporter_url'] = ($pu && in_array($pu['scheme'] ?? '', ['http', 'https'], true) && ! empty($pu['host']) && ! isset($pu['user'])) ? $eu : null;
+                    $row['exporter_services'] = self::str($x['exporter']['services'] ?? null, 500);
+                }
                 if (is_array($x['modbus'] ?? null)) {
                     $row['modbus_port'] = is_numeric($x['modbus']['port'] ?? null) ? self::int($x['modbus']['port'], 1, 65535, 502) : null;
                     $row['modbus_unit'] = self::int($x['modbus']['unit'] ?? 1, 0, 255, 1);

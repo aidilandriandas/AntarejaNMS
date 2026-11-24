@@ -81,7 +81,7 @@ class ConfigTransferTest extends TestCase
         $core = $this->isiData();
         $site = DB::table('sites')->where('code', 'PIT-A')->value('id');
         $col = DB::table('site_collectors')->insertGetId(['name' => 'collector-pit-a', 'site_id' => $site, 'token_hash' => str_repeat('f', 64), 'token_hint' => 'acs_lama']);
-        DB::table('devices')->where('id', $core)->update(['collector_id' => $col, 'modbus_port' => 502, 'modbus_unit' => 2]);
+        DB::table('devices')->where('id', $core)->update(['collector_id' => $col, 'modbus_port' => 502, 'modbus_unit' => 2, 'exporter_url' => 'http://10.1.0.1:9100/metrics', 'exporter_services' => 'nginx']);
         DB::table('modbus_points')->insert([
             ['device_id' => $core, 'label' => 'Baterai', 'class' => 'voltage', 'unit' => 'V', 'fn' => 4, 'address' => 12548, 'scale' => 0.01, 'warn_low' => 12.2, 'position' => 0],
             ['device_id' => $core, 'label' => 'Suhu', 'class' => 'temperature', 'unit' => '°C', 'fn' => 3, 'address' => 10, 'scale' => 1, 'warn_low' => null, 'position' => 1],
@@ -98,7 +98,7 @@ class ConfigTransferTest extends TestCase
         DB::table('service_checks')->delete();
         DB::table('runbooks')->delete();
         DB::table('modbus_points')->delete();
-        DB::table('devices')->update(['collector_id' => null, 'modbus_port' => null]);
+        DB::table('devices')->update(['collector_id' => null, 'modbus_port' => null, 'exporter_url' => null, 'exporter_services' => null]);
         DB::table('site_collectors')->delete();
 
         $plan = $t->plan($file);
@@ -111,7 +111,7 @@ class ConfigTransferTest extends TestCase
         $newCol = DB::table('site_collectors')->where('name', 'collector-pit-a')->first();
         $this->assertNotSame(str_repeat('f', 64), $newCol->token_hash);
         $dev = DB::table('devices')->where('id', $core)->first();
-        $this->assertSame([$newCol->id, 502, 2], [$dev->collector_id, $dev->modbus_port, $dev->modbus_unit]);
+        $this->assertSame([$newCol->id, 502, 2, 'http://10.1.0.1:9100/metrics', 'nginx'], [$dev->collector_id, $dev->modbus_port, $dev->modbus_unit, $dev->exporter_url, $dev->exporter_services]);
         $this->assertSame(['Baterai', 'Suhu'], DB::table('modbus_points')->where('device_id', $core)->orderBy('position')->pluck('label')->all());
         $this->assertSame('Masuk', DB::table('service_checks')->where('device_id', $core)->value('expect_text'));
         $this->assertSame($core, (int) DB::table('runbooks')->where('title', 'Core down')->value('device_id'));

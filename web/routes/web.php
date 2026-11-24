@@ -22,6 +22,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\ModbusController;
+use App\Http\Controllers\ExporterController;
 use App\Http\Controllers\FlowController;
 use App\Http\Controllers\VersionController;
 use App\Http\Controllers\ImpactController;
@@ -99,6 +100,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('perangkat/{device}/modbus/titik/{point}', [ModbusController::class, 'destroy'])->name('modbus.points.destroy')->whereNumber('point');
         Route::post('perangkat/{device}/modbus/salin', [ModbusController::class, 'copy'])->name('modbus.copy');
         Route::post('perangkat/{device}/modbus/uji', [ModbusController::class, 'test'])->name('modbus.test')->middleware('throttle:10,1');
+        Route::get('perangkat/{device}/exporter', [ExporterController::class, 'edit'])->name('exporter.edit');
+        Route::put('perangkat/{device}/exporter', [ExporterController::class, 'update'])->name('exporter.update');
+        Route::post('perangkat/{device}/exporter/uji', [ExporterController::class, 'test'])->name('exporter.test')->middleware('throttle:10,1');
         Route::post('runbook', [RunbookController::class, 'store'])->name('runbooks.store');
         Route::get('runbook/{runbook}/ubah', [RunbookController::class, 'edit'])->name('runbooks.edit')->whereNumber('runbook');
         Route::put('runbook/{runbook}', [RunbookController::class, 'update'])->name('runbooks.update')->whereNumber('runbook');

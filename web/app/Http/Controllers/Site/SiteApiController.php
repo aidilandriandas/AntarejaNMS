@@ -57,7 +57,12 @@ class SiteApiController extends Controller
                         'warn_low' => $p->warn_low, 'warn_high' => $p->warn_high, 'crit_low' => $p->crit_low, 'crit_high' => $p->crit_high])->values()])
             ->filter(fn ($m) => $m['points']->isNotEmpty())->values();
 
-        return response()->json(['collector' => ['id' => $c->id, 'name' => $c->name], 'devices' => $devices, 'checks' => $checks, 'modbus' => $modbus]);
+        $exporters = Device::where('collector_id', $c->id)->where('enabled', true)->whereNotNull('exporter_url')->get(['id', 'exporter_url', 'exporter_services'])
+            ->map(fn ($d) => ['device_id' => $d->id, 'url' => $d->exporter_url,
+                'services' => collect(explode(',', (string) $d->exporter_services))->map(fn ($s) => trim($s))->filter()->values()])->values();
+
+        return response()->json(['collector' => ['id' => $c->id, 'name' => $c->name], 'devices' => $devices, 'checks' => $checks, 'modbus' => $modbus,
+            'exporters' => $exporters]);
     }
 
     public function results(Request $request, Collector $collector): JsonResponse

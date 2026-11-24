@@ -341,8 +341,8 @@ func (s Store) SaveSensors(ctx context.Context, deviceID int64, rows []SensorRow
 			return err
 		}
 	}
-	// sensor Modbus (kunci "mb:") dikelola SaveModbusSensors, jangan ikut terhapus putaran SNMP
-	if _, err := tx.Exec(ctx, `DELETE FROM device_sensors WHERE device_id = $1 AND NOT (key = ANY($2)) AND key NOT LIKE 'mb:%'`, deviceID, keys); err != nil {
+	// sensor Modbus ("mb:") dan exporter ("px:") dikelola penyimpannya sendiri, jangan ikut terhapus putaran SNMP
+	if _, err := tx.Exec(ctx, `DELETE FROM device_sensors WHERE device_id = $1 AND NOT (key = ANY($2)) AND key NOT LIKE 'mb:%' AND key NOT LIKE 'px:%'`, deviceID, keys); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)
@@ -570,4 +570,28 @@ func (s Store) SaveInventory(ctx context.Context, deviceID int64, version, model
 		return "", false, err
 	}
 	return *prev, version != "" && *prev != version, nil
+}
+
+// SaveExporterSensors menyimpan sensor dari exporter Prometheus (kunci "px:"); yang tidak ada lagi di hasil dihapus.
+func (s Store) SaveExporterSensors(ctx context.Context, deviceID int64, rows []SensorRow) error {
+	tx, err := s.DB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+	keys := make([]string, 0, len(rows))
+	for _, r := range rows {
+		keys = append(keys, r.Key)
+		if _, err := tx.Exec(ctx, `INSERT INTO device_sensors (device_id, key, class, grp, label, unit, value, text, status, updated_at)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,NULLIF($8,''),$9, now())
+			ON CONFLICT (device_id, key) DO UPDATE SET class = EXCLUDED.class, grp = EXCLUDED.grp, label = EXCLUDED.label, unit = EXCLUDED.unit,
+				value = EXCLUDED.value, text = EXCLUDED.text, status = EXCLUDED.status, updated_at = now()`,
+			deviceID, r.Key, r.Class, r.Group, cut(r.Label), r.Unit, r.Value, r.Text, r.Status); err != nil {
+			return err
+		}
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM device_sensors WHERE device_id = $1 AND key LIKE 'px:%' AND NOT (key = ANY($2))`, deviceID, keys); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }

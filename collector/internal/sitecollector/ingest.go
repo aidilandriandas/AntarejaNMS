@@ -9,17 +9,19 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/modbus"
 	"github.com/aidilandriandas/antarejanms/collector/internal/ping"
 	"github.com/aidilandriandas/antarejanms/collector/internal/poller"
+	"github.com/aidilandriandas/antarejanms/collector/internal/promx"
 	"github.com/aidilandriandas/antarejanms/collector/internal/store"
 )
 
 // IngestResult ringkasan penerapan satu kiriman.
 type IngestResult struct {
-	Pings    int   `json:"pings"`
-	SNMP     int   `json:"snmp"`
-	Checks   int   `json:"checks"`
-	Modbus   int   `json:"modbus"`
-	Skipped  int   `json:"skipped"` // sampel ganda, terlalu lama, atau milik perangkat lain
-	SkewSecs int64 `json:"skew_s"`
+	Pings     int   `json:"pings"`
+	SNMP      int   `json:"snmp"`
+	Checks    int   `json:"checks"`
+	Modbus    int   `json:"modbus"`
+	Exporters int   `json:"exporters"`
+	Skipped   int   `json:"skipped"` // sampel ganda, terlalu lama, atau milik perangkat lain
+	SkewSecs  int64 `json:"skew_s"`
 }
 
 // maxSkew selisih jam site yang masih dibiarkan; lebih dari ini, waktu sampel digeser mengikuti jam pusat.
@@ -34,9 +36,10 @@ func Ingest(ctx context.Context, p *poller.Poller, collectorID int64, b Batch) (
 
 // Appliers penerap hasil di pusat. Checks/Modbus nil: sampel jenis itu dilewati.
 type Appliers struct {
-	Poller *poller.Poller
-	Checks *checks.Runner
-	Modbus *modbus.Runner
+	Poller   *poller.Poller
+	Checks   *checks.Runner
+	Modbus   *modbus.Runner
+	Exporter *promx.Runner
 }
 
 // IngestAll seperti Ingest, ditambah hasil cek layanan dan Modbus.
@@ -154,6 +157,23 @@ func IngestAll(ctx context.Context, ap Appliers, collectorID int64, b Batch) (In
 		}
 	}
 
+	exs := append([]ExporterSample(nil), b.Exporters...)
+	sort.SliceStable(exs, func(i, j int) bool { return exs[i].At.Before(exs[j].At) })
+	for _, e := range exs {
+		ok := false
+		if ap.Exporter != nil {
+			var err error
+			if ok, err = ap.Exporter.ApplySample(ctx, collectorID, e.DeviceID, e.Readings, e.Error, fix(e.At)); err != nil {
+				return res, err
+			}
+		}
+		if ok {
+			res.Exporters++
+		} else {
+			res.Skipped++
+		}
+	}
+
 	var newest *time.Time
 	if len(times) > 0 {
 		t := times[len(times)-1]
@@ -167,7 +187,7 @@ func IngestAll(ctx context.Context, ap Appliers, collectorID int64, b Batch) (In
 	}
 	_, err := p.Store.DB.Exec(ctx, `UPDATE site_collectors SET newest_sample_at = GREATEST(newest_sample_at, $2), clock_skew_s = $3,
 		queued = $4, version = NULLIF($5, ''), updated_at = now() WHERE id = $1`, collectorID, newest, res.SkewSecs, b.Queued, trimTo(b.Version, 32))
-	if (res.Pings > 0 || res.Checks > 0 || res.Modbus > 0) && p.AfterPing != nil {
+	if (res.Pings > 0 || res.Checks > 0 || res.Modbus > 0 || res.Exporters > 0) && p.AfterPing != nil {
 		p.AfterPing(ctx) // problem & notifikasi dinilai ulang dengan status baru
 	}
 	return res, err

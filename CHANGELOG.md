@@ -16,6 +16,10 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - **Flow trafik** (NetFlow v5, v9, IPFIX di 2055/UDP; sFlow v5 di 6343/UDP): siapa dan aplikasi apa yang memakai
   bandwidth per port dan arah, ringkasan 5 menit (50 percakapan terbesar + lainnya), disimpan 7 hari; pemakai terbesar
   di halaman port. Hanya dari perangkat terdaftar. **Buka 2055/UDP dan 6343/UDP** dari subnet manajemen bila dipakai.
+- **Exporter Prometheus**: server Linux (node_exporter) dan Windows (windows_exporter) dipantau tanpa SNMP. CPU,
+  memori, disk per mount atau drive, dan status layanan pilihan (unit systemd, layanan Windows) jadi sensor dan
+  problem. Diatur di halaman perangkat, *Uji scrape* untuk mencoba, ikut ekspor/impor dan collector site. API
+  sensor menerima `source=exporter`. Migrasi 0040. Belum diuji dengan exporter sungguhan di lingkungan pengembangan.
 - **Versi & jam perangkat** (menu *Pemantauan, Versi & jam*): versi perangkat lunak, model, dan nomor seri dibaca
   tiap 24 jam (MikroTik dari MIKROTIK-MIB, lainnya dari ENTITY-MIB, IEEE802dot11-MIB, atau "Version" di sysDescr),
   dikelompokkan per model; perangkat yang versinya beda dari mayoritas modelnya ditandai. Kejadian *Versi berubah*

@@ -22,6 +22,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/config"
 	"github.com/aidilandriandas/antarejanms/collector/internal/modbus"
 	"github.com/aidilandriandas/antarejanms/collector/internal/poller"
+	"github.com/aidilandriandas/antarejanms/collector/internal/promx"
 )
 
 // Agent berjalan di site: mengambil daftar perangkat dari pusat, mengukur, mengantrekan, dan mengirim.
@@ -34,13 +35,15 @@ type Agent struct {
 	HTTP  *http.Client
 	Spool *Spool
 
-	mu      sync.RWMutex
-	devices []DeviceConfig
-	checks  []CheckConfig
-	modbus  []ModbusConfig
-	lastChk map[int64]time.Time // waktu terakhir tiap cek dijalankan
-	name    string
-	prof    poller.ProfileCache
+	mu        sync.RWMutex
+	devices   []DeviceConfig
+	checks    []CheckConfig
+	modbus    []ModbusConfig
+	exporters []ExporterConfig
+	pxState   promx.States
+	lastChk   map[int64]time.Time // waktu terakhir tiap cek dijalankan
+	name      string
+	prof      poller.ProfileCache
 
 	lastPing  atomic.Int64
 	lastSent  atomic.Int64
@@ -117,6 +120,7 @@ func (a *Agent) Run(ctx context.Context) error {
 	every(a.Cfg.SNMPInterval, a.snmpCycle)
 	every(15*time.Second, a.checkCycle)
 	every(time.Minute, a.modbusCycle)
+	every(time.Minute, a.exporterCycle)
 	wg.Add(1)
 	go func() { defer wg.Done(); a.sendLoop(ctx) }()
 	wg.Wait()
@@ -194,7 +198,7 @@ func (a *Agent) fetchConfig(ctx context.Context) error {
 	}
 	a.mu.Lock()
 	changed := a.name != c.Collector.Name || len(a.devices) != len(c.Devices)
-	a.devices, a.name, a.checks, a.modbus = c.Devices, c.Collector.Name, c.Checks, c.Modbus
+	a.devices, a.name, a.checks, a.modbus, a.exporters = c.Devices, c.Collector.Name, c.Checks, c.Modbus, c.Exporters
 	a.mu.Unlock()
 	if raw, err := json.Marshal(withoutSecrets(c.Devices)); err == nil {
 		_ = os.WriteFile(a.cachePath(), raw, 0o600)
@@ -370,6 +374,36 @@ func (a *Agent) modbusCycle(ctx context.Context) {
 	}
 	wg.Wait()
 	a.enqueue(Batch{Version: a.Version, Modbus: out})
+}
+
+// exporterCycle scrape exporter Prometheus perangkat milik site ini; status dinilai pusat dengan ambang perangkat.
+func (a *Agent) exporterCycle(ctx context.Context) {
+	a.mu.RLock()
+	list := a.exporters
+	a.mu.RUnlock()
+	if len(list) == 0 {
+		return
+	}
+	out := make([]ExporterSample, len(list))
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 8)
+	for i, e := range list {
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(i int, e ExporterConfig) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			s := ExporterSample{DeviceID: e.DeviceID, At: time.Now().Truncate(time.Second)}
+			rd, _, err := promx.Measure(ctx, &a.pxState, e.DeviceID, e.URL, e.Services)
+			if err != nil {
+				s.Error = err.Error()
+			}
+			s.Readings = rd
+			out[i] = s
+		}(i, e)
+	}
+	wg.Wait()
+	a.enqueue(Batch{Version: a.Version, Exporters: out})
 }
 
 func (a *Agent) enqueue(b Batch) {
