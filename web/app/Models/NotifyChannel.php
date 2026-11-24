@@ -19,7 +19,7 @@ class NotifyChannel extends Model
         'webhook' => ['url' => false, 'secret' => true],
     ];
 
-    protected $fillable = ['name', 'type', 'min_severity', 'delay_minutes', 'notify_resolve', 'to_oncall', 'site_id', 'enabled'];
+    protected $fillable = ['name', 'type', 'min_severity', 'delay_minutes', 'notify_resolve', 'to_oncall', 'site_id', 'enabled', 'template_open', 'template_resolve'];
 
     protected $hidden = ['config_enc'];
 

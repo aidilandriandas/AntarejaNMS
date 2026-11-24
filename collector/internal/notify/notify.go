@@ -34,6 +34,8 @@ type Channel struct {
 	SiteID        int64
 	ToOncall      bool
 	Oncall        []string // nama engineer piket yang menerima (kosong = tujuan tetap kanal)
+	// Templat isi pesan satu problem (kosong = format bawaan)
+	TemplateOpen, TemplateResolve string
 }
 
 // Problem adalah data problem yang dikirim.
@@ -110,10 +112,10 @@ func (d *Dispatcher) channels(ctx context.Context, onlyID int64) ([]Channel, err
 
 // rawChannels: kanal apa adanya dari database (konfigurasi sudah dibuka), tanpa penggantian tujuan.
 func (d *Dispatcher) rawChannels(ctx context.Context, onlyID int64) ([]Channel, error) {
-	q := `SELECT id, name, type, config_enc, min_severity, delay_minutes, notify_resolve, COALESCE(site_id, 0), to_oncall FROM notify_channels WHERE enabled`
+	q := `SELECT id, name, type, config_enc, min_severity, delay_minutes, notify_resolve, COALESCE(site_id, 0), to_oncall, COALESCE(template_open, ''), COALESCE(template_resolve, '') FROM notify_channels WHERE enabled`
 	args := []any{}
 	if onlyID > 0 {
-		q = `SELECT id, name, type, config_enc, min_severity, delay_minutes, notify_resolve, COALESCE(site_id, 0), to_oncall FROM notify_channels WHERE id = $1`
+		q = `SELECT id, name, type, config_enc, min_severity, delay_minutes, notify_resolve, COALESCE(site_id, 0), to_oncall, COALESCE(template_open, ''), COALESCE(template_resolve, '') FROM notify_channels WHERE id = $1`
 		args = append(args, onlyID)
 	}
 	rows, err := d.DB.Query(ctx, q, args...)
@@ -125,7 +127,7 @@ func (d *Dispatcher) rawChannels(ctx context.Context, onlyID int64) ([]Channel, 
 	for rows.Next() {
 		var c Channel
 		var enc string
-		if err := rows.Scan(&c.ID, &c.Name, &c.Type, &enc, &c.MinSeverity, &c.DelayMinutes, &c.NotifyResolve, &c.SiteID, &c.ToOncall); err != nil {
+		if err := rows.Scan(&c.ID, &c.Name, &c.Type, &enc, &c.MinSeverity, &c.DelayMinutes, &c.NotifyResolve, &c.SiteID, &c.ToOncall, &c.TemplateOpen, &c.TemplateResolve); err != nil {
 			return nil, err
 		}
 		plain, err := d.Box.Decrypt(enc)
@@ -242,7 +244,7 @@ func (d *Dispatcher) sendBatch(ctx context.Context, c Channel, kind string, ps [
 		groups = append(groups, ps)
 	} else {
 		for _, p := range ps {
-			msgs = append(msgs, Single(kind, p, c.DelayMinutes, d.BaseURL))
+			msgs = append(msgs, Templated(c, kind, p, c.DelayMinutes, d.BaseURL))
 			groups = append(groups, []Problem{p})
 		}
 	}
@@ -304,6 +306,13 @@ func (d *Dispatcher) Test(ctx context.Context, channelID int64) error {
 	m := Message{Event: "test", Subject: "[ANTAREJA] Uji notifikasi",
 		Text: "ANTAREJA NMS: uji notifikasi kanal \"" + c.Name + "\" berhasil (" + now + ").",
 		HTML: "✅ <b>ANTAREJA NMS</b>\nUji notifikasi kanal <b>" + esc(c.Name) + "</b> berhasil.\n<i>" + now + "</i>"}
+	if strings.TrimSpace(c.TemplateOpen) != "" {
+		// kanal bertemplat: uji memakai templat dengan problem contoh supaya hasilnya bisa dilihat
+		sample := Problem{Severity: "high", Title: "CONTOH: Radio Pit A down", Detail: "Ping gagal 3 kali", Device: "Radio Pit A",
+			Host: "10.1.2.3", Site: "PIT-A", StartedAt: time.Now().Add(-4 * time.Minute), Impact: "3 kamera, 2 perangkat"}
+		m = Templated(c, "open", sample, 0, d.BaseURL)
+		m.Event, m.Subject = "test", "[ANTAREJA] Uji templat: "+strings.TrimPrefix(m.Subject, "[ANTAREJA] ")
+	}
 	err = d.send(ctx, c, m)
 	status, errText := "sent", (*string)(nil)
 	if err != nil {

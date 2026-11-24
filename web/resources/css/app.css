@@ -576,3 +576,6 @@ table.t.logs td:nth-child(4) { font-size: var(--text-xs); white-space: nowrap; }
 fieldset.field { border: 0; margin: 0; padding: 0; min-width: 0; }
 fieldset.field > legend { font-weight: 600; font-size: var(--text-sm); margin-bottom: var(--space-2xs); padding: 0; }
 .check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--space-2xs) var(--space-md); }
+details.tpl { border: 1px solid var(--color-rule); border-radius: var(--radius-ctl); padding: var(--space-sm) var(--space-md); }
+details.tpl > summary { cursor: pointer; font-weight: 600; }
+details.tpl[open] > summary { margin-bottom: var(--space-sm); }

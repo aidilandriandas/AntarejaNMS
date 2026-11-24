@@ -122,6 +122,7 @@ class ChannelController extends Controller
                 'cfg.password' => ['nullable', 'string', 'max:255'], 'cfg.from' => ['required', 'email'], 'cfg.to' => ['required', 'string', 'max:1000']],
             'webhook' => ['cfg.url' => ['required', 'url:http,https', 'max:1000'], 'cfg.secret' => ['nullable', 'string', 'max:255']],
         };
+        $rules += ['template_open' => ['nullable', 'string', 'max:2000'], 'template_resolve' => ['nullable', 'string', 'max:2000']];
         $d = $r->validate($rules, [
             'cfg.bot_token.required' => 'Isi token bot dari @BotFather.',
             'cfg.bot_token.regex' => 'Format token bot: 123456789:ABC... (dari @BotFather).',
@@ -141,7 +142,8 @@ class ChannelController extends Controller
         }
         $c->fill(['name' => $d['name'], 'min_severity' => $d['min_severity'], 'delay_minutes' => $d['delay_minutes'],
             'site_id' => $d['site_id'] ?? null, 'notify_resolve' => $r->boolean('notify_resolve'),
-            'to_oncall' => in_array($type, ['email', 'telegram'], true) && $r->boolean('to_oncall'), 'enabled' => $r->boolean('enabled')]);
+            'to_oncall' => in_array($type, ['email', 'telegram'], true) && $r->boolean('to_oncall'), 'enabled' => $r->boolean('enabled'),
+            'template_open' => trim((string) ($d['template_open'] ?? '')) ?: null, 'template_resolve' => trim((string) ($d['template_resolve'] ?? '')) ?: null]);
         $c->setConfig($cfg);
     }
 }

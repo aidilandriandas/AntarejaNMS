@@ -56,6 +56,12 @@
         <small>{{ $channel->type === 'email' ? 'Penerima diganti email semua orang yang sedang piket.' : 'Chat ID diganti chat ID Telegram orang yang sedang piket.' }} Bila tidak ada yang piket atau kontaknya kosong, dikirim ke tujuan di atas. Atur di <a href="{{ route('oncall.index') }}">Jadwal piket</a>.</small></span></label>
     @endif
     <label class="check"><input type="checkbox" name="notify_resolve" value="1" @checked(old('notify_resolve', $channel->notify_resolve))><span>Kirim juga saat problem pulih</span></label>
+    <details class="tpl" @if($channel->template_open || $channel->template_resolve || $errors->has('template_open')) open @endif>
+        <summary>Templat pesan <span class="muted">(opsional)</span></summary>
+        <div class="field"><label for="template_open">Problem baru</label><textarea class="input mono @error('template_open') is-err @enderror" id="template_open" name="template_open" rows="5" maxlength="2000" placeholder="{severity} {judul}&#10;{perangkat} ({host}), site {site}&#10;{detail}&#10;Dampak: {dampak}&#10;{tautan}">{{ old('template_open', $channel->template_open) }}</textarea><x-field-error name="template_open"/></div>
+        <div class="field"><label for="template_resolve">Problem pulih</label><textarea class="input mono" id="template_resolve" name="template_resolve" rows="3" maxlength="2000" placeholder="PULIH {judul} setelah {durasi}">{{ old('template_resolve', $channel->template_resolve) }}</textarea></div>
+        <p class="hint muted" style="margin:0">Kosongkan untuk format bawaan. Penanda: <code>{judul}</code> <code>{severity}</code> <code>{perangkat}</code> <code>{host}</code> <code>{site}</code> <code>{detail}</code> <code>{mulai}</code> <code>{durasi}</code> <code>{dampak}</code> <code>{runbook}</code> <code>{tautan}</code> <code>{eskalasi}</code> <code>{ack_oleh}</code>. Baris yang penandanya kosong tidak dikirim. Baris pertama menjadi subjek email. Ringkasan banyak problem sekaligus tetap memakai format bawaan. Tombol Uji mengirim contoh memakai templat ini.</p>
+    </details>
     <label class="check"><input type="checkbox" name="enabled" value="1" @checked(old('enabled', $channel->enabled))><span>Kanal aktif</span></label>
     <div class="form-foot"><a class="btn" href="{{ route('channels.index') }}">Batal</a><button class="btn primary">Simpan</button></div>
 </form>

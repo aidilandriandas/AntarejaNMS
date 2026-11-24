@@ -107,7 +107,8 @@ class ConfigTransfer
 
                 return ['name' => $c->name, 'type' => $c->type, 'config' => array_diff_key($cfg, array_flip($secretKeys)),
                     'min_severity' => $c->min_severity, 'delay_minutes' => $c->delay_minutes, 'notify_resolve' => (bool) $c->notify_resolve,
-                    'to_oncall' => (bool) ($c->to_oncall ?? false), 'site' => $siteCode[$c->site_id] ?? null, 'enabled' => (bool) $c->enabled];
+                    'to_oncall' => (bool) ($c->to_oncall ?? false), 'site' => $siteCode[$c->site_id] ?? null, 'enabled' => (bool) $c->enabled,
+                    'template_open' => $c->template_open ?? null, 'template_resolve' => $c->template_resolve ?? null];
             })->values(),
             'report_schedules' => DB::table('report_schedules as r')->join('notify_channels as c', 'c.id', '=', 'r.channel_id')->orderBy('r.name')
                 ->get(['r.*', 'c.name as ch_name', 'c.type as ch_type'])->map(fn ($r) => ['name' => $r->name, 'frequency' => $r->frequency,
@@ -508,7 +509,8 @@ class ConfigTransfer
                     'min_severity' => in_array($c['min_severity'] ?? '', ['info', 'warning', 'average', 'high', 'disaster'], true) ? $c['min_severity'] : 'average',
                     'delay_minutes' => self::int($c['delay_minutes'] ?? 0, 0, 1440, 0), 'notify_resolve' => (bool) ($c['notify_resolve'] ?? true),
                     'to_oncall' => in_array($type, ['email', 'telegram'], true) && (bool) ($c['to_oncall'] ?? false),
-                    'site_id' => $siteId($c['site'] ?? null), 'enabled' => (bool) ($c['enabled'] ?? true) && $complete, 'updated_at' => $now];
+                    'site_id' => $siteId($c['site'] ?? null), 'enabled' => (bool) ($c['enabled'] ?? true) && $complete, 'updated_at' => $now,
+                    'template_open' => self::str($c['template_open'] ?? null, 2000), 'template_resolve' => self::str($c['template_resolve'] ?? null, 2000)];
                 $existing ? DB::table('notify_channels')->where('id', $existing->id)->update($row)
                     : DB::table('notify_channels')->insert($row + ['name' => $name, 'type' => $type, 'created_at' => $now]);
                 $res['channels']++;

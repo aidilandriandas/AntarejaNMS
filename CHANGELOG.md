@@ -16,6 +16,9 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - **Flow trafik** (NetFlow v5, v9, IPFIX di 2055/UDP; sFlow v5 di 6343/UDP): siapa dan aplikasi apa yang memakai
   bandwidth per port dan arah, ringkasan 5 menit (50 percakapan terbesar + lainnya), disimpan 7 hari; pemakai terbesar
   di halaman port. Hanya dari perangkat terdaftar. **Buka 2055/UDP dan 6343/UDP** dari subnet manajemen bila dipakai.
+- **Templat pesan notifikasi** per kanal (Notifikasi, ubah kanal, *Templat pesan*): isi pesan problem baru dan pulih
+  bisa diubah dengan penanda `{judul}`, `{site}`, `{dampak}`, `{runbook}`, dll.; baris yang penandanya kosong
+  dibuang, baris pertama jadi subjek email. Tombol Uji mengirim contoh dengan templat. Migrasi 0043.
 - **Aturan log** (Log, *Aturan log*): pola teks atau regex pada syslog, N kali dalam jendela waktu per perangkat,
   jadi problem *Pola log* dengan severity pilihan; bisa dibatasi tingkat log, program, site, atau perangkat; pulih
   sendiri setelah sepi. *Uji ke log 24 jam* sebelum disimpan. Regex memakai RE2 (tanpa lookaround). Migrasi 0042.
