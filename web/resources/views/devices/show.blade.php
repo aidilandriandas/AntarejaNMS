@@ -152,6 +152,12 @@
             </div></section>
         @endif
         @endcan
+        @if($runbooks->isNotEmpty() || auth()->user()->can('manage-devices'))
+        <section class="card"><div class="hd"><h2>Runbook</h2>@can('manage-devices')<a class="sub" href="{{ route('runbooks.create', ['device' => $device->id]) }}">Tambah runbook</a>@endcan</div><div class="bd">
+            @if($runbooks->isEmpty())<p class="muted" style="margin:0">Belum ada langkah penanganan untuk perangkat ini.</p>@else
+            <ul class="impact-list">@foreach($runbooks as $rb)<li><a href="{{ route('runbooks.show', $rb) }}">{{ $rb->title }}</a> <span class="muted">{{ $rb->problem_kind ? (\App\Models\Problem::KINDS[$rb->problem_kind] ?? $rb->problem_kind) : 'semua problem' }}</span></li>@endforeach</ul>@endif
+        </div></section>
+        @endif
         @if($checks->isNotEmpty() || auth()->user()->can('manage-devices'))
         <section class="card"><div class="hd"><h2>Cek layanan</h2>@can('manage-devices')<a class="sub" href="{{ route('checks.create', ['device' => $device->id]) }}">Tambah cek</a>@endcan</div><div class="bd @if($checks->isNotEmpty()) flush @endif">
             @if($checks->isEmpty())<p class="muted" style="margin:0">Belum ada. Tambahkan bila perangkat ini menjalankan aplikasi (web, database, DNS) supaya aplikasinya ikut dipantau.</p>@else

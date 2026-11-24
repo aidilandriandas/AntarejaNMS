@@ -83,6 +83,8 @@ class DeviceController extends Controller
             'device' => $device,
             'impact' => $impact,
             'checks' => \App\Models\ServiceCheck::where('device_id', $device->id)->orderBy('name')->get(),
+            'runbooks' => \App\Models\Runbook::where('enabled', true)->with('site', 'device')->get()->filter(fn ($r) => $r->matches($device, null))
+                ->sortByDesc(fn ($r) => $r->score())->values(),
             'traffic' => $traffic,
             'events' => $device->events()->limit(20)->get(),
             'logs' => \App\Models\SyslogEntry::where('device_id', $device->id)->where('received_at', '>=', now()->subDay())->orderByDesc('id')->limit(10)->get(),

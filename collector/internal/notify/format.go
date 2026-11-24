@@ -74,6 +74,18 @@ func Single(kind string, p Problem, delay int, base string) Message {
 			m.Text += "\nDampak: " + p.Impact
 			m.HTML += "\n<b>Dampak:</b> " + esc(p.Impact)
 		}
+		if rb := p.Runbook; rb != nil {
+			m.Text += "\n\nLangkah penanganan (" + rb.Title + "):\n" + strings.Join(rb.Steps, "\n")
+			m.HTML += "\n\n<b>Langkah penanganan</b> (" + esc(rb.Title) + "):"
+			for _, s := range rb.Steps {
+				m.HTML += "\n" + esc(s)
+			}
+			if base != "" {
+				u := fmt.Sprintf("%s/runbook/%d", base, rb.ID)
+				m.Text += "\nRunbook lengkap: " + u
+				m.HTML += "\nRunbook lengkap: " + esc(u)
+			}
+		}
 	}
 	if link != "" {
 		m.Text += "\n" + link

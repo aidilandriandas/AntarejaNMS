@@ -10,6 +10,7 @@
             @if($p->relationLoaded('incidents') && ($inc = $p->incidents->first()))<a class="inc-tag" href="{{ route('incidents.show', $inc) }}">Insiden #{{ $inc->id }}</a>, @endif
             @if($p->suppressed)<span style="color:var(--info)">{{ $p->suppressed_note }}</span>@else{{ $p->detail }}@endif
             @if(! empty($impactLines[$p->device_id]) && $p->kind === 'down')<a class="impact-tag" href="{{ route('impact.index') }}">Dampak: {{ $impactLines[$p->device_id] }}</a>@endif
+            @if(! empty($runbookFor[$p->id]))<a class="runbook-tag" href="{{ route('runbooks.show', $runbookFor[$p->id]) }}"><x-icon name="list"/> Runbook: {{ $runbookFor[$p->id]->title }}</a>@endif
         </small>
     </td>
     <td class="nowrap" title="Mulai {{ $p->started_at->format('d/m/Y H:i:s') }}">

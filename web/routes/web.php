@@ -36,6 +36,7 @@ use App\Http\Controllers\ReportScheduleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SensorController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\RunbookController;
 use App\Http\Controllers\SiteCollectorController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\StatusLinkController;
@@ -87,6 +88,11 @@ Route::middleware('auth')->group(function () {
         Route::post('perangkat/massal', [DeviceBulkController::class, 'apply'])->name('devices.bulk')->middleware('throttle:20,1');
         Route::get('perangkat/{device}/ubah', [DeviceController::class, 'edit'])->name('devices.edit');
         Route::get('cek-layanan/tambah', [CheckController::class, 'create'])->name('checks.create');
+        Route::get('runbook/tambah', [RunbookController::class, 'create'])->name('runbooks.create');
+        Route::post('runbook', [RunbookController::class, 'store'])->name('runbooks.store');
+        Route::get('runbook/{runbook}/ubah', [RunbookController::class, 'edit'])->name('runbooks.edit')->whereNumber('runbook');
+        Route::put('runbook/{runbook}', [RunbookController::class, 'update'])->name('runbooks.update')->whereNumber('runbook');
+        Route::delete('runbook/{runbook}', [RunbookController::class, 'destroy'])->name('runbooks.destroy')->whereNumber('runbook');
         Route::post('cek-layanan', [CheckController::class, 'store'])->name('checks.store');
         Route::get('cek-layanan/{check}/ubah', [CheckController::class, 'edit'])->name('checks.edit')->whereNumber('check');
         Route::put('cek-layanan/{check}', [CheckController::class, 'update'])->name('checks.update')->whereNumber('check');
@@ -162,6 +168,8 @@ Route::middleware('auth')->group(function () {
     Route::get('site', [SiteController::class, 'index'])->name('sites.index');
     Route::get('dampak', [ImpactController::class, 'index'])->name('impact.index');
     Route::get('cek-layanan', [CheckController::class, 'index'])->name('checks.index');
+    Route::get('runbook', [RunbookController::class, 'index'])->name('runbooks.index');
+    Route::get('runbook/{runbook}', [RunbookController::class, 'show'])->name('runbooks.show')->whereNumber('runbook');
     Route::get('kejadian', [EventController::class, 'index'])->name('events.index');
     Route::get('log', [LogController::class, 'index'])->name('logs.index');
     Route::get('peta', [MapController::class, 'index'])->name('map.index');

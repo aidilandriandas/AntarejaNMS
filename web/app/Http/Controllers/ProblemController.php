@@ -37,7 +37,18 @@ class ProblemController extends Controller
             }
         }
 
+        $runbooks = \App\Models\Runbook::where('enabled', true)->get();
+        $runbookFor = [];
+        if ($runbooks->isNotEmpty()) {
+            foreach ($problems as $p) {
+                if ($p->device && ($rb = \App\Models\Runbook::best($runbooks, $p->device, $p->kind))) {
+                    $runbookFor[$p->id] = $rb;
+                }
+            }
+        }
+
         return view('problems.index', [
+            'runbookFor' => $runbookFor,
             'impactLines' => $impactLines,
             'problems' => $problems,
             'history' => $history,

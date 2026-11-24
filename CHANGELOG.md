@@ -13,6 +13,8 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
   admin atau semua akun, reset oleh admin.
 - **Login LDAP / Active Directory** (opsional): akun dibuat otomatis, peran dari grup direktori; akun lokal tetap bisa
   masuk walau server direktori mati.
+- **Runbook** (menu *Runbook*): langkah penanganan per jenis problem, kategori, site, atau perangkat; yang paling
+  spesifik dipakai. Tampil di daftar problem, halaman perangkat, dan lima langkah pertama ikut di pesan Telegram/email.
 - **Cek layanan** (menu *Cek layanan*): HTTP(S) dengan kode status dan teks wajib, port TCP, dan DNS dari server
   pusat tiap 30 detik sampai 1 jam. Gagal dua kali berturut-turut menjadi problem (severity diatur per cek), lambat dan
   sertifikat HTTPS yang hampir habis menjadi Warning. Tombol *Uji sekarang*, kartu di halaman perangkat.

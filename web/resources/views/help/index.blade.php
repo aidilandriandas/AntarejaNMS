@@ -25,6 +25,7 @@
     <a href="#topologi">Sinkron LLDP & diagnosa SNMP</a>
     <a href="#api">Integrasi lewat API</a>
     <a href="#diag">Alat diagnosa & down bulanan</a>
+    <a href="#runbook">Runbook</a>
     <a href="#cek">Cek layanan</a>
     <a href="#dampak">Peta dampak</a>
     <a href="#site">Collector site</a>
@@ -190,6 +191,14 @@
     <ul class="help-list">
         <li><b>Alat diagnosa</b> di halaman perangkat menjalankan ping, traceroute, atau cek port TCP dari server ANTAREJA ke perangkat itu. Bila traceroute berhenti sebelum tujuan, hop terakhir yang menjawab adalah titik yang perlu diperiksa (radio, switch, atau router di lokasi itu). Cek port berguna untuk kamera (554 RTSP), web perangkat (80/443), atau SSH (22).</li>
         <li><b>Down bulanan</b> (menu Laporan) menunjukkan persen waktu down tiap perangkat per bulan, dengan rumus yang sama seperti SLA perangkat. Waktu di dalam maintenance tidak dihitung down. Angka bulan berjalan masih sementara dan dikunci setelah bulan berganti.</li>
+    </ul>
+</div></section>
+
+<section class="card" id="runbook"><div class="hd"><h2>Runbook</h2></div><div class="bd">
+    <ul class="help-list">
+        <li>Problem yang punya langkah penanganan menampilkan tautan <b>Runbook</b>. Ikuti langkahnya dari atas; lima langkah pertama juga ada di pesan Telegram.</li>
+        <li>Runbook ditulis engineer di menu <i>Runbook</i> dan bisa berlaku untuk jenis problem, kategori perangkat, site, atau satu perangkat. Bila beberapa cocok, yang paling spesifik dipakai.</li>
+        <li>Langkah yang salah atau sudah tidak berlaku? Beri tahu engineer supaya diperbarui. Jangan menulis password di runbook.</li>
     </ul>
 </div></section>
 

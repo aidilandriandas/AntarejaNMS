@@ -51,6 +51,7 @@ type Problem struct {
 	DeviceID   int64      `json:"device_id,omitempty"`
 	Kind       string     `json:"kind,omitempty"`
 	Impact     string     `json:"impact,omitempty"` // ringkasan dampak (problem down)
+	Runbook    *Runbook   `json:"-"`
 }
 
 // Message adalah satu pesan siap kirim.
@@ -201,9 +202,13 @@ func (d *Dispatcher) runChannel(ctx context.Context, c Channel) error {
 		return err
 	}
 	for i := range opens {
-		if opens[i].Kind == "down" && len(opens) < summaryAt {
+		if len(opens) >= summaryAt {
+			break
+		}
+		if opens[i].Kind == "down" {
 			opens[i].Impact = ImpactLine(ctx, d.DB, opens[i].DeviceID)
 		}
+		opens[i].Runbook = RunbookFor(ctx, d.DB, opens[i].DeviceID, opens[i].Kind)
 	}
 	var resolves []Problem
 	if c.NotifyResolve {
