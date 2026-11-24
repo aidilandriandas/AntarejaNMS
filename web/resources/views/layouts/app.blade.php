@@ -40,6 +40,7 @@
             <a href="{{ route('map.index') }}" class="{{ $nav('map.*') }}"><x-icon name="map-pin"/>Peta lokasi</a>
             <a href="{{ route('quality.index') }}" class="{{ $nav('quality.*') }}"><x-icon name="pulse"/>Kualitas jaringan</a>
             <a href="{{ route('checks.index') }}" class="{{ $nav('checks.*') }}"><x-icon name="check"/>Cek layanan</a>
+            <a href="{{ route('flow.index') }}" class="{{ $nav('flow.*') }}"><x-icon name="chart"/>Flow trafik</a>
             <a href="{{ route('sensors.index') }}" class="{{ $nav('sensors.*') }}"><x-icon name="gauge"/>Sensor</a>
             <a href="{{ route('ipam.index') }}" class="{{ $nav('ipam.*') }}"><x-icon name="grid"/>IPAM</a>
             <a href="{{ route('cctv.index') }}" class="{{ $nav('cctv.*') }}"><x-icon name="camera"/>CCTV</a>

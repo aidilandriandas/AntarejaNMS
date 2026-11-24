@@ -82,6 +82,11 @@
             @endforeach
         </ul>@endif
     </div></section>
+    @if($flowTop->isNotEmpty())
+    <section class="card"><div class="hd"><h2>Pemakai terbesar</h2><a class="sub" href="{{ route('flow.index', ['perangkat' => $device->id, 'port' => $port->if_index]) }}">1 jam, flow</a></div><div class="bd flush">
+        <table class="t"><tbody>@foreach($flowTop as $f)<tr><td class="mono">{{ $f->ip }} <span class="muted">{{ $f->dir === 'i' ? 'masuk' : 'keluar' }}</span></td><td class="num">{{ \App\Support\Fmt::bytes($f->bytes) }}</td></tr>@endforeach</tbody></table>
+    </div></section>
+    @endif
     <section class="card"><div class="hd"><h2>Terpasang di port ini</h2><span class="sub">dari tabel MAC switch, 24 jam</span></div><div class="bd flush">
         @if(empty($attached))<div class="empty">Tidak ada MAC terlacak di port ini. Port uplink (punya tetangga LLDP/CDP atau berisi lebih dari 12 MAC) tidak dihitung.</div>@else
         <table class="t"><tbody>

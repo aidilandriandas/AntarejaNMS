@@ -24,6 +24,7 @@ type Config struct {
 	SyslogUDP      string // mis. ":5514"; kosong = penerima syslog UDP mati
 	SyslogTCP      string
 	TrapUDP        string // mis. ":5162"; kosong = penerima SNMP trap mati
+	FlowUDP        string // mis. ":2055"; kosong = penerima NetFlow/IPFIX mati
 	BackupDir      string // folder backup NMS yang di-mount (untuk salinan ke luar server)
 	PingInterval   time.Duration
 	PingCount      int
@@ -59,6 +60,7 @@ func Load() (Config, error) {
 		SyslogUDP:      os.Getenv("ANTAREJA_SYSLOG_UDP"),
 		SyslogTCP:      os.Getenv("ANTAREJA_SYSLOG_TCP"),
 		TrapUDP:        os.Getenv("ANTAREJA_TRAP_UDP"),
+		FlowUDP:        os.Getenv("ANTAREJA_FLOW_UDP"),
 		BackupDir:      os.Getenv("ANTAREJA_BACKUP_DIR"),
 		PingInterval:   dur("ANTAREJA_PING_INTERVAL", 60*time.Second),
 		PingCount:      num("ANTAREJA_PING_COUNT", 3),

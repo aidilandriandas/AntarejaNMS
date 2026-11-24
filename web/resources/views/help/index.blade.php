@@ -27,6 +27,7 @@
     <a href="#diag">Alat diagnosa & down bulanan</a>
     <a href="#daya">Daya menara (Modbus)</a>
     <a href="#runbook">Runbook</a>
+    <a href="#flow">Flow trafik</a>
     <a href="#cek">Cek layanan</a>
     <a href="#dampak">Peta dampak</a>
     <a href="#site">Collector site</a>
@@ -208,6 +209,14 @@
         <li>Problem yang punya langkah penanganan menampilkan tautan <b>Runbook</b>. Ikuti langkahnya dari atas; lima langkah pertama juga ada di pesan Telegram.</li>
         <li>Runbook ditulis engineer di menu <i>Runbook</i> dan bisa berlaku untuk jenis problem, kategori perangkat, site, atau satu perangkat. Bila beberapa cocok, yang paling spesifik dipakai.</li>
         <li>Langkah yang salah atau sudah tidak berlaku? Beri tahu engineer supaya diperbarui. Jangan menulis password di runbook.</li>
+    </ul>
+</div></section>
+
+<section class="card" id="flow"><div class="hd"><h2>Flow trafik</h2></div><div class="bd">
+    <ul class="help-list">
+        <li>Bila link (mis. VSAT atau radio) penuh, buka <b>Flow trafik</b>, pilih router dan port link itu, arah <i>Keluar</i> atau <i>Masuk</i>. Daftar <i>Sumber terbesar</i> dan <i>Aplikasi</i> menunjukkan siapa dan apa yang memakai bandwidth.</li>
+        <li>Data per 5 menit; trafik 5 menit terakhir baru muncul setelah ringkasannya ditutup.</li>
+        <li>Hanya router yang dikonfigurasi mengirim flow yang punya data di sini.</li>
     </ul>
 </div></section>
 

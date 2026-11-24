@@ -35,6 +35,8 @@ class PortController extends Controller
                 ->where('n.device_id', $device->id)->where('n.local_if_index', $ifIndex)
                 ->get(['n.protocol', 'n.remote_name', 'n.remote_port', 'n.remote_ip', 'n.remote_platform', 'n.remote_device_id', 'd.name as dev_name']),
             'ips' => DB::table('device_ips')->where('device_id', $device->id)->where('if_index', $ifIndex)->orderBy('ip')->get(['ip', 'prefix']),
+            'flowTop' => DB::table('flow_stats')->where('device_id', $device->id)->where('if_index', $ifIndex)->where('bucket', '>=', now()->subHour())
+                ->whereNotNull('src')->groupBy('src', 'dir')->orderByRaw('sum(bytes) DESC')->limit(5)->get([DB::raw('host(src) AS ip'), 'dir', DB::raw('sum(bytes) AS bytes')]),
             'attached' => DB::select(<<<'SQL'
                 SELECT ml.mac, ml.vlan, ml.first_seen, ml.last_seen,
                     (SELECT host(a.ip) FROM arp_entries a WHERE a.mac = ml.mac ORDER BY a.last_seen DESC LIMIT 1) AS ip,

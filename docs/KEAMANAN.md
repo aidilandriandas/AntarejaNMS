@@ -45,6 +45,7 @@ dibatasi ke server sendiri, `object-src 'none'`, `frame-ancestors 'self'`), `X-F
 | 80/443 (bisa diganti di `.env`) | Web (HTTPS; HTTP dialihkan) | Satu-satunya pintu untuk pengguna |
 | 514 UDP/TCP | Penerima syslog | Hanya menerima & menyimpan teks; batas laju per IP |
 | 162 UDP | Penerima SNMP trap v1/v2c | Hanya menerima & menyimpan; tidak menjawab (inform dan v3 diabaikan); batas 50 trap per 10 detik per IP; community tidak disimpan |
+| 2055/UDP, 6343/UDP | Penerima NetFlow/IPFIX dan sFlow | Hanya dari IP perangkat terdaftar (lainnya dihitung lalu dibuang); hanya ringkasan IP/port/byte yang disimpan, bukan isi paket; batas 500.000 percakapan per 5 menit di memori |
 | 443 (keluar dari site) | Collector site ke web pusat | Hanya koneksi keluar dari site; site tidak membuka port apa pun |
 | — | API collector `:9274`, PostgreSQL, VictoriaMetrics, go2rtc | **Tidak** dipublikasikan; hanya jaringan Docker. Token API = HMAC dari `ANTAREJA_APP_KEY` |
 

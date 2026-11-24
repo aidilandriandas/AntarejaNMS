@@ -22,6 +22,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\ModbusController;
+use App\Http\Controllers\FlowController;
 use App\Http\Controllers\ImpactController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\IncidentReportController;
@@ -176,6 +177,7 @@ Route::middleware('auth')->group(function () {
     Route::get('site', [SiteController::class, 'index'])->name('sites.index');
     Route::get('dampak', [ImpactController::class, 'index'])->name('impact.index');
     Route::get('cek-layanan', [CheckController::class, 'index'])->name('checks.index');
+    Route::get('flow', [FlowController::class, 'index'])->name('flow.index');
     Route::get('runbook', [RunbookController::class, 'index'])->name('runbooks.index');
     Route::get('runbook/{runbook}', [RunbookController::class, 'show'])->name('runbooks.show')->whereNumber('runbook');
     Route::get('kejadian', [EventController::class, 'index'])->name('events.index');

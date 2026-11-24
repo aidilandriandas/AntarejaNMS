@@ -49,6 +49,9 @@ services:
       - "${SYSLOG_PORT:-514}:5514/tcp"
       # SNMP trap v1/v2c dari perangkat: arahkan trap ke IP VM port 162/UDP
       - "${TRAP_PORT:-162}:5162/udp"
+      # NetFlow v5/v9 dan IPFIX dari router: arahkan ekspor flow ke IP VM port 2055/UDP
+      - "${FLOW_PORT:-2055}:2055/udp"
+      - "${SFLOW_PORT:-6343}:6343/udp"   # sFlow v5
     volumes:
       - ${BACKUP_DIR:-./backups}:/backups:ro   # hanya dibaca: salinan backup ke luar server
     environment:
@@ -65,6 +68,7 @@ services:
       ANTAREJA_SYSLOG_UDP: ":5514"   # penerima syslog (port tinggi di dalam container; collector bukan root)
       ANTAREJA_SYSLOG_TCP: ":5514"
       ANTAREJA_TRAP_UDP: ":5162"     # penerima SNMP trap (port tinggi di dalam container)
+      ANTAREJA_FLOW_UDP: ":2055,:6343"   # NetFlow/IPFIX dan sFlow (hanya dari perangkat terdaftar)
       ANTAREJA_BACKUP_DIR: /backups  # dibaca (tidak ditulis) untuk salinan backup ke luar server
       TZ: ${TZ:-Asia/Jakarta}
 

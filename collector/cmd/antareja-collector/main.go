@@ -35,6 +35,7 @@ import (
 	"github.com/aidilandriandas/antarejanms/collector/internal/config"
 	"github.com/aidilandriandas/antarejanms/collector/internal/configbak"
 	"github.com/aidilandriandas/antarejanms/collector/internal/discovery"
+	"github.com/aidilandriandas/antarejanms/collector/internal/flow"
 	"github.com/aidilandriandas/antarejanms/collector/internal/incidents"
 	"github.com/aidilandriandas/antarejanms/collector/internal/migrate"
 	"github.com/aidilandriandas/antarejanms/collector/internal/modbus"
@@ -264,6 +265,32 @@ func run() error {
 				}
 			}
 		}()
+
+		// NetFlow v5/v9 dan IPFIX dari router (ringkasan 5 menit), retensi dibersihkan tiap jam
+		if cfg.FlowUDP != "" {
+			fc := &flow.Collector{DB: db, Log: log, Addr: cfg.FlowUDP}
+			go func() {
+				if err := fc.Run(ctx); err != nil {
+					log.Error("penerima NetFlow gagal", "galat", err)
+				}
+			}()
+			go func() {
+				t := time.NewTicker(time.Hour)
+				defer t.Stop()
+				for {
+					if n, err := flow.Prune(ctx, db); err != nil && ctx.Err() == nil {
+						log.Warn("pembersihan flow gagal", "galat", err)
+					} else if n > 0 {
+						log.Info("ringkasan flow lama dihapus", "baris", n)
+					}
+					select {
+					case <-ctx.Done():
+						return
+					case <-t.C:
+					}
+				}
+			}()
+		}
 
 		// Modbus TCP (hanya baca) tiap menit: daya menara, baterai, genset
 		modbusRunner := &modbus.Runner{DB: db, Log: log, Writer: p.Writer, Store: store.Store{DB: db}}

@@ -47,6 +47,21 @@ class Fmt
         return number_format($v, 0, ',', '.') . ' bps';
     }
 
+    /** Volume: "820 B", "1,5 KB", "12 MB", "3,4 GB" (basis 1000). */
+    public static function bytes(?float $v): string
+    {
+        if ($v === null) {
+            return 'tidak ada';
+        }
+        foreach (['TB' => 1e12, 'GB' => 1e9, 'MB' => 1e6, 'KB' => 1e3] as $unit => $div) {
+            if ($v >= $div) {
+                return self::num($v / $div) . ' ' . $unit;
+            }
+        }
+
+        return number_format($v, 0, ',', '.') . ' B';
+    }
+
     public static function ms(?float $v): string
     {
         if ($v === null) {
