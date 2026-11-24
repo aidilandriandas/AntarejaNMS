@@ -48,6 +48,8 @@ class ConfigTransfer
         $sites = DB::table('sites')->orderBy('code')->get();
         $siteCode = $sites->pluck('code', 'id');
         $devices = DB::table('devices')->orderBy('name')->get();
+        $collectorName = DB::table('site_collectors')->pluck('name', 'id');
+        $points = DB::table('modbus_points')->orderBy('position')->orderBy('id')->get()->groupBy('device_id');
         $devKey = $devices->mapWithKeys(fn ($d) => [$d->id => ['name' => $d->name, 'host' => $d->host]]);
         $secrets = ['devices' => [], 'cameras' => [], 'channels' => []];
         $dec = fn (?string $v) => $v ? Crypt::decryptString($v) : null;
@@ -57,7 +59,9 @@ class ConfigTransfer
             'app_version' => config('antareja.version'),
             'sites' => $sites->map(fn ($s) => ['code' => $s->code, 'name' => $s->name, 'description' => $s->description ?? null,
                 'lat' => $s->lat, 'lng' => $s->lng])->values(),
-            'devices' => $devices->map(function ($d) use ($siteCode, $devKey, $withSecrets, &$secrets, $dec) {
+            'site_collectors' => DB::table('site_collectors')->orderBy('name')->get()->map(fn ($c) => ['name' => $c->name,
+                'site' => $siteCode[$c->site_id] ?? null, 'notes' => $c->notes, 'enabled' => (bool) $c->enabled])->values(),
+            'devices' => $devices->map(function ($d) use ($siteCode, $devKey, $withSecrets, &$secrets, $dec, $collectorName, $points) {
                 if ($withSecrets) {
                     $sec = array_filter(['snmp_community' => $dec($d->snmp_community_enc), 'snmp_v3_auth' => $dec($d->snmp_v3_auth_enc),
                         'snmp_v3_priv' => $dec($d->snmp_v3_priv_enc), 'ssh_password' => $dec($d->ssh_password_enc)], fn ($v) => $v !== null);
@@ -71,7 +75,13 @@ class ConfigTransfer
                     'snmp_version' => $d->snmp_version, 'snmp_port' => $d->snmp_port, 'snmp_v3_user' => $d->snmp_v3_user,
                     'snmp_v3_level' => $d->snmp_v3_level, 'snmp_v3_auth_proto' => $d->snmp_v3_auth_proto, 'snmp_v3_priv_proto' => $d->snmp_v3_priv_proto,
                     'parent' => $d->parent_id ? ($devKey[$d->parent_id] ?? null) : null, 'thresholds' => json_decode($d->thresholds ?: '{}', true) ?: (object) [],
-                    'cfg_type' => $d->cfg_type, 'ssh_port' => $d->ssh_port, 'ssh_user' => $d->ssh_user, 'lat' => $d->lat, 'lng' => $d->lng, 'notes' => $d->notes];
+                    'cfg_type' => $d->cfg_type, 'ssh_port' => $d->ssh_port, 'ssh_user' => $d->ssh_user, 'lat' => $d->lat, 'lng' => $d->lng, 'notes' => $d->notes,
+                    'collector' => $d->collector_id ? ($collectorName[$d->collector_id] ?? null) : null,
+                    'modbus' => ($d->modbus_port || isset($points[$d->id])) ? ['port' => $d->modbus_port, 'unit' => $d->modbus_unit,
+                        'points' => ($points[$d->id] ?? collect())->map(fn ($p) => ['label' => $p->label, 'class' => $p->class, 'unit' => $p->unit, 'fn' => $p->fn,
+                            'address' => $p->address, 'dtype' => $p->dtype, 'word_swap' => (bool) $p->word_swap, 'scale' => (float) $p->scale,
+                            'offset' => (float) $p->offset_value, 'warn_low' => $p->warn_low, 'warn_high' => $p->warn_high, 'crit_low' => $p->crit_low,
+                            'crit_high' => $p->crit_high, 'enabled' => (bool) $p->enabled])->values()] : null];
             })->values(),
             'links' => DB::table('device_links')->orderBy('id')->get()->map(fn ($l) => ['a' => $devKey[$l->a_device_id] ?? null, 'a_if' => $l->a_if_index,
                 'b' => $devKey[$l->b_device_id] ?? null, 'b_if' => $l->b_if_index, 'note' => $l->note])->filter(fn ($l) => $l['a'] && $l['b'])->values(),
@@ -113,6 +123,14 @@ class ConfigTransfer
                 'duration_min' => $t->duration_min, 'scope' => $t->scope, 'site' => $siteCode[$t->site_id] ?? null, 'category' => $t->category,
                 'days' => $t->days, 'start_min' => $t->start_min, 'end_min' => $t->end_min, 'note' => $t->note,
                 'devices' => DB::table('trigger_devices')->where('trigger_id', $t->id)->pluck('device_id')->map(fn ($id) => $devKey[$id] ?? null)->filter()->values()])->values(),
+            'checks' => DB::table('service_checks')->orderBy('name')->get()->map(fn ($c) => ['name' => $c->name, 'device' => $devKey[$c->device_id] ?? null,
+                'type' => $c->type, 'url' => $c->url, 'port' => $c->port, 'query' => $c->query, 'expect_status' => $c->expect_status, 'expect_text' => $c->expect_text,
+                'expect_answer' => $c->expect_answer, 'verify_tls' => (bool) $c->verify_tls, 'interval_s' => $c->interval_s, 'timeout_s' => $c->timeout_s,
+                'slow_ms' => $c->slow_ms, 'cert_warn_days' => $c->cert_warn_days, 'severity' => $c->severity, 'enabled' => (bool) $c->enabled])
+                ->filter(fn ($c) => $c['device'])->values(),
+            'runbooks' => DB::table('runbooks')->orderBy('title')->get()->map(fn ($r) => ['title' => $r->title, 'body' => $r->body,
+                'problem_kind' => $r->problem_kind, 'category' => $r->category, 'site' => $siteCode[$r->site_id] ?? null,
+                'device' => $r->device_id ? ($devKey[$r->device_id] ?? null) : null, 'enabled' => (bool) $r->enabled])->values(),
             'settings' => DB::table('settings')->orderBy('key')->get()->filter(fn ($s) => collect(self::SETTING_PREFIX)->contains(fn ($p) => str_starts_with($s->key, $p)))
                 ->mapWithKeys(fn ($s) => [$s->key => json_decode($s->value, true)]),
         ];
@@ -164,7 +182,7 @@ class ConfigTransfer
         if ((int) ($d['version'] ?? 0) > self::VERSION) {
             throw new RuntimeException('Berkas dari versi ANTAREJA yang lebih baru, perbarui aplikasi dulu.');
         }
-        foreach (['sites', 'devices', 'links', 'subnets', 'cameras', 'channels', 'report_schedules', 'services', 'triggers'] as $k) {
+        foreach (['sites', 'site_collectors', 'devices', 'links', 'subnets', 'cameras', 'channels', 'report_schedules', 'services', 'triggers', 'checks', 'runbooks'] as $k) {
             $d[$k] = array_values(array_filter((array) ($d[$k] ?? []), 'is_array'));
         }
         $d['settings'] = is_array($d['settings'] ?? null) ? $d['settings'] : [];
@@ -193,6 +211,17 @@ class ConfigTransfer
         $p['services'] = $this->count($d['services'], fn ($x) => isset($sv[$x['name'] ?? '']));
         $tr = DB::table('triggers')->pluck('id', 'name');
         $p['triggers'] = $this->count($d['triggers'], fn ($x) => isset($tr[$x['name'] ?? '']));
+        $sc = DB::table('site_collectors')->pluck('id', 'name');
+        $p['site_collectors'] = $this->count($d['site_collectors'], fn ($x) => isset($sc[$x['name'] ?? '']));
+        $ck = DB::table('service_checks as c')->join('devices as d', 'd.id', '=', 'c.device_id')->get(['c.name', 'd.name as dn', 'd.host'])
+            ->map(fn ($x) => $x->name . '|' . $x->dn . '|' . $x->host)->flip();
+        $p['checks'] = $this->count($d['checks'], fn ($x) => isset($ck[($x['name'] ?? '') . '|' . ($x['device']['name'] ?? '') . '|' . ($x['device']['host'] ?? '')]));
+        $rb = DB::table('runbooks')->pluck('id', 'title');
+        $p['runbooks'] = $this->count($d['runbooks'], fn ($x) => isset($rb[$x['title'] ?? '']));
+        $p['modbus_points'] = ['total' => collect($d['devices'])->sum(fn ($x) => count((array) ($x['modbus']['points'] ?? [])))];
+        if ($p['site_collectors']['new'] > 0) {
+            $p['warnings'][] = 'Collector site baru dibuat dengan token acak yang tidak diketahui siapa pun: buka Collector site, klik Ganti token, lalu pasang token baru di site.';
+        }
         $p['settings'] = ['total' => count($this->allowedSettings($d['settings']))];
         $p['has_secrets'] = isset($d['secrets']);
         $bad = collect($d['devices'])->filter(fn ($x) => ! $this->validDevice($x))->count();
@@ -220,6 +249,55 @@ class ConfigTransfer
         }
 
         return ['total' => count($rows), 'new' => $new, 'update' => $upd];
+    }
+
+    /** Baris service_checks dari berkas, atau null bila tidak valid. */
+    private function checkRow(array $c): ?array
+    {
+        $name = self::str($c['name'] ?? null, 128);
+        $type = $c['type'] ?? '';
+        if (! $name || ! in_array($type, ['http', 'tcp', 'dns'], true)) {
+            return null;
+        }
+        $url = self::str($c['url'] ?? null, 500);
+        $port = is_numeric($c['port'] ?? null) ? self::int($c['port'], 1, 65535, 0) : null;
+        $query = self::str($c['query'] ?? null, 255);
+        if (($type === 'http' && ! preg_match('#^https?://\S+$#i', (string) $url)) || ($type === 'tcp' && ! $port)
+            || ($type === 'dns' && ! preg_match('/^[A-Za-z0-9._-]+$/', (string) $query))) {
+            return null;
+        }
+        $status = self::str($c['expect_status'] ?? null, 32);
+        if ($status !== null && ! preg_match('/^\s*\d{3}(\s*-\s*\d{3})?(\s*,\s*\d{3}(\s*-\s*\d{3})?)*\s*$/', $status)) {
+            $status = null;
+        }
+        $answer = filter_var($c['expect_answer'] ?? null, FILTER_VALIDATE_IP) ?: null;
+        $interval = (int) ($c['interval_s'] ?? 60);
+
+        return ['name' => $name, 'type' => $type, 'url' => $type === 'http' ? $url : null, 'port' => $type === 'http' ? null : $port,
+            'query' => $type === 'dns' ? $query : null, 'expect_status' => $type === 'http' ? $status : null,
+            'expect_text' => $type === 'http' ? self::str($c['expect_text'] ?? null, 200) : null, 'expect_answer' => $type === 'dns' ? $answer : null,
+            'verify_tls' => (bool) ($c['verify_tls'] ?? true), 'interval_s' => in_array($interval, [30, 60, 120, 300, 900, 3600], true) ? $interval : 60,
+            'timeout_s' => self::int($c['timeout_s'] ?? 10, 1, 60, 10), 'slow_ms' => is_numeric($c['slow_ms'] ?? null) ? self::int($c['slow_ms'], 1, 600000, 1000) : null,
+            'cert_warn_days' => $type === 'http' && is_numeric($c['cert_warn_days'] ?? null) ? self::int($c['cert_warn_days'], 1, 365, 14) : null,
+            'severity' => in_array($c['severity'] ?? '', ['info', 'warning', 'average', 'high', 'disaster'], true) ? $c['severity'] : 'high',
+            'enabled' => (bool) ($c['enabled'] ?? true)];
+    }
+
+    /** Baris modbus_points dari berkas, atau null bila tidak valid. */
+    private function modbusPoint(array $p): ?array
+    {
+        $label = self::str($p['label'] ?? null, 80);
+        $num = fn ($k) => is_numeric($p[$k] ?? null) && abs((float) $p[$k]) <= 1e9 ? (float) $p[$k] : null;
+        $scale = $num('scale');
+        if (! $label || ! isset(\App\Models\ModbusPoint::CLASSES[$p['class'] ?? '']) || ! in_array((int) ($p['fn'] ?? 0), [3, 4], true)
+            || ! isset(\App\Models\ModbusPoint::DTYPES[$p['dtype'] ?? '']) || ! is_numeric($p['address'] ?? null) || ! $scale) {
+            return null;
+        }
+
+        return ['label' => $label, 'class' => $p['class'], 'unit' => self::str($p['unit'] ?? null, 12) ?? '', 'fn' => (int) $p['fn'],
+            'address' => self::int($p['address'], 0, 65535, 0), 'dtype' => $p['dtype'], 'word_swap' => (bool) ($p['word_swap'] ?? false),
+            'scale' => $scale, 'offset_value' => $num('offset') ?? 0.0, 'warn_low' => $num('warn_low'), 'warn_high' => $num('warn_high'),
+            'crit_low' => $num('crit_low'), 'crit_high' => $num('crit_high'), 'enabled' => (bool) ($p['enabled'] ?? true)];
     }
 
     private function validDevice(array $x): bool
@@ -257,7 +335,7 @@ class ConfigTransfer
             $sec = self::open($d['secrets'], $pass) + $sec;
         }
         $enc = fn (?string $v) => $v !== null && $v !== '' ? Crypt::encryptString($v) : null;
-        $res = ['sites' => 0, 'devices' => 0, 'links' => 0, 'subnets' => 0, 'cameras' => 0, 'channels' => 0, 'report_schedules' => 0, 'services' => 0, 'triggers' => 0, 'settings' => 0, 'skipped' => 0];
+        $res = ['site_collectors' => 0, 'checks' => 0, 'runbooks' => 0, 'modbus_points' => 0, 'sites' => 0, 'devices' => 0, 'links' => 0, 'subnets' => 0, 'cameras' => 0, 'channels' => 0, 'report_schedules' => 0, 'services' => 0, 'triggers' => 0, 'settings' => 0, 'skipped' => 0];
 
         DB::transaction(function () use ($d, $sec, $enc, &$res) {
             $now = now();
@@ -283,6 +361,24 @@ class ConfigTransfer
                 return $id ?: DB::table('sites')->insertGetId(['code' => $code, 'name' => $code, 'created_at' => $now, 'updated_at' => $now]);
             };
 
+            // Collector site (token baru acak; admin mengganti token untuk melihatnya)
+            foreach ($d['site_collectors'] as $c) {
+                $name = self::str($c['name'] ?? null, 64);
+                if (! $name) {
+                    $res['skipped']++;
+                    continue;
+                }
+                $row = ['site_id' => $siteId($c['site'] ?? null), 'notes' => self::str($c['notes'] ?? null, 1000), 'enabled' => (bool) ($c['enabled'] ?? true), 'updated_at' => $now];
+                if (DB::table('site_collectors')->where('name', $name)->exists()) {
+                    DB::table('site_collectors')->where('name', $name)->update($row);
+                } else {
+                    DB::table('site_collectors')->insert($row + ['name' => $name, 'token_hash' => hash('sha256', 'acs_' . \Illuminate\Support\Str::random(48)),
+                        'token_hint' => 'acs_impor', 'created_at' => $now]);
+                }
+                $res['site_collectors']++;
+            }
+            $collectorId = fn ($n) => is_string($n) && $n !== '' ? DB::table('site_collectors')->where('name', $n)->value('id') : null;
+
             // Perangkat (induk diset setelah semua ada)
             $devId = fn (?array $k) => $k ? DB::table('devices')->where('name', $k['name'] ?? '')->where('host', $k['host'] ?? '')->value('id') : null;
             foreach ($d['devices'] as $x) {
@@ -301,7 +397,12 @@ class ConfigTransfer
                     'thresholds' => json_encode(is_array($x['thresholds'] ?? null) ? $x['thresholds'] : (object) []),
                     'cfg_type' => $cfg, 'ssh_port' => self::int($x['ssh_port'] ?? 22, 1, 65535, 22), 'ssh_user' => self::str($x['ssh_user'] ?? null, 64),
                     'lat' => self::coord($x['lat'] ?? null, 90), 'lng' => self::coord($x['lng'] ?? null, 180), 'notes' => self::str($x['notes'] ?? null, 5000),
+                    'collector_id' => $collectorId($x['collector'] ?? null),
                     'updated_at' => $now];
+                if (is_array($x['modbus'] ?? null)) {
+                    $row['modbus_port'] = is_numeric($x['modbus']['port'] ?? null) ? self::int($x['modbus']['port'], 1, 65535, 502) : null;
+                    $row['modbus_unit'] = self::int($x['modbus']['unit'] ?? 1, 0, 255, 1);
+                }
                 foreach (['snmp_community' => 'snmp_community_enc', 'snmp_v3_auth' => 'snmp_v3_auth_enc', 'snmp_v3_priv' => 'snmp_v3_priv_enc', 'ssh_password' => 'ssh_password_enc'] as $k => $col) {
                     if (isset($s[$k]) && is_string($s[$k]) && $s[$k] !== '') {
                         $row[$col] = $enc($s[$k]);
@@ -316,6 +417,19 @@ class ConfigTransfer
                 if ($this->validDevice($x) && ($id = $devId($x))) {
                     $pid = is_array($x['parent'] ?? null) ? $devId($x['parent']) : null;
                     DB::table('devices')->where('id', $id)->update(['parent_id' => $pid !== $id ? $pid : null]);
+                    // Titik Modbus: diganti seluruhnya bila berkas memuat bagian modbus untuk perangkat ini
+                    if (is_array($x['modbus'] ?? null)) {
+                        DB::table('modbus_points')->where('device_id', $id)->delete();
+                        DB::table('device_sensors')->where('device_id', $id)->where('key', 'like', 'mb:%')->delete();
+                        foreach (array_values(array_filter((array) ($x['modbus']['points'] ?? []), 'is_array')) as $i => $pt) {
+                            if (! ($row = $this->modbusPoint($pt))) {
+                                $res['skipped']++;
+                                continue;
+                            }
+                            DB::table('modbus_points')->insert($row + ['device_id' => $id, 'position' => $i]);
+                            $res['modbus_points']++;
+                        }
+                    }
                 }
             }
 
@@ -463,6 +577,40 @@ class ConfigTransfer
                     DB::table('trigger_devices')->insert($ids->map(fn ($id) => ['trigger_id' => $tid, 'device_id' => $id])->values()->all());
                 }
                 $res['triggers']++;
+            }
+
+            // Cek layanan (dicocokkan lewat nama + perangkat)
+            foreach ($d['checks'] as $c) {
+                $dev = is_array($c['device'] ?? null) ? $devId($c['device']) : null;
+                $row = $dev ? $this->checkRow($c) : null;
+                if (! $row) {
+                    $res['skipped']++;
+                    continue;
+                }
+                $ex = DB::table('service_checks')->where('device_id', $dev)->where('name', $row['name'])->value('id');
+                $ex ? DB::table('service_checks')->where('id', $ex)->update($row + ['updated_at' => $now])
+                    : DB::table('service_checks')->insert($row + ['device_id' => $dev, 'created_at' => $now, 'updated_at' => $now]);
+                $res['checks']++;
+            }
+
+            // Runbook (dicocokkan lewat judul)
+            foreach ($d['runbooks'] as $r) {
+                $title = self::str($r['title'] ?? null, 160);
+                $body = is_string($r['body'] ?? null) ? mb_substr(trim($r['body']), 0, 6000) : '';
+                $kind = $r['problem_kind'] ?? null;
+                $cat = $r['category'] ?? null;
+                if (! $title || $body === '' || ($kind !== null && ! isset(\App\Models\Problem::KINDS[$kind])) || ($cat !== null && ! isset(Device::CATEGORIES[$cat]))) {
+                    $res['skipped']++;
+                    continue;
+                }
+                $devRef = is_array($r['device'] ?? null) ? $devId($r['device']) : null;
+                if (is_array($r['device'] ?? null) && ! $devRef) {
+                    $res['skipped']++; // perangkatnya tidak ada: jangan jadikan runbook umum
+                    continue;
+                }
+                DB::table('runbooks')->updateOrInsert(['title' => $title], ['body' => $body, 'problem_kind' => $kind, 'category' => $cat,
+                    'site_id' => $siteId($r['site'] ?? null), 'device_id' => $devRef, 'enabled' => (bool) ($r['enabled'] ?? true), 'updated_at' => $now]);
+                $res['runbooks']++;
             }
 
             // Pengaturan (hanya kunci yang diizinkan)

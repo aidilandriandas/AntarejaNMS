@@ -76,6 +76,50 @@ class ConfigTransferTest extends TestCase
         $this->assertSame($core, (int) DB::table('devices')->where('name', 'Radio')->value('parent_id'));
     }
 
+    public function test_collector_cek_runbook_dan_modbus_ikut(): void
+    {
+        $core = $this->isiData();
+        $site = DB::table('sites')->where('code', 'PIT-A')->value('id');
+        $col = DB::table('site_collectors')->insertGetId(['name' => 'collector-pit-a', 'site_id' => $site, 'token_hash' => str_repeat('f', 64), 'token_hint' => 'acs_lama']);
+        DB::table('devices')->where('id', $core)->update(['collector_id' => $col, 'modbus_port' => 502, 'modbus_unit' => 2]);
+        DB::table('modbus_points')->insert([
+            ['device_id' => $core, 'label' => 'Baterai', 'class' => 'voltage', 'unit' => 'V', 'fn' => 4, 'address' => 12548, 'scale' => 0.01, 'warn_low' => 12.2, 'position' => 0],
+            ['device_id' => $core, 'label' => 'Suhu', 'class' => 'temperature', 'unit' => '°C', 'fn' => 3, 'address' => 10, 'scale' => 1, 'warn_low' => null, 'position' => 1],
+        ]);
+        DB::table('service_checks')->insert(['name' => 'Login FMS', 'device_id' => $core, 'type' => 'http', 'url' => 'https://fms.local/login', 'expect_text' => 'Masuk', 'severity' => 'average']);
+        DB::table('runbooks')->insert(['title' => 'Core down', 'body' => "1. Cek listrik\n2. Telepon", 'problem_kind' => 'down', 'device_id' => $core]);
+
+        $t = new ConfigTransfer;
+        $raw = $t->export(false, null);
+        $json = json_encode($raw);
+        $this->assertStringNotContainsString(str_repeat('f', 64), $json, 'hash token collector tidak ikut');
+        $file = $t->parse($json);
+
+        DB::table('service_checks')->delete();
+        DB::table('runbooks')->delete();
+        DB::table('modbus_points')->delete();
+        DB::table('devices')->update(['collector_id' => null, 'modbus_port' => null]);
+        DB::table('site_collectors')->delete();
+
+        $plan = $t->plan($file);
+        $this->assertSame(1, $plan['site_collectors']['new']);
+        $this->assertSame(2, $plan['modbus_points']['total']);
+        $this->assertTrue(collect($plan['warnings'])->contains(fn ($w) => str_contains($w, 'Ganti token')));
+        $res = $t->apply($file, null);
+        $this->assertSame([1, 1, 1, 2], [$res['site_collectors'], $res['checks'], $res['runbooks'], $res['modbus_points']]);
+
+        $newCol = DB::table('site_collectors')->where('name', 'collector-pit-a')->first();
+        $this->assertNotSame(str_repeat('f', 64), $newCol->token_hash);
+        $dev = DB::table('devices')->where('id', $core)->first();
+        $this->assertSame([$newCol->id, 502, 2], [$dev->collector_id, $dev->modbus_port, $dev->modbus_unit]);
+        $this->assertSame(['Baterai', 'Suhu'], DB::table('modbus_points')->where('device_id', $core)->orderBy('position')->pluck('label')->all());
+        $this->assertSame('Masuk', DB::table('service_checks')->where('device_id', $core)->value('expect_text'));
+        $this->assertSame($core, (int) DB::table('runbooks')->where('title', 'Core down')->value('device_id'));
+        // impor ulang tidak menggandakan
+        $t->apply($file, null);
+        $this->assertSame([1, 1, 2], [DB::table('service_checks')->count(), DB::table('runbooks')->count(), DB::table('modbus_points')->count()]);
+    }
+
     public function test_layanan_trigger_dan_kanal_piket_ikut(): void
     {
         $core = $this->isiData();
