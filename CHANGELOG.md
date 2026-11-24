@@ -13,6 +13,9 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
   admin atau semua akun, reset oleh admin.
 - **Login LDAP / Active Directory** (opsional): akun dibuat otomatis, peran dari grup direktori; akun lokal tetap bisa
   masuk walau server direktori mati.
+- **Uji beban 1.012 perangkat** (lihat `docs/UJI-BEBAN.md`): ping 2,7 detik, SNMP 46,5 detik per putaran di 4 vCPU.
+  Pencocokan ulang tetangga LLDP/CDP ditulis ulang lewat indeks (migrasi 0037), puncak CPU database 211% → 96%.
+  Log putaran ping dan SNMP kini mencantumkan durasi.
 - **API**: `/api/v1/checks` (cek layanan, URL tanpa kredensial), `/api/v1/sensors` (SNMP & Modbus), `/api/v1/macs` (lokasi MAC).
 - **Ekspor/impor konfigurasi** kini memuat collector site (tanpa token; collector hasil impor perlu *Ganti token*),
   penempatan perangkat ke collector, setelan dan titik Modbus, cek layanan, dan runbook.

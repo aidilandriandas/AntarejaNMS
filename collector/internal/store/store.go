@@ -523,19 +523,17 @@ type execer interface {
 // salah satu port. Nama dibandingkan tanpa beda huruf besar/kecil, juga bagian sebelum titik pertama (FQDN).
 func matchNeighbors(ctx context.Context, db execer, where, portWhere string, args ...any) error {
 	if _, err := db.Exec(ctx, `
-		UPDATE neighbors n SET remote_device_id = (
-			SELECT d.id FROM devices d
-			WHERE d.id <> n.device_id AND (
-				(n.remote_ip IS NOT NULL AND (d.host = n.remote_ip OR EXISTS (SELECT 1 FROM device_ips di WHERE di.device_id = d.id AND host(di.ip) = n.remote_ip)))
-				OR (n.remote_name IS NOT NULL AND d.sys_name IS NOT NULL AND (
-					lower(d.sys_name) = lower(n.remote_name)
-					OR lower(split_part(d.sys_name, '.', 1)) = lower(split_part(n.remote_name, '.', 1))))
-				OR (n.remote_name IS NOT NULL AND (lower(d.name) = lower(n.remote_name) OR lower(d.name) = lower(split_part(n.remote_name, '.', 1))))
-				OR (n.remote_chassis IS NOT NULL AND EXISTS (SELECT 1 FROM interfaces i WHERE i.device_id = d.id AND lower(i.mac) = lower(n.remote_chassis))))
-			ORDER BY (n.remote_ip IS NOT NULL AND d.host = n.remote_ip) DESC,
-			         (n.remote_name IS NOT NULL AND lower(COALESCE(d.sys_name, '')) = lower(n.remote_name)) DESC,
-			         (n.remote_name IS NOT NULL AND lower(d.name) = lower(n.remote_name)) DESC, d.id
-			LIMIT 1)
+		UPDATE neighbors n SET remote_device_id = COALESCE(
+			-- urutan = prioritas: host, sysName, nama, IP interface, nama pendek, MAC chassis (tiap langkah lewat indeks)
+			(SELECT d.id FROM devices d WHERE n.remote_ip IS NOT NULL AND d.host = n.remote_ip AND d.id <> n.device_id ORDER BY d.id LIMIT 1),
+			(SELECT d.id FROM devices d WHERE n.remote_name IS NOT NULL AND d.sys_name IS NOT NULL AND lower(d.sys_name) = lower(n.remote_name) AND d.id <> n.device_id ORDER BY d.id LIMIT 1),
+			(SELECT d.id FROM devices d WHERE n.remote_name IS NOT NULL AND lower(d.name) = lower(n.remote_name) AND d.id <> n.device_id ORDER BY d.id LIMIT 1),
+			(SELECT di.device_id FROM device_ips di WHERE n.remote_ip ~ '^[0-9]{1,3}(\.[0-9]{1,3}){3}$' AND di.ip = n.remote_ip::inet AND di.device_id <> n.device_id ORDER BY di.device_id LIMIT 1),
+			(SELECT d.id FROM devices d WHERE n.remote_name IS NOT NULL AND d.sys_name IS NOT NULL
+				AND lower(split_part(d.sys_name, '.', 1)) = lower(split_part(n.remote_name, '.', 1)) AND d.id <> n.device_id ORDER BY d.id LIMIT 1),
+			(SELECT d.id FROM devices d WHERE n.remote_name IS NOT NULL AND lower(d.name) = lower(split_part(n.remote_name, '.', 1)) AND d.id <> n.device_id ORDER BY d.id LIMIT 1),
+			(SELECT i.device_id FROM interfaces i WHERE n.remote_chassis IS NOT NULL AND i.mac IS NOT NULL AND lower(i.mac) = lower(n.remote_chassis)
+				AND i.device_id <> n.device_id ORDER BY i.device_id LIMIT 1))
 		WHERE `+where, args...); err != nil {
 		return err
 	}

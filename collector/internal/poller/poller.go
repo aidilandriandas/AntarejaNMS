@@ -127,6 +127,7 @@ func (p *Poller) Run(ctx context.Context) {
 // ---------- Ping ----------
 
 func (p *Poller) PingCycle(ctx context.Context) error {
+	began := time.Now()
 	devs, err := p.Store.Devices(ctx)
 	if err != nil {
 		return err
@@ -162,7 +163,7 @@ func (p *Poller) PingCycle(ctx context.Context) error {
 		return err
 	}
 	p.lastPing.Store(time.Now().Unix())
-	p.Log.Info("putaran ping", "perangkat", len(targets), "down", down)
+	p.Log.Info("putaran ping", "perangkat", len(targets), "down", down, "durasi", time.Since(began).Round(10*time.Millisecond))
 	if p.AfterPing != nil {
 		p.AfterPing(ctx)
 	}
@@ -287,6 +288,7 @@ func (p *Poller) SNMPCycle(ctx context.Context) error {
 }
 
 func (p *Poller) snmpCycle(ctx context.Context) error {
+	began := time.Now()
 	devs, err := p.Store.Devices(ctx)
 	if err != nil {
 		return err
@@ -327,7 +329,7 @@ func (p *Poller) snmpCycle(ctx context.Context) error {
 	}
 	p.RecomputeMACs(mctx)
 	p.lastSNMP.Store(time.Now().Unix())
-	p.Log.Info("putaran SNMP", "berhasil", ok.Load(), "gagal", fail.Load())
+	p.Log.Info("putaran SNMP", "berhasil", ok.Load(), "gagal", fail.Load(), "durasi", time.Since(began).Round(100*time.Millisecond))
 	return ctx.Err()
 }
 

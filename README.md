@@ -52,7 +52,7 @@ berlisensi tertutup milik perusahaan. Lihat [`LICENSE`](LICENSE), [`docs/CLEAN-R
 
 | Fitur | Keterangan |
 |---|---|
-| Ping 1 menit | 3 paket per perangkat, paralel (ratusan perangkat sekaligus). Mencatat RTT dan loss |
+| Ping 1 menit | 3 paket per perangkat, paralel: 1.012 perangkat selesai dalam 2,7 detik di 4 vCPU (lihat [`docs/UJI-BEBAN.md`](docs/UJI-BEBAN.md)). Mencatat RTT dan loss |
 | Status down/up | Down setelah 2 putaran gagal berturut-turut (±2 menit). Kejadian *up* mencatat lama down |
 | SNMP v1/v2c/v3 | sysName, sysDescr, sysObjectID, lokasi, uptime. SNMPv3: MD5/SHA/SHA2 dan DES/AES |
 | Deteksi reboot | Dari turunnya sysUpTime. Wrap counter 497 hari tidak dihitung sebagai reboot |
