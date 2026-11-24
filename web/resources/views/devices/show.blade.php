@@ -187,6 +187,7 @@
                 <dt>Ping</dt><dd>{{ $device->ping_enabled ? 'aktif, tiap menit' : 'dimatikan' }}</dd>
                 <dt>SNMP</dt><dd>@if(! $device->snmp_enabled) dimatikan @elseif($device->snmp_ok === false)<span style="color:var(--warn)">gagal: {{ $device->snmp_error }}</span>@else v{{ $device->snmp_version }}, port {{ $device->snmp_port }}@if($device->last_snmp_at), {{ $device->last_snmp_at->diffForHumans() }}@endif @endif</dd>
                 @if($device->sys_name)<dt>sysName</dt><dd>{{ $device->sys_name }}</dd>@endif
+                @if($device->os_version || $device->hw_model)<dt>Versi</dt><dd>{{ $device->os_version ?: 'tidak terbaca' }}@if($device->hw_model), <span class="muted">{{ $device->hw_model }}</span>@endif @if($device->serial_no)<span class="muted mono">, SN {{ $device->serial_no }}</span>@endif</dd>@endif
                 @if($device->sys_descr)<dt>Deskripsi</dt><dd>{{ \Illuminate\Support\Str::limit($device->sys_descr, 220) }}</dd>@endif
                 @if($device->sys_location)<dt>Lokasi SNMP</dt><dd>{{ $device->sys_location }}</dd>@endif
                 @if($device->profiles)<dt>Profil</dt><dd>{{ collect(explode(',', $device->profiles))->map(fn ($x) => \App\Models\DeviceSensor::PROFILES[$x] ?? $x)->implode(', ') }}</dd>@endif

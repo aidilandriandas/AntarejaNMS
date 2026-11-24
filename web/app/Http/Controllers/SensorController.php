@@ -22,7 +22,7 @@ class SensorController extends Controller
             ['Arus', 'current', 'first'], ['Daya', 'power', 'first'], ['Bahan bakar', 'fuel', 'worst'],
         ]],
         'sistem' => ['label' => 'Sistem & suhu', 'cols' => [
-            ['CPU', 'cpu', 'worst'], ['Memori', 'memory', 'worst'], ['Disk', 'disk', 'worst'], ['Suhu', 'temperature', 'max'], ['Kipas', 'fan', 'first'],
+            ['CPU', 'cpu', 'worst'], ['Memori', 'memory', 'worst'], ['Disk', 'disk', 'worst'], ['Suhu', 'temperature', 'max'], ['Kipas', 'fan', 'first'], ['Jam', 'clock_skew', 'worst'],
         ]],
     ];
 

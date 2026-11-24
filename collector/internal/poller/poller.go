@@ -42,6 +42,8 @@ type Poller struct {
 	lastSNMP atomic.Int64
 	snmpMu   sync.Mutex // satu putaran SNMP pada satu waktu (terjadwal atau sinkron manual)
 	macMu    sync.Mutex
+	invMu    sync.Mutex
+	invAt    map[int64]time.Time // kapan inventaris (versi, model, serial) terakhir dibaca per perangkat
 }
 
 func New(cfg config.Config, st store.Store, box *secret.Box, log *slog.Logger) *Poller {

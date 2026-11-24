@@ -27,6 +27,7 @@ class DeviceEvent extends Model
         'check_down' => ['Cek gagal', 'crit', 'x'],
         'check_up' => ['Cek pulih', 'ok', 'check'],
         'check_slow' => ['Cek lambat', 'warn', 'gauge'],
+        'firmware' => ['Versi berubah', 'info', 'rotate'],
     ];
 
     protected function casts(): array

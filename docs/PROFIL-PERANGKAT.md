@@ -62,3 +62,16 @@ bawaan: RSRP -105 / -115 dBm, RSRQ -15 / -20 dB, SINR 3 / 0 dB; RSRP dan SINR bi
 
 Belum didukung: modem Teltonika dan merek lain (MIB-nya belum bisa diverifikasi). Untuk tahu kapan jalur cadangan
 LTE dipakai, buat trigger trafik pada port LTE (mis. masuk di atas 1 Mbps selama 5 menit).
+
+## Versi dan jam perangkat
+
+Kode: `collector/internal/snmp/inventory.go`. Hanya GET/WALK.
+
+- **Versi, model, serial** dibaca saat collector mulai lalu tiap 24 jam:
+  MikroTik `mtxrLicVersion` (.1.3.6.1.4.1.14988.1.1.4.4.0), `mtxrSerialNumber` (.1.1.7.3.0), `mtxrBoardName`
+  (.1.1.7.9.0); lainnya entri chassis ENTITY-MIB (`entPhysicalClass` 3 atau 11; kolom 10 SoftwareRev, 9
+  FirmwareRev, 11 SerialNum, 13 ModelName); bila kosong `dot11manufacturerProductVersion` (.1.2.840.10036.3.1.2.1.4);
+  terakhir pola "Version x" di sysDescr (Cisco IOS). Versi berubah dicatat sebagai kejadian `firmware`.
+- **Selisih jam**: `hrSystemDate` (.1.3.6.1.2.1.25.1.2.0, DateAndTime) dibanding jam collector di titik tengah
+  permintaan. Bila perangkat tidak menyertakan zona waktu (8 oktet), selisih kelipatan 15 menit dibuang karena
+  perangkat bisa memakai WIB, WITA, atau WIT. Sensor `clock` kelas `clock_skew`: peringatan 60 detik, kritis 300 detik.

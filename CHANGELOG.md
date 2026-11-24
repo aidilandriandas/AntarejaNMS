@@ -16,6 +16,11 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - **Flow trafik** (NetFlow v5, v9, IPFIX di 2055/UDP; sFlow v5 di 6343/UDP): siapa dan aplikasi apa yang memakai
   bandwidth per port dan arah, ringkasan 5 menit (50 percakapan terbesar + lainnya), disimpan 7 hari; pemakai terbesar
   di halaman port. Hanya dari perangkat terdaftar. **Buka 2055/UDP dan 6343/UDP** dari subnet manajemen bila dipakai.
+- **Versi & jam perangkat** (menu *Pemantauan, Versi & jam*): versi perangkat lunak, model, dan nomor seri dibaca
+  tiap 24 jam (MikroTik dari MIKROTIK-MIB, lainnya dari ENTITY-MIB, IEEE802dot11-MIB, atau "Version" di sysDescr),
+  dikelompokkan per model; perangkat yang versinya beda dari mayoritas modelnya ditandai. Kejadian *Versi berubah*
+  saat perangkat di-upgrade. Selisih jam dari hrSystemDate tiap putaran SNMP jadi sensor *Selisih jam* (peringatan
+  1 menit, kritis 5 menit). Migrasi 0039.
 - **Sinyal 4G/LTE** modem MikroTik (RSRP, RSRQ, SINR, RSSI) di halaman Sensor tab Radio, jadi problem bila di bawah
   ambang, bisa dipakai di trigger. Modem Teltonika belum didukung (MIB belum terverifikasi).
 - **Uji beban 1.012 perangkat** (lihat `docs/UJI-BEBAN.md`): ping 2,7 detik, SNMP 46,5 detik per putaran di 4 vCPU.

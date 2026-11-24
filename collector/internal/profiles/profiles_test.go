@@ -99,9 +99,9 @@ func TestMikrotikWireless(t *testing.T) {
 
 func TestMikrotikLTE(t *testing.T) {
 	q := fakeQ{
-		mtxrHlVoltage: 120.0,
+		mtxrHlVoltage:      120.0,
 		mtxrLTERSRP + ".9": -112.0, mtxrLTERSRQ + ".9": -11.0, mtxrLTESINR + ".9": 12.0, mtxrLTERSSI + ".9": -79.0,
-		ifName + ".9": "lte1",
+		ifName + ".9":       "lte1",
 		mtxrLTERSRP + ".10": 0.0, // modem kedua belum terdaftar
 	}
 	rs := Collect(q, []string{"mikrotik"})

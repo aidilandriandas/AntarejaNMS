@@ -58,6 +58,46 @@ type SNMPSample struct {
 	AddrsOK bool            `json:"addrs_ok,omitempty"`
 	ARP     []snmp.ARPEntry `json:"arp,omitempty"`
 	FDB     []snmp.FDBEntry `json:"fdb,omitempty"` // tabel MAC switch
+
+	Clock *snmp.Clock     `json:"clock,omitempty"` // selisih jam perangkat
+	Inv   *snmp.Inventory `json:"inv,omitempty"`   // versi & model, dibaca tiap 24 jam
+}
+
+// Ambang selisih jam (detik, nilai mutlak). Log, sertifikat, dan korelasi kejadian kacau bila jam perangkat meleset.
+const (
+	clockWarnSec = 60
+	clockCritSec = 300
+	invEvery     = 24 * time.Hour
+)
+
+func (p *Poller) inventoryDue(id int64, now time.Time) bool {
+	p.invMu.Lock()
+	defer p.invMu.Unlock()
+	if p.invAt == nil {
+		p.invAt = map[int64]time.Time{}
+	}
+	if t, ok := p.invAt[id]; ok && now.Sub(t) < invEvery {
+		return false
+	}
+	p.invAt[id] = now
+	return true
+}
+
+// ClockSensor mengubah selisih jam menjadi sensor kelas clock_skew (masuk problem sensor seperti sensor lain).
+func ClockSensor(c snmp.Clock) Sensor {
+	v := math.Round(c.SkewSec)
+	st, a := "ok", math.Abs(v)
+	switch {
+	case a >= clockCritSec:
+		st = "crit"
+	case a >= clockWarnSec:
+		st = "warn"
+	}
+	label := "Selisih jam"
+	if !c.HasTZ {
+		label = "Selisih jam (tanpa zona waktu)"
+	}
+	return Sensor{Key: "clock", Class: "clock_skew", Group: "sistem", Label: label, Unit: "detik", Value: &v, Status: st}
 }
 
 // ProfileFunc menentukan profil sensor perangkat: ids dipisah koma, detected = baru dideteksi ulang,
@@ -99,6 +139,17 @@ func (p *Poller) MeasureSNMP(d store.Device, cr snmp.Credentials, credErr error,
 			}
 		}
 		sess.Close()
+	}
+	if c, err := p.SNMP.Clock(d.Host, cr); err == nil {
+		s.Clock = &c
+		if s.ProfilesOK && s.Profiles != "" {
+			s.Sensors = append(s.Sensors, ClockSensor(c))
+		}
+	}
+	if p.inventoryDue(d.ID, s.At) {
+		if inv, err := p.SNMP.Inventory(d.Host, cr, sys.Descr, sys.ObjectID); err == nil {
+			s.Inv = &inv
+		}
 	}
 	if addrs, err := p.SNMP.Addresses(d.Host, cr); err == nil {
 		s.Addrs, s.AddrsOK = addrs, true
@@ -284,6 +335,16 @@ func (p *Poller) ApplySNMP(ctx context.Context, d store.Device, s SNMPSample) bo
 		}
 		if err := p.Store.SaveSensors(ctx, d.ID, rows); err != nil {
 			p.Log.Error("simpan sensor gagal", "perangkat", d.ID, "galat", err)
+		}
+	}
+
+	if s.Inv != nil {
+		if old, changed, err := p.Store.SaveInventory(ctx, d.ID, s.Inv.Version, s.Inv.Model, s.Inv.Serial); err != nil {
+			p.Log.Warn("simpan versi perangkat gagal", "perangkat", d.ID, "galat", err)
+		} else if changed {
+			if err := p.Store.Event(ctx, d.ID, "firmware", "Versi berubah dari "+old+" ke "+s.Inv.Version, nil, now); err != nil {
+				p.Log.Warn("catat kejadian versi gagal", "perangkat", d.ID, "galat", err)
+			}
 		}
 	}
 

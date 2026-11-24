@@ -551,3 +551,23 @@ func matchNeighbors(ctx context.Context, db execer, where, portWhere string, arg
 func (s Store) RematchNeighbors(ctx context.Context) error {
 	return matchNeighbors(ctx, s.DB, `n.remote_device_id IS NULL`, `n.remote_if_index IS NULL`)
 }
+
+// SaveInventory menyimpan versi, model, dan serial. Nilai kosong tidak menimpa nilai lama.
+// changed = versi lama ada dan berbeda dari versi baru (untuk kejadian "versi berubah").
+func (s Store) SaveInventory(ctx context.Context, deviceID int64, version, model, serial string) (old string, changed bool, err error) {
+	nz := func(v string) *string {
+		if v == "" {
+			return nil
+		}
+		return &v
+	}
+	var prev *string
+	err = s.DB.QueryRow(ctx, `WITH o AS (SELECT os_version FROM devices WHERE id = $1)
+		UPDATE devices SET os_version = COALESCE($2, os_version), hw_model = COALESCE($3, hw_model),
+			serial_no = COALESCE($4, serial_no), inventory_at = now() WHERE id = $1 RETURNING (SELECT os_version FROM o)`,
+		deviceID, nz(version), nz(model), nz(serial)).Scan(&prev)
+	if err != nil || prev == nil {
+		return "", false, err
+	}
+	return *prev, version != "" && *prev != version, nil
+}

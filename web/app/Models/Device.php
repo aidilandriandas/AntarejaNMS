@@ -75,6 +75,7 @@ class Device extends Model
             'status_changed_at' => 'datetime',
             'last_ping_at' => 'datetime',
             'last_snmp_at' => 'datetime',
+            'inventory_at' => 'datetime',
             'cfg_last_at' => 'datetime',
             'cfg_requested' => 'boolean',
         ];
