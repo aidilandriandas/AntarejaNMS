@@ -84,6 +84,9 @@
 .n-tile .tn { display: block; font-size: 12.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .n-tile .ts { display: block; font: 400 10.5px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .n-wall.dense .n-tile .ts { display: none; }
+.n-wall.xdense .n-tiles { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 3px; }
+.n-wall.xdense .n-tile { padding: 3px 6px 3px 9px; } .n-wall.xdense .n-tile .tn { font-size: 11px; }
+.n-wall.xdense .n-wsec { margin-bottom: 8px; }
 .n-tile.problem { background: rgba(245,184,74,.1); border-color: rgba(245,184,74,.45); } .n-tile.problem::before { background: var(--warn); }
 .n-tile.down { background: rgba(255,95,107,.22); border-color: var(--crit); animation: n-tile 1.4s ease-in-out infinite; } .n-tile.down::before { background: var(--crit); }
 .n-tile.impacted { background: rgba(255,95,107,.08); border-color: rgba(255,95,107,.35); } .n-tile.impacted::before { background: var(--crit); opacity: .5; }

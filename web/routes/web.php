@@ -264,6 +264,7 @@ Route::middleware('auth')->group(function () {
     Route::get('topologi/port/{device}', [TopologyController::class, 'ports'])->name('topology.ports');
     Route::get('noc', [NocController::class, 'index'])->name('noc');
     Route::get('noc/data', [NocController::class, 'data'])->name('noc.data');
+    Route::get('noc/state', [NocController::class, 'state'])->name('noc.state');
 
     Route::get('profil', [ProfileController::class, 'edit'])->name('profile');
     Route::put('profil/password', [ProfileController::class, 'updatePassword'])->name('profile.password');

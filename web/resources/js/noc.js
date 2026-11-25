@@ -1,4 +1,4 @@
-// Layar NOC ANTAREJA — diperbarui tiap 15 detik tanpa muat ulang halaman.
+// Layar NOC ANTAREJA: cek perubahan tiap 5 detik, data lengkap paling lambat tiap 15 detik, tanpa muat ulang halaman.
 import { createTopology, bps } from './topology.js';
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -13,13 +13,17 @@ const TONE = { crit: 'var(--crit)', warn: 'var(--warn)', info: 'var(--info)', ok
 
 let serverOffset = 0;
 let lastOk = Date.now();
-let seen = null; // id problem yang sudah tampil (untuk suara & kilatan)
+let seen = null; // id problem yang sudah tampil (untuk kilatan)
+let heard = null; // id problem High/Disaster baru yang sudah dibunyikan
+let sig = null; // sidik keadaan terakhir dari server
+let lastFull = Date.now();
+let busy = false;
 const site = $('[data-site]');
 site.value = store.get('ant-noc-site') || '';
 
 function ago(iso) {
     const s = Math.max(0, Math.floor((Date.now() + serverOffset - new Date(iso).getTime()) / 1000));
-    if (s < 60) return `${s}d`;
+    if (s < 60) return `${s} dtk`;
     if (s < 3600) return `${Math.floor(s / 60)}m`;
     if (s < 86400) return `${Math.floor(s / 3600)}j ${Math.floor((s % 3600) / 60)}m`;
     return `${Math.floor(s / 86400)}h ${Math.floor((s % 86400) / 3600)}j`;
@@ -143,9 +147,11 @@ function render(d) {
             : `<small>PIKET</small><b>TIDAK ADA</b>${d.oncall_next?.length ? `<small>BERIKUTNYA ${esc(d.oncall_next[0].name)} ${esc(d.oncall_next[0].from)}</small>` : ''}`;
     }
 
-    // Suara: problem High/Disaster baru yang belum di-ACK & tidak ditekan
+    // Suara: problem High/Disaster baru yang belum di-ACK & tidak ditekan (dari server, tidak terbatas daftar yang tampil)
     const ids = d.problems.map((p) => p.id);
-    if (seen !== null && d.problems.some((p) => !seen.includes(p.id) && !p.acked && !p.suppressed && ['high', 'disaster'].includes(p.severity))) beep('crit');
+    const fresh = d.fresh || [];
+    if (heard !== null && fresh.some((id) => !heard.has(id))) beep('crit');
+    heard = new Set([...(heard || []), ...fresh]);
 
     const k = d.kpi;
     const av = k.availability;
@@ -175,7 +181,10 @@ function render(d) {
     d.wall.forEach((w) => { (bySite[w.site] = bySite[w.site] || []).push(w); });
     const wall = $('[data-wall]');
     wall.classList.toggle('dense', d.wall.length > 120);
-    wall.innerHTML = Object.keys(bySite).sort().map((s) => {
+    wall.classList.toggle('xdense', d.wall.length > 300);
+    // Site yang punya perangkat down di atas, supaya yang bermasalah tidak tersembunyi di bawah layar
+    const downIn = (s) => bySite[s].filter((w) => w.state === 'down').length;
+    wall.innerHTML = Object.keys(bySite).sort((a, b) => (downIn(b) > 0) - (downIn(a) > 0) || a.localeCompare(b)).map((s) => {
         const list = bySite[s].sort((a, b) => order[a.state] - order[b.state] || a.name.localeCompare(b.name));
         const bad = list.filter((w) => w.state === 'down').length;
         const up = list.filter((w) => ['ok', 'problem'].includes(w.state)).length;
@@ -188,7 +197,7 @@ function render(d) {
     }).join('') || '<div class="n-list"><div class="empty">Belum ada perangkat</div></div>';
 
     // Problem aktif
-    $('[data-prob-n]').textContent = d.kpi.problems || '';
+    $('[data-prob-n]').textContent = d.kpi.problems > d.kpi.shown ? `${d.kpi.shown} dari ${d.kpi.problems}` : (d.kpi.problems || '');
     $('[data-problems]').innerHTML = d.problems.length ? d.problems.map((p) => {
         const isNew = seen && !seen.includes(p.id);
         const status = p.suppressed ? 'DITEKAN' : p.acked ? `ACK ${esc(p.acked_by || '')}` : 'BELUM ACK';
@@ -210,8 +219,11 @@ async function refresh() {
         const r = await fetch(`${root.dataset.url}?site=${site.value}`, { headers: { Accept: 'application/json' } });
         if (r.status === 401 || r.status === 419 || r.redirected) { $('[data-overlay]').hidden = false; return; }
         if (!r.ok) return;
-        render(await r.json());
+        const d = await r.json();
+        render(d);
+        sig = d.sig;
         lastOk = Date.now();
+        lastFull = Date.now();
         $('[data-overlay]').hidden = true;
     } catch (e) { /* jaringan terputus: indikator LIVE berubah sendiri */ }
 }
@@ -228,6 +240,7 @@ topo.every(30);
 site.addEventListener('change', () => {
     store.set('ant-noc-site', site.value);
     seen = null;
+    heard = null;
     refresh();
     topo.load().then(() => topo.fit()).catch(() => {});
 });
@@ -238,4 +251,37 @@ document.addEventListener('keydown', (e) => { if ((e.key === 'f' || e.key === 'F
 setMode(mode);
 tick();
 refresh();
-setInterval(() => { if (!document.hidden) refresh(); }, 15000);
+// Tiap 5 detik cek sidik keadaan (ringan); data lengkap dimuat begitu ada problem baru, ACK, pulih, atau status
+// perangkat berubah, dan paling lambat tiap 15 detik untuk angka RTT dan trafik.
+setInterval(async () => {
+    if (document.hidden || busy) return;
+    busy = true;
+    try {
+        if (Date.now() - lastFull >= 15000) { await refresh(); return; }
+        const r = await fetch(`${root.dataset.stateUrl}?site=${site.value}`, { headers: { Accept: 'application/json' } });
+        if (r.status === 401 || r.status === 419 || r.redirected) { $('[data-overlay]').hidden = false; return; }
+        if (!r.ok) return;
+        lastOk = Date.now();
+        if ((await r.json()).sig !== sig) await refresh();
+    } catch (e) { /* jaringan terputus: indikator LIVE berubah sendiri */ } finally { busy = false; }
+}, 5000);
+
+// Dinding status lebih panjang dari layar (ratusan perangkat): gulir sendiri pelan, jeda di atas dan bawah,
+// berhenti saat kursor di atasnya. Layar TV tidak ada yang menggulir.
+{
+    const wall = $('[data-wall]');
+    let hold = Date.now() + 5000;
+    let hover = false;
+    wall.addEventListener('mouseenter', () => { hover = true; });
+    wall.addEventListener('mouseleave', () => { hover = false; hold = Date.now() + 3000; });
+    setInterval(() => {
+        if (hover || document.hidden || Date.now() < hold || showing !== 'wall') return;
+        if (wall.scrollHeight - wall.clientHeight < 8) return;
+        if (wall.scrollTop + wall.clientHeight >= wall.scrollHeight - 2) {
+            hold = Date.now() + 5000;
+            setTimeout(() => { wall.scrollTop = 0; }, 4000);
+            return;
+        }
+        wall.scrollTop += 1;
+    }, 40);
+}

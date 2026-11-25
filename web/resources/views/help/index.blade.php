@@ -261,6 +261,9 @@
         <li>Login dengan akun viewer + centang <i>Ingat saya</i>, buka <i>Layar NOC</i>, tekan <kbd>F</kbd> untuk layar penuh.</li>
         <li>Klik tombol <b>SUARA</b> sekali setelah membuka (browser mewajibkan satu klik sebelum boleh berbunyi).</li>
         <li>Pilih <b>OTOMATIS</b> agar tampilan bergantian: dinding status, topologi, lalu peta lokasi (tiap 30 detik).</li>
+        <li>Layar memeriksa perubahan tiap 5 detik. Problem baru, ACK, pulih, dan perubahan status perangkat tampil dalam beberapa detik setelah dicatat collector. Problem yang muncul dalam 15 menit terakhir dan belum di-ACK selalu di urutan teratas daftar <i>Problem aktif</i>, apa pun severity-nya.</li>
+        <li>Angka di pojok <i>Problem aktif</i>, misalnya <b>20 dari 390</b>, berarti daftar menampilkan 20 teratas dari semua problem terbuka; alarm dan grafik severity menghitung semuanya.</li>
+        <li>Bila perangkat terlalu banyak untuk satu layar, dinding status bergulir sendiri pelan; site yang punya perangkat down tampil paling atas. Arahkan kursor ke dinding untuk menghentikan guliran.</li>
         <li>Indikator <b>LIVE</b> menguning bila layar gagal mengambil data. Alarm <b>"COLLECTOR TIDAK MELAPOR, DATA USANG"</b> berarti mesin pemantau ANTAREJA berhenti: status di layar sudah tidak bisa dipercaya, hubungi admin.</li>
     </ul>
 </div></section>

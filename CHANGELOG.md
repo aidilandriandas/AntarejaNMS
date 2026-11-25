@@ -111,6 +111,13 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - Perbaikan: keterangan kamera di grid CCTV tidak lagi diawali koma untuk kamera tanpa site, dan nama perangkat tidak
   diulang bila sama dengan nama kamera (kamera hasil tambah massal).
 - Teks layar, pesan notifikasi, dan laporan tidak lagi memakai titik tengah, panah, tanda pisah, atau elipsis.
+- Perbaikan Layar NOC: alarm, jumlah problem, dan grafik severity sebelumnya dihitung dari 30 problem teratas saja
+  (tertulis "30 problem High/Disaster belum di-ACK" padahal ratusan). Sekarang dihitung dari semua problem terbuka.
+- Layar NOC memeriksa perubahan tiap 5 detik lewat permintaan ringan dan langsung memuat ulang bila ada problem baru,
+  ACK, pulih, atau perubahan status perangkat (sebelumnya tiap 15 detik). Problem baru 15 menit terakhir yang belum
+  di-ACK selalu di urutan teratas walau severity-nya rendah; bunyi alarm untuk semua problem High/Disaster baru, bukan
+  hanya yang masuk 20 teratas. Dinding status bergulir sendiri bila perangkat melebihi layar, site dengan perangkat
+  down di atas. Umur problem di bawah semenit ditulis "dtk".
 
 ## 0.4.0
 
