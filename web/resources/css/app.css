@@ -587,3 +587,5 @@ details.tpl[open] > summary { margin-bottom: var(--space-sm); }
 .load-scale .ld4 { background: var(--load-4); } .load-scale .ld5 { background: var(--load-5); }
 .flow-plot { width: 100%; min-height: 40px; }
 [data-flow-chart] .hd { flex-wrap: wrap; gap: var(--space-xs) var(--space-md); }
+.t tr.is-sel > td { background: var(--color-accent-soft); }
+.card[id] { scroll-margin-top: 84px; }

@@ -16,6 +16,8 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - **Flow trafik** (NetFlow v5, v9, IPFIX di 2055/UDP; sFlow v5 di 6343/UDP): siapa dan aplikasi apa yang memakai
   bandwidth per port dan arah, ringkasan 5 menit (50 percakapan terbesar + lainnya), disimpan 7 hari; pemakai terbesar
   di halaman port. Hanya dari perangkat terdaftar. **Buka 2055/UDP dan 6343/UDP** dari subnet manajemen bila dipakai.
+- **Ubah kamera CCTV**: form ubah di Kelola kamera tidak lagi berupa popup yang terpotong; tombol *Ubah* membuka form
+  lengkap di kartu samping (juga perangkat dan site bisa diganti), baris yang sedang diubah ditandai.
 - **VLAN dari interface router**: halaman VLAN & STP kini juga mengenali VLAN yang berupa interface (MikroTik
   `/interface vlan`, Cisco `Vlan20` atau subinterface `Gi0/0.20`) lewat tipe interface l2vlan (135) / l3ipvlan (136)
   atau pola nama, bukan hanya tabel VLAN switch. Tabel VLAN switch dan STP kini dibaca juga dari perangkat kategori

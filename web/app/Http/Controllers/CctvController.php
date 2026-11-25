@@ -55,10 +55,13 @@ class CctvController extends Controller
         return response('', 204);
     }
 
-    public function manage()
+    public function manage(Request $request)
     {
+        $cams = Camera::with('site', 'device')->orderBy('sort')->orderBy('name')->get();
+
         return view('cctv.manage', [
-            'cams' => Camera::with('site', 'device')->orderBy('sort')->orderBy('name')->get(),
+            'cams' => $cams,
+            'edit' => $request->integer('ubah') ? $cams->firstWhere('id', $request->integer('ubah')) : null,
             'devices' => Device::orderBy('name')->get(['id', 'name', 'host', 'category', 'site_id']),
             'sites' => Site::orderBy('code')->get(),
         ]);
@@ -97,7 +100,7 @@ class CctvController extends Controller
         $go2rtc->forget($camera); // didaftarkan ulang dengan URL baru saat dibuka
         Audit::log('updated', "Kamera {$camera->name} diubah", $camera, $changes);
 
-        return back()->with('ok', "Kamera {$camera->name} disimpan.");
+        return redirect()->route('cctv.manage')->with('ok', "Kamera {$camera->name} disimpan.");
     }
 
     public function destroy(Camera $camera, Go2rtc $go2rtc)
