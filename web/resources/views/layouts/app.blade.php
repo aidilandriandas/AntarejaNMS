@@ -71,6 +71,7 @@
             <div class="grp">Laporan</div>
             <a href="{{ route('services.index') }}" class="{{ $nav('services.*') }}"><x-icon name="layers"/>SLA layanan</a>
             <a href="{{ route('reports.sla') }}" class="{{ $nav('reports.sla*') }}"><x-icon name="chart"/>SLA perangkat</a>
+            <a href="{{ route('isp.index') }}" class="{{ $nav('isp.*') }}"><x-icon name="pulse"/>SLA link ISP</a>
             <a href="{{ route('reports.downtime') }}" class="{{ $nav('reports.downtime*') }}"><x-icon name="arrow-down"/>Down bulanan</a>
             <a href="{{ route('reports.incidents') }}" class="{{ $nav('reports.incidents*') }}"><x-icon name="flag"/>Insiden bulanan</a>
             <a href="{{ route('capacity.index') }}" class="{{ $nav('capacity.*') }}"><x-icon name="gauge"/>Kapasitas port</a>

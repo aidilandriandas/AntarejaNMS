@@ -589,3 +589,7 @@ details.tpl[open] > summary { margin-bottom: var(--space-sm); }
 [data-flow-chart] .hd { flex-wrap: wrap; gap: var(--space-xs) var(--space-md); }
 .t tr.is-sel > td { background: var(--color-accent-soft); }
 .card[id] { scroll-margin-top: 84px; }
+.isp-charts > .card { margin-bottom: var(--space-md); }
+.isp-fig { margin: 0 0 var(--space-md); min-width: 0; }
+.isp-fig figcaption { font-size: var(--text-sm); font-weight: 600; color: var(--color-ink-2); margin-bottom: var(--space-2xs); }
+.isp-grid { gap: var(--space-md) var(--space-lg); }

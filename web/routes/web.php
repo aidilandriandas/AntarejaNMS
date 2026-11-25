@@ -24,6 +24,7 @@ use App\Http\Controllers\MapController;
 use App\Http\Controllers\ModbusController;
 use App\Http\Controllers\ExporterController;
 use App\Http\Controllers\FlowController;
+use App\Http\Controllers\IspSlaController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\VlanController;
 use App\Http\Controllers\RoutingController;
@@ -109,6 +110,10 @@ Route::middleware('auth')->group(function () {
         Route::delete('perangkat/{device}/modbus/titik/{point}', [ModbusController::class, 'destroy'])->name('modbus.points.destroy')->whereNumber('point');
         Route::post('perangkat/{device}/modbus/salin', [ModbusController::class, 'copy'])->name('modbus.copy');
         Route::delete('perangkat/{device}/routing', [RoutingController::class, 'forget'])->name('routing.forget');
+        Route::get('laporan/sla-isp/atur', [IspSlaController::class, 'manage'])->name('isp.manage');
+        Route::post('laporan/sla-isp/atur', [IspSlaController::class, 'store'])->name('isp.store');
+        Route::put('laporan/sla-isp/atur/{isp}', [IspSlaController::class, 'update'])->name('isp.update')->whereNumber('isp');
+        Route::delete('laporan/sla-isp/atur/{isp}', [IspSlaController::class, 'destroy'])->name('isp.destroy')->whereNumber('isp');
         Route::get('templat', [TemplateController::class, 'index'])->name('templates.index');
         Route::get('templat/baru', [TemplateController::class, 'create'])->name('templates.create');
         Route::post('templat', [TemplateController::class, 'store'])->name('templates.store');
@@ -243,6 +248,9 @@ Route::middleware('auth')->group(function () {
     Route::get('laporan/insiden', [IncidentReportController::class, 'index'])->name('reports.incidents');
     Route::get('laporan/insiden.csv', [IncidentReportController::class, 'csv'])->name('reports.incidents.csv');
     Route::get('laporan/sla', [ReportController::class, 'sla'])->name('reports.sla');
+    Route::get('laporan/sla-isp', [IspSlaController::class, 'index'])->name('isp.index');
+    Route::get('laporan/sla-isp/{isp}', [IspSlaController::class, 'show'])->name('isp.show')->whereNumber('isp');
+    Route::get('laporan/sla-isp/{isp}.csv', [IspSlaController::class, 'csv'])->name('isp.csv')->whereNumber('isp');
     Route::get('laporan/down-bulanan', [DowntimeController::class, 'index'])->name('reports.downtime');
     Route::get('laporan/down-bulanan.csv', [DowntimeController::class, 'csv'])->name('reports.downtime.csv');
     Route::get('laporan/sla.csv', [ReportController::class, 'csv'])->name('reports.sla.csv');

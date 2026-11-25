@@ -16,6 +16,12 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - **Flow trafik** (NetFlow v5, v9, IPFIX di 2055/UDP; sFlow v5 di 6343/UDP): siapa dan aplikasi apa yang memakai
   bandwidth per port dan arah, ringkasan 5 menit (50 percakapan terbesar + lainnya), disimpan 7 hari; pemakai terbesar
   di halaman port. Hanya dari perangkat terdaftar. **Buka 2055/UDP dan 6343/UDP** dari subnet manajemen bila dipakai.
+- **SLA link ISP** (Laporan, *SLA link ISP*): laporan per link internet/Metro-E dari ping ANTAREJA. Gangguan = ping
+  gagal atau packet loss di atas ambang link (bawaan 10%); maintenance bisa dikecualikan; waktu tanpa data tidak
+  dihitung. Periode minggu lalu/ini, bulan lalu/ini, atau tanggal pilihan. Isi: ketersediaan dengan status Memenuhi /
+  Peringatan / Tidak memenuhi (ambang per link, bawaan 98% dan 97%), waktu normal dan gangguan, latensi, jitter, loss
+  rata-rata, jumlah sampel ping, tren harian, grafik detail dengan pita gangguan, daftar insiden (mulai, pulih, durasi,
+  penyebab), tabel per hari, CSV dan cetak. Link diatur engineer (Atur link). Migrasi 0048.
 - **Ubah kamera CCTV**: form ubah di Kelola kamera tidak lagi berupa popup yang terpotong; tombol *Ubah* membuka form
   lengkap di kartu samping (juga perangkat dan site bisa diganti), baris yang sedang diubah ditandai.
 - **VLAN dari interface router**: halaman VLAN & STP kini juga mengenali VLAN yang berupa interface (MikroTik

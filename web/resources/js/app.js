@@ -695,3 +695,8 @@ $$('[data-toggle-target]').forEach((cb) => {
 if (document.querySelector('[data-flow-chart]')) {
     import('./flowchart.js').then(({ initFlowChart }) => initFlowChart());
 }
+
+// Grafik laporan SLA link ISP
+if (document.querySelector('[data-isp-report]')) {
+    import('./ispsla.js').then(({ initIspSla }) => initIspSla());
+}
