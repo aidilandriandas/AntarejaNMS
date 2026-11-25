@@ -105,6 +105,12 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - **Ubah perangkat massal** di daftar Perangkat: site, induk, kategori, kredensial SNMP, collector, aktif/nonaktif, hapus.
 - **Backup ke luar server**: SFTP atau S3/MinIO, retensi di tujuan, peringatan bila gagal.
 - Perbaikan: login akun dengan password tersimpan bukan bcrypt (data impor) ditolak biasa, bukan error 500.
+- Perbaikan: pengiriman notifikasi sekarang berjalan terpisah dari putaran ping. Sebelumnya kanal yang lambat atau
+  tidak terjangkau (Telegram, webhook, SMTP) bisa menghabiskan jatah waktu putaran sehingga penilaian problem berikutnya
+  gagal dan perangkat down atau pulih terlambat tercatat.
+- Perbaikan: keterangan kamera di grid CCTV tidak lagi diawali koma untuk kamera tanpa site, dan nama perangkat tidak
+  diulang bila sama dengan nama kamera (kamera hasil tambah massal).
+- Teks layar, pesan notifikasi, dan laporan tidak lagi memakai titik tengah, panah, tanda pisah, atau elipsis.
 
 ## 0.4.0
 

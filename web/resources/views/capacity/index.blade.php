@@ -25,7 +25,7 @@
 
 @if(! $rows)
     <div class="card"><div class="empty"><x-icon name="chart"/>Belum ada port yang dipantau.
-        <div class="muted" style="margin-top:8px;max-width:560px;margin-inline:auto">Buka halaman perangkat → tabel port → tandai port penting (uplink, link PTP, ke ISP) sebagai <b>pantau</b>. Port yang dipantau juga memunculkan problem bila putus atau penuh. Perkiraan muncul setelah {{ $C::MIN_DAYS }} hari data.</div>
+        <div class="muted" style="margin-top:8px;max-width:560px;margin-inline:auto">Buka halaman perangkat, lalu di tabel port tandai port penting (uplink, link PTP, ke ISP) sebagai <b>pantau</b>. Port yang dipantau juga memunculkan problem bila putus atau penuh. Perkiraan muncul setelah {{ $C::MIN_DAYS }} hari data.</div>
     </div></div>
 @else
 <div class="kpis">

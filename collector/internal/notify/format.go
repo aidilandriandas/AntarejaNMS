@@ -36,7 +36,7 @@ func dur(d time.Duration) string {
 func where(p Problem) string {
 	s := p.Device + " (" + p.Host + ")"
 	if p.Site != "" {
-		s += " · " + p.Site
+		s += ", " + p.Site
 	}
 	return s
 }
@@ -55,13 +55,13 @@ func Single(kind string, p Problem, delay int, base string) Message {
 		}
 		m.Event = "problem.resolve"
 		m.Subject = "[ANTAREJA] PULIH: " + p.Title
-		m.Text = fmt.Sprintf("PULIH · %s\n%s\nLama gangguan: %s", p.Title, where(p), dur(d))
+		m.Text = fmt.Sprintf("PULIH: %s\n%s\nLama gangguan: %s", p.Title, where(p), dur(d))
 		m.HTML = fmt.Sprintf("✅ <b>PULIH</b>\n<b>%s</b>\n%s\nLama gangguan: %s", esc(p.Title), esc(where(p)), dur(d))
 	} else {
 		m.Event = "problem.open"
-		head := "PROBLEM · " + sevLabel[p.Severity]
+		head := "PROBLEM " + sevLabel[p.Severity]
 		if delay > 0 {
-			head = fmt.Sprintf("ESKALASI · belum di-ACK %d menit · %s", delay, sevLabel[p.Severity])
+			head = fmt.Sprintf("ESKALASI %s (belum di-ACK %d menit)", sevLabel[p.Severity], delay)
 		}
 		m.Subject = "[ANTAREJA] " + head + ": " + p.Title
 		m.Text = fmt.Sprintf("%s\n%s\n%s\n%s\nMulai %s", head, p.Title, where(p), p.Detail, when(p.StartedAt))
@@ -119,15 +119,15 @@ func Summary(kind string, ps []Problem, delay int, base string) Message {
 	var tl, hl []string
 	for i, p := range ps {
 		if i == 15 {
-			tl = append(tl, fmt.Sprintf("… dan %d lainnya", len(ps)-15))
-			hl = append(hl, fmt.Sprintf("… dan %d lainnya", len(ps)-15))
+			tl = append(tl, fmt.Sprintf("dan %d lainnya", len(ps)-15))
+			hl = append(hl, fmt.Sprintf("dan %d lainnya", len(ps)-15))
 			break
 		}
 		tl = append(tl, fmt.Sprintf("- [%s] %s (%s)", sevLabel[p.Severity], p.Title, p.Site))
 		hl = append(hl, fmt.Sprintf("%s %s <i>%s</i>", sevIcon[p.Severity], esc(p.Title), esc(p.Site)))
 	}
 	m.Text = head + " (" + strings.Join(siteParts, ", ") + ")\n" + strings.Join(tl, "\n")
-	m.HTML = fmt.Sprintf("%s <b>%s</b>\n%s\n\n%s", icon, esc(head), esc(strings.Join(siteParts, " · ")), strings.Join(hl, "\n"))
+	m.HTML = fmt.Sprintf("%s <b>%s</b>\n%s\n\n%s", icon, esc(head), esc(strings.Join(siteParts, ", ")), strings.Join(hl, "\n"))
 	if base != "" {
 		m.Text += "\n" + base + "/problem"
 		m.HTML += "\n" + esc(base+"/problem")

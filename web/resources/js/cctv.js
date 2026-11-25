@@ -29,7 +29,7 @@ export function play(video, src, onStatus) {
     };
 
     ms.addEventListener('sourceopen', () => {
-        onStatus?.('Menghubungkan…');
+        onStatus?.('Menghubungkan');
         ws.onopen = () => ws.send(JSON.stringify({ type: 'mse', value: supported }));
         if (ws.readyState === WebSocket.OPEN) ws.onopen();
     }, { once: true });

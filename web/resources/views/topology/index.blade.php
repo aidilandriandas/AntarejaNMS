@@ -65,7 +65,7 @@
     <section class="card" data-topo-panel="list" hidden>
         <div class="bd flush"><div class="table-wrap"><table class="t">
             <thead><tr><th>Perangkat A</th><th>Port A</th><th>Perangkat B</th><th>Port B</th><th>Sumber</th><th>Status</th><th class="num">Masuk</th><th class="num">Keluar</th></tr></thead>
-            <tbody data-topo-rows><tr><td colspan="8" class="empty">Memuat sambungan…</td></tr></tbody>
+            <tbody data-topo-rows><tr><td colspan="8" class="empty">Memuat sambungan</td></tr></tbody>
         </table></div></div>
     </section>
 
@@ -96,7 +96,7 @@
             @if($links->isNotEmpty())
             <section class="card"><div class="hd"><h2>Sambungan manual</h2></div><div class="bd flush"><table class="t"><tbody>
                 @foreach($links as $l)
-                    <tr><td>{{ $l->a_name }}<span class="muted">{{ $l->a_port ? ', ' . $l->a_port : '' }}</span> ↔ {{ $l->b_name }}<span class="muted">{{ $l->b_port ? ', ' . $l->b_port : '' }}</span>
+                    <tr><td>{{ $l->a_name }}<span class="muted">{{ $l->a_port ? ', ' . $l->a_port : '' }}</span> ke {{ $l->b_name }}<span class="muted">{{ $l->b_port ? ', ' . $l->b_port : '' }}</span>
                         @if($l->note)<div class="muted" style="font-size:12px">{{ $l->note }}</div>@endif</td>
                         @can('manage-devices')<td class="right"><form method="post" action="{{ route('topology.links.destroy', $l->id) }}" data-confirm="Hapus sambungan ini?">@csrf @method('DELETE')<button class="btn sm danger" aria-label="Hapus sambungan {{ $l->a_name }} ke {{ $l->b_name }}"><x-icon name="trash"/></button></form></td>@endcan</tr>
                 @endforeach

@@ -83,7 +83,7 @@
         </ul></div>
         @can('manage-devices')
         <form method="post" action="{{ route('incidents.note', $i) }}" class="bd stack" style="border-top:1px solid var(--line)">@csrf
-            <textarea class="input @error('body') is-err @enderror" name="body" rows="2" placeholder="Catatan: temuan di lapangan, langkah yang sudah dicoba…" required maxlength="2000" aria-label="Catatan"></textarea><x-field-error name="body"/>
+            <textarea class="input @error('body') is-err @enderror" name="body" rows="2" placeholder="Catatan: temuan di lapangan, langkah yang sudah dicoba" required maxlength="2000" aria-label="Catatan"></textarea><x-field-error name="body"/>
             <div><button class="btn sm">Tambah catatan</button></div>
         </form>
         @endcan

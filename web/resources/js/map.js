@@ -94,12 +94,12 @@ export function createMap(el, { csrf, onSelect }) {
     });
     const devIcon = (d) => L.divIcon({ className: '', html: `<div class="mk-dev ${d.state}" title="${esc(d.name)}"></div>`, iconSize: [14, 14], iconAnchor: [7, 7] });
 
-    const sitePopup = (s) => `<div class="mp"><b>${esc(s.code)} — ${esc(s.name)}</b><div class="mp-st ${s.state}">${STATE[s.state]}</div>
+    const sitePopup = (s) => `<div class="mp"><b>${esc(s.code)}, ${esc(s.name)}</b><div class="mp-st ${s.state}">${STATE[s.state]}</div>
         <div>${s.total} perangkat${s.down ? `, <b style="color:var(--crit)">${s.down} down</b>` : ''}${s.problem ? `, ${s.problem} problem` : ''}${s.maintenance ? `, ${s.maintenance} maintenance` : ''}</div>
         ${s.down_list.length ? `<ul>${s.down_list.map((d) => `<li><a href="${esc(d.url)}">${esc(d.name)}</a></li>`).join('')}</ul>` : ''}
-        <a href="${esc(s.url)}">Lihat perangkat site →</a></div>`;
+        <a href="${esc(s.url)}">Lihat perangkat site</a></div>`;
     const devPopup = (d) => `<div class="mp"><b>${esc(d.name)}</b><div class="mono" style="font-size:12px">${esc(d.host)}${d.site ? ', ' + esc(d.site) : ''}</div>
-        <div class="mp-st ${d.state}">${STATE[d.state] || esc(d.state)}</div>${d.reason ? `<div style="font-size:12px">${esc(d.reason)}</div>` : ''}<a href="${esc(d.url)}">Detail perangkat →</a></div>`;
+        <div class="mp-st ${d.state}">${STATE[d.state] || esc(d.state)}</div>${d.reason ? `<div style="font-size:12px">${esc(d.reason)}</div>` : ''}<a href="${esc(d.url)}">Detail perangkat</a></div>`;
 
     const place = (store, key, item, icon, popup, type) => {
         let m = store.get(key);

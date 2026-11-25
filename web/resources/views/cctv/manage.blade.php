@@ -12,7 +12,7 @@
             <tbody>
             @foreach($cams as $c)
                 <tr class="{{ $c->enabled ? '' : 'is-off' }} {{ $edit?->id === $c->id ? 'is-sel' : '' }}">
-                    <td class="name">{{ $c->name }}<small>{{ $c->device?->name ?? 'tanpa perangkat' }}{{ $c->enabled ? '' : ', nonaktif' }}</small></td>
+                    <td class="name">{{ $c->name }}<small>{{ $c->device ? ($c->device->name !== $c->name ? $c->device->name : 'perangkat ' . $c->device->host) : 'tanpa perangkat' }}{{ $c->enabled ? '' : ', nonaktif' }}</small></td>
                     <td class="mono" style="font-size:12.5px">{{ $c->host }}:{{ $c->rtsp_port }}, kanal {{ $c->channel }}<div class="muted">{{ $c->profile ? 'profil ' . $c->profile->name : ($c->username ? 'user ' . $c->username : 'tanpa login') }}</div></td>
                     <td>{{ $c->site?->code ?? 'tidak ada' }}</td>
                     <td>@if($h = $c->healthMeta())<span class="badge {{ $h[1] }}" title="{{ $c->health_detail }}">{{ $h[0] }}</span>

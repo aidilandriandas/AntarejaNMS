@@ -30,7 +30,7 @@ class Onboarding
                 'done' => $q("SELECT 1 FROM backups WHERE status = 'ok'")],
             ['key' => 'syslog', 'title' => 'Syslog dari perangkat masuk', 'hint' => 'Arahkan syslog perangkat ke IP server port 514 (petunjuk di halaman Log).', 'route' => 'logs.index',
                 'done' => $q('SELECT 1 FROM syslog WHERE device_id IS NOT NULL')],
-            ['key' => 'map', 'title' => 'Tempatkan site di peta', 'hint' => 'Peta lokasi → Atur posisi.', 'route' => 'map.index',
+            ['key' => 'map', 'title' => 'Tempatkan site di peta', 'hint' => 'Buka Peta lokasi, lalu Atur posisi.', 'route' => 'map.index',
                 'done' => $q('SELECT 1 FROM sites WHERE lat IS NOT NULL')],
         ];
     }

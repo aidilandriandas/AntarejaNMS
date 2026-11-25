@@ -125,7 +125,7 @@ if (form) {
         if (!body.host) { out.textContent = 'Isi alamat IP / nama DNS dulu.'; return; }
         if (!body.ping_enabled && !body.snmp_enabled) { out.textContent = 'Aktifkan ping atau SNMP untuk diuji.'; return; }
         btn.disabled = true;
-        out.textContent = 'Menguji… (SNMP bisa sampai 10 detik bila perangkat tidak menjawab)';
+        out.textContent = 'Menguji (SNMP bisa sampai 10 detik bila perangkat tidak menjawab)';
         try {
             const r = await fetch(btn.dataset.testUrl, {
                 method: 'POST',
@@ -373,7 +373,7 @@ if (toolsCard) {
         const body = { tool };
         if (tool === 'port') body.port = Number($('[data-tool-port]', toolsCard).value);
         $$('[data-tool]', toolsCard).forEach((x) => { x.disabled = true; });
-        out.replaceChildren(el('p', 'muted', tool === 'traceroute' ? 'Menjalankan traceroute, bisa sampai 30 detik…' : 'Menjalankan…'));
+        out.replaceChildren(el('p', 'muted', tool === 'traceroute' ? 'Menjalankan traceroute, bisa sampai 30 detik' : 'Menjalankan'));
         try {
             const res = await fetch(toolsCard.dataset.url, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrf() }, body: JSON.stringify(body) });
             const j = await res.json().catch(() => ({}));
@@ -517,7 +517,7 @@ if (cctv) {
             $('[data-cam-title]', modal).textContent = name;
             $$('[data-q]', modal).forEach((b) => b.classList.toggle('primary', b.dataset.q === q));
             modal.hidden = false;
-            status.textContent = 'Menyiapkan aliran…';
+            status.textContent = 'Menyiapkan aliran';
             const r = await fetch(`/cctv/${camId}/live?q=${q}`, { method: 'POST', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrf() } });
             const j = await r.json().catch(() => ({}));
             if (!r.ok) { status.textContent = j.error || 'Gagal menyiapkan aliran'; return; }
@@ -561,7 +561,7 @@ if (disc) {
         if (!['queued', 'running'].includes(s.status)) { location.reload(); return; }
         const pct = s.total ? Math.round((s.progress / s.total) * 100) : 2;
         $('[data-disc-bar]').style.width = `${Math.max(pct, 2)}%`;
-        $('[data-disc-text]').textContent = `${s.progress} / ${s.total || '…'} alamat, ${s.found} menjawab`;
+        $('[data-disc-text]').textContent = `${s.progress} / ${s.total || '?'} alamat, ${s.found} menjawab`;
         $('[data-disc-status]').textContent = s.status === 'running' ? 'Berjalan' : 'Antre';
     };
     setInterval(() => { if (!document.hidden) tick(); }, 2000);
@@ -588,7 +588,7 @@ if (pvModal) {
     const frame = $('[data-preview-frame]', pvModal);
     const close = () => { pvModal.hidden = true; frame.removeAttribute('src'); };
     $$('[data-preview]').forEach((b) => b.addEventListener('click', () => {
-        $('[data-preview-title]', pvModal).textContent = `Pratinjau — ${b.dataset.title}`;
+        $('[data-preview-title]', pvModal).textContent = `Pratinjau ${b.dataset.title}`;
         frame.src = b.dataset.preview;
         pvModal.hidden = false;
     }));
@@ -644,7 +644,7 @@ if (mapEl) {
         });
         $('[data-map-apply]')?.addEventListener('click', () => {
             const v = $('[data-map-coord]').value.trim().match(/^(-?\d+(?:\.\d+)?)\s*[,; ]\s*(-?\d+(?:\.\d+)?)$/);
-            if (!v || Math.abs(+v[1]) > 90 || Math.abs(+v[2]) > 180) { say('Format koordinat: lintang, bujur — mis. -2.123456, 115.654321', true); return; }
+            if (!v || Math.abs(+v[1]) > 90 || Math.abs(+v[2]) > 180) { say('Format koordinat: lintang, bujur, mis. -2.123456, 115.654321', true); return; }
             put(+(+v[1]).toFixed(6), +(+v[2]).toFixed(6)).then(() => m.focus(+v[1], +v[2]));
         });
         clearBtn?.addEventListener('click', () => { if (confirm('Hapus posisi ini dari peta?')) put(null, null); });

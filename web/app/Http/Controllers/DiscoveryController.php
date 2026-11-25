@@ -147,7 +147,7 @@ class DiscoveryController extends Controller
             $collector->pollNow($id);
         }
 
-        return back()->with('ok', count($created) . ' perangkat ditambahkan. Status muncul dalam 1–2 menit.');
+        return back()->with('ok', count($created) . ' perangkat ditambahkan. Status muncul dalam 1 sampai 2 menit.');
     }
 
     public function ignore(Request $request, int $scan)

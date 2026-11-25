@@ -43,7 +43,7 @@ class Maintenance extends Model
         return match ($this->scope) {
             'all' => 'Semua perangkat',
             'site' => 'Site ' . ($this->site?->code ?? '?'),
-            default => $this->devices->count() . ' perangkat: ' . $this->devices->pluck('name')->take(4)->implode(', ') . ($this->devices->count() > 4 ? ', …' : ''),
+            default => $this->devices->count() . ' perangkat: ' . $this->devices->pluck('name')->take(4)->implode(', ') . ($this->devices->count() > 4 ? ' dan ' . ($this->devices->count() - 4) . ' lainnya' : ''),
         };
     }
 }

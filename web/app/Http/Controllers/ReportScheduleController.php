@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 /** Laporan terjadwal: ringkasan harian/mingguan/bulanan dikirim collector lewat kanal notifikasi. */
 class ReportScheduleController extends Controller
 {
-    public const FREQ = ['daily' => 'Harian (kemarin)', 'weekly' => 'Mingguan (Senin–Minggu lalu)', 'monthly' => 'Bulanan (bulan lalu)'];
+    public const FREQ = ['daily' => 'Harian (kemarin)', 'weekly' => 'Mingguan (Senin sampai Minggu lalu)', 'monthly' => 'Bulanan (bulan lalu)'];
 
     public function index()
     {

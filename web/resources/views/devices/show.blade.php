@@ -134,7 +134,7 @@
         </div></section>
         @if($device->cfg_type)
         <section class="card"><div class="hd"><h2>Konfigurasi</h2>
-            <form method="post" action="{{ route('devices.config.backup', $device) }}">@csrf<button class="btn sm" @disabled($device->cfg_requested)>{{ $device->cfg_requested ? 'Diminta…' : 'Backup sekarang' }}</button></form></div>
+            <form method="post" action="{{ route('devices.config.backup', $device) }}">@csrf<button class="btn sm" @disabled($device->cfg_requested)>{{ $device->cfg_requested ? 'Diminta' : 'Backup sekarang' }}</button></form></div>
             <div class="bd flush">
                 @if($device->cfg_error)
                     <div class="alert error" style="margin:12px"><x-icon name="alert"/><div>{{ $device->cfg_error }}

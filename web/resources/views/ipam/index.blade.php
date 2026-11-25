@@ -69,7 +69,7 @@
             @if($changes->isEmpty())<div class="empty">Tidak ada.</div>@else
             <table class="t"><tbody>
                 @foreach($changes as $c)
-                    <tr><td class="mono" style="font-size:12.5px"><a href="{{ route('ipam.search', ['q' => $c->ip]) }}">{{ $c->ip }}</a><div class="muted">{{ $c->old_mac }} → {{ $c->new_mac }}</div></td>
+                    <tr><td class="mono" style="font-size:12.5px"><a href="{{ route('ipam.search', ['q' => $c->ip]) }}">{{ $c->ip }}</a><div class="muted">{{ $c->old_mac }} jadi {{ $c->new_mac }}</div></td>
                         <td class="right nowrap" style="font-size:12.5px">{{ \Illuminate\Support\Carbon::parse($c->at)->format('H:i') }}<div class="muted">{{ $c->reporter }}</div></td></tr>
                 @endforeach
             </tbody></table>@endif

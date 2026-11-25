@@ -41,7 +41,7 @@
         <div class="field"><label for="send_hour">Jam kirim</label><select class="input" id="send_hour" name="send_hour" style="max-width:140px">
             @for($h = 0; $h < 24; $h++)<option value="{{ $h }}" @selected((int) old('send_hour', $f->send_hour ?? 7) === $h)>{{ sprintf('%02d.00', $h) }}</option>@endfor</select></div>
         <div class="field"><label for="channel_id">Kirim ke kanal</label><select class="input @error('channel_id') is-err @enderror" id="channel_id" name="channel_id" required>
-            <option value="">— pilih kanal —</option>
+            <option value="">Pilih kanal</option>
             @foreach($channels as $c)<option value="{{ $c->id }}" @selected((int) old('channel_id', $f->channel_id ?? 0) === $c->id)>{{ $c->name }} ({{ $c->type }})</option>@endforeach</select>
             <x-field-error name="channel_id"/><div class="hint">Penerima diatur di <a href="{{ route('channels.index') }}">Notifikasi</a>. Pengaturan severity/eskalasi kanal tidak berlaku untuk laporan.</div></div>
         <div class="field"><label for="site_id">Cakupan</label><select class="input" id="site_id" name="site_id">

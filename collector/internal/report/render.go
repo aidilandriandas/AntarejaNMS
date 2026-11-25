@@ -83,24 +83,24 @@ var tpl = template.Must(template.New("r").Funcs(template.FuncMap{
 <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb">
 <tr><td style="background:#111827;padding:18px 24px;color:#ffffff">
   <div style="font:700 16px/1.2 Segoe UI,Arial,sans-serif;letter-spacing:.06em">ANTAREJA NMS</div>
-  <div style="font-size:13px;color:#9ca3af;margin-top:4px">Laporan {{.Freq}} · {{.D.Period.Label}} · {{if .D.SiteName}}{{.D.SiteName}}{{else}}semua site{{end}}</div>
+  <div style="font-size:13px;color:#9ca3af;margin-top:4px">Laporan {{.Freq}}, {{.D.Period.Label}}, {{if .D.SiteName}}{{.D.SiteName}}{{else}}semua site{{end}}</div>
 </td></tr>
 <tr><td style="padding:22px 24px 6px">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
     <td style="padding:12px;border:1px solid #e5e7eb;border-radius:8px" width="33%">
       <div style="font-size:11px;color:#6b7280;letter-spacing:.08em;text-transform:uppercase">Ketersediaan</div>
       <div style="font:700 26px Segoe UI,Arial,sans-serif;color:{{tone .D.Total.Avail .D.Target}}">{{pct .D.Total.Avail}}</div>
-      <div style="font-size:12px;color:#6b7280">target {{pct .D.Target}} · {{.D.Total.Devices}} perangkat</div></td>
+      <div style="font-size:12px;color:#6b7280">target {{pct .D.Target}}, {{.D.Total.Devices}} perangkat</div></td>
     <td width="10"></td>
     <td style="padding:12px;border:1px solid #e5e7eb;border-radius:8px" width="33%">
       <div style="font-size:11px;color:#6b7280;letter-spacing:.08em;text-transform:uppercase">Gangguan down</div>
       <div style="font:700 26px Segoe UI,Arial,sans-serif">{{.D.Total.Incidents}}</div>
-      <div style="font-size:12px;color:#6b7280">total {{dur .D.Total.Down}} · {{.D.BelowCount}} di bawah target</div></td>
+      <div style="font-size:12px;color:#6b7280">total {{dur .D.Total.Down}}, {{.D.BelowCount}} di bawah target</div></td>
     <td width="10"></td>
     <td style="padding:12px;border:1px solid #e5e7eb;border-radius:8px" width="33%">
       <div style="font-size:11px;color:#6b7280;letter-spacing:.08em;text-transform:uppercase">Sekarang</div>
       <div style="font:700 26px Segoe UI,Arial,sans-serif;color:{{if .D.DownNow}}#b91c1c{{else}}#047857{{end}}">{{len .D.DownNow}} down</div>
-      <div style="font-size:12px;color:#6b7280">{{.D.OpenNow}} problem terbuka{{if .D.OpenHigh}} · <b style="color:#b91c1c">{{.D.OpenHigh}} High+ belum ACK</b>{{end}}</div></td>
+      <div style="font-size:12px;color:#6b7280">{{.D.OpenNow}} problem terbuka{{if .D.OpenHigh}}, <b style="color:#b91c1c">{{.D.OpenHigh}} High+ belum ACK</b>{{end}}</div></td>
   </tr></table>
 </td></tr>
 {{if .D.DownNow}}<tr><td style="padding:14px 24px 0">
@@ -203,7 +203,7 @@ func Text(freq string, d Data) string {
 			fmt.Fprintf(&b, "- %s (%s) sejak %s\n", x.Name, x.Host, x.Since.Local().Format("02/01 15.04"))
 		}
 	}
-	fmt.Fprintf(&b, "\nProblem baru %d · reboot %d · perubahan konfigurasi %d · syslog error %d\n", d.ProblemsN, d.Reboots, d.ConfigChg, d.SyslogErr)
+	fmt.Fprintf(&b, "\nProblem baru %d, reboot %d, perubahan konfigurasi %d, syslog error %d\n", d.ProblemsN, d.Reboots, d.ConfigChg, d.SyslogErr)
 	return b.String()
 }
 
@@ -214,12 +214,12 @@ func Telegram(freq string, d Data) string {
 	if d.SiteName != "" {
 		scope = d.SiteName
 	}
-	fmt.Fprintf(&b, "📊 <b>Laporan %s</b> · %s\n<i>%s</i>\n\n", freqName[freq], html.EscapeString(d.Period.Label), html.EscapeString(scope))
-	fmt.Fprintf(&b, "Ketersediaan <b>%s</b> (target %s) · %d perangkat\n", pct(d.Total.Avail), pct(d.Target), d.Total.Devices)
-	fmt.Fprintf(&b, "Gangguan %d · downtime %s\n", d.Total.Incidents, durText(d.Total.Down))
-	fmt.Fprintf(&b, "Sekarang: <b>%d down</b> · %d problem terbuka\n", len(d.DownNow), d.OpenNow)
+	fmt.Fprintf(&b, "📊 <b>Laporan %s</b>, %s\n<i>%s</i>\n\n", freqName[freq], html.EscapeString(d.Period.Label), html.EscapeString(scope))
+	fmt.Fprintf(&b, "Ketersediaan <b>%s</b> (target %s), %d perangkat\n", pct(d.Total.Avail), pct(d.Target), d.Total.Devices)
+	fmt.Fprintf(&b, "Gangguan %d, downtime %s\n", d.Total.Incidents, durText(d.Total.Down))
+	fmt.Fprintf(&b, "Sekarang: <b>%d down</b>, %d problem terbuka\n", len(d.DownNow), d.OpenNow)
 	if d.IncN > 0 {
-		fmt.Fprintf(&b, "Insiden %d (%d berlangsung) · MTTR %s\n", d.IncN, d.IncActive, durText(d.IncMTTR))
+		fmt.Fprintf(&b, "Insiden %d (%d berlangsung), MTTR %s\n", d.IncN, d.IncActive, durText(d.IncMTTR))
 	}
 	if len(d.Services) > 0 {
 		b.WriteString("\n<b>Layanan</b>\n")

@@ -65,7 +65,7 @@ func TestWebhookSignature(t *testing.T) {
 
 func TestFormat(t *testing.T) {
 	esc := Single("open", p1, 30, "")
-	if !strings.HasPrefix(esc.Subject, "[ANTAREJA] ESKALASI · belum di-ACK 30 menit · HIGH") {
+	if !strings.HasPrefix(esc.Subject, "[ANTAREJA] ESKALASI HIGH (belum di-ACK 30 menit)") {
 		t.Fatal(esc.Subject)
 	}
 	r := p1
@@ -81,7 +81,7 @@ func TestFormat(t *testing.T) {
 		many = append(many, x)
 	}
 	s := Summary("open", many, 0, "")
-	if s.Subject != "[ANTAREJA] 20 problem baru" || !strings.Contains(s.Text, "… dan 5 lainnya") {
+	if s.Subject != "[ANTAREJA] 20 problem baru" || !strings.Contains(s.Text, "dan 5 lainnya") {
 		t.Fatalf("%s\n%s", s.Subject, s.Text)
 	}
 	if mimeHeader("Lama gangguan ✅") == "Lama gangguan ✅" {

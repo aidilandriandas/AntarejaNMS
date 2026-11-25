@@ -52,8 +52,8 @@
     <section class="card"><div class="hd"><h2>Ambang problem</h2></div><div class="bd">
         <form method="post" action="{{ route('thresholds.update') }}" class="form">
             @csrf @method('PUT')
-            <div class="field"><label for="latency_ms">Latensi tinggi (ms)</label><input class="input" type="number" step="1" min="1" id="latency_ms" name="latency_ms" value="{{ old('latency_ms', $thresholds['latency_ms']) }}"><div class="hint">Rata-rata 5 menit di atas nilai ini → Warning.</div></div>
-            <div class="field"><label for="loss_pct">Packet loss (%)</label><input class="input" type="number" step="1" min="1" max="100" id="loss_pct" name="loss_pct" value="{{ old('loss_pct', $thresholds['loss_pct']) }}"><div class="hint">Rata-rata 5 menit di atas nilai ini → Average (≥ 50% → High).</div></div>
+            <div class="field"><label for="latency_ms">Latensi tinggi (ms)</label><input class="input" type="number" step="1" min="1" id="latency_ms" name="latency_ms" value="{{ old('latency_ms', $thresholds['latency_ms']) }}"><div class="hint">Rata-rata 5 menit di atas nilai ini jadi Warning.</div></div>
+            <div class="field"><label for="loss_pct">Packet loss (%)</label><input class="input" type="number" step="1" min="1" max="100" id="loss_pct" name="loss_pct" value="{{ old('loss_pct', $thresholds['loss_pct']) }}"><div class="hint">Rata-rata 5 menit di atas nilai ini jadi Average (≥ 50% jadi High).</div></div>
             <div class="field"><label for="util_pct">Port penuh (%)</label><input class="input" type="number" step="1" min="10" max="100" id="util_pct" name="util_pct" value="{{ old('util_pct', $thresholds['util_pct']) }}"><div class="hint">Hanya port yang ditandai <em>Pantau</em> di halaman perangkat.</div></div>
             <div class="field"><label for="snmp_fail_cycles">SNMP gagal (putaran)</label><input class="input" type="number" step="1" min="1" max="20" id="snmp_fail_cycles" name="snmp_fail_cycles" value="{{ old('snmp_fail_cycles', $thresholds['snmp_fail_cycles']) }}"><div class="hint">1 putaran = 5 menit.</div></div>
             <div class="row">
@@ -63,7 +63,7 @@
             <div class="hint" style="margin-top:-6px">Untuk port dipantau, port yang punya tetangga LLDP/CDP, dan sambungan manual. Trap linkDown/linkUp membuat hitungan lebih akurat.</div>
             <div class="form-foot"><button class="btn primary">Simpan ambang</button></div>
         </form>
-        <p class="muted" style="font-size:12.5px;margin:12px 0 0">Down: perangkat tidak menjawab 2 putaran ping (±2 menit) → High; Core/Distribution/Firewall → Disaster. Perangkat yang induknya down ditandai <em>terdampak</em> dan tidak dinotifikasi.</p>
+        <p class="muted" style="font-size:12.5px;margin:12px 0 0">Down: perangkat tidak menjawab 2 putaran ping (±2 menit) jadi High; Core/Distribution/Firewall jadi Disaster. Perangkat yang induknya down ditandai <em>terdampak</em> dan tidak dinotifikasi.</p>
     </div></section>
 </div>
 @endsection

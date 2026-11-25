@@ -10,7 +10,7 @@
     <div><div class="crumbs"><a href="{{ route('devices.index') }}">Perangkat</a> / <a href="{{ route('discovery.index') }}">Discovery</a> / {{ $s->cidr }}</div>
         <h1 class="mono">{{ $s->cidr }}</h1>
         <p><span class="badge {{ $tone }}" data-disc-status>{{ $label }}</span>
-            <span data-disc-text>{{ $s->progress }} / {{ $s->total ?: '…' }} alamat, {{ $s->found }} menjawab</span>
+            <span data-disc-text>{{ $s->progress }} / {{ $s->total ?: '?' }} alamat, {{ $s->found }} menjawab</span>
             @if($s->error), <span style="color:var(--crit)">{{ $s->error }}</span>@endif
             @if($s->site_code), site {{ $s->site_code }}@endif</p></div>
     @if($active)<div class="actions"><form method="post" action="{{ route('discovery.cancel', $s->id) }}">@csrf<button class="btn">Batalkan</button></form></div>@endif
@@ -19,7 +19,7 @@
 @if($active)
 <section class="card" data-disc="{{ route('discovery.status', $s->id) }}"><div class="bd">
     <div class="bar" style="height:10px"><span data-disc-bar style="width:{{ $s->total ? round($s->progress / $s->total * 100) : 2 }}%;background:var(--info)"></span></div>
-    <p class="muted" style="margin:10px 0 0">Memindai… halaman diperbarui otomatis. Anda boleh meninggalkan halaman ini; pemindaian tetap berjalan di server.</p>
+    <p class="muted" style="margin:10px 0 0">Memindai. Halaman diperbarui otomatis. Anda boleh meninggalkan halaman ini; pemindaian tetap berjalan di server.</p>
 </div></section>
 @endif
 
@@ -35,7 +35,7 @@
     <form method="post" action="{{ route('discovery.add', $s->id) }}" data-disc-form>@csrf
         @if($tab === 'new')
         <div class="filters">
-            <select class="input" name="site_id" aria-label="Site"><option value="">Site: {{ $s->site_code ?? '— tanpa site —' }}</option>
+            <select class="input" name="site_id" aria-label="Site"><option value="">Site: {{ $s->site_code ?? 'tanpa site' }}</option>
                 @foreach($sites as $st)<option value="{{ $st->id }}">{{ $st->code }} ({{ $st->name }})</option>@endforeach</select>
             <select class="input" name="parent_id" aria-label="Perangkat induk"><option value="">Tanpa perangkat induk</option>
                 @foreach($parents as $p)<option value="{{ $p->id }}">{{ $p->name }} ({{ $p->host }})</option>@endforeach</select>

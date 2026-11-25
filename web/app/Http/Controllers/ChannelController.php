@@ -126,7 +126,7 @@ class ChannelController extends Controller
         $d = $r->validate($rules, [
             'cfg.bot_token.required' => 'Isi token bot dari @BotFather.',
             'cfg.bot_token.regex' => 'Format token bot: 123456789:ABC... (dari @BotFather).',
-            'cfg.chat_id.regex' => 'Chat ID berupa angka (grup diawali -100…) atau @namakanal.',
+            'cfg.chat_id.regex' => 'Chat ID berupa angka (grup diawali -100) atau @namakanal.',
         ]);
         if ($type === 'email') {
             foreach (preg_split('/[\s,;]+/', $d['cfg']['to'], -1, PREG_SPLIT_NO_EMPTY) as $addr) {

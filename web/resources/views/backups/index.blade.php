@@ -3,7 +3,7 @@
 @section('content')
 <div class="page-head">
     <div><h1>Backup</h1><p>Seluruh data ANTAREJA (perangkat, site, kredensial terenkripsi, problem, kejadian, pengguna, pengaturan) di-backup harian. Grafik VictoriaMetrics tidak termasuk.</p></div>
-    <div class="actions"><form method="post" action="{{ route('backups.store') }}">@csrf<button class="btn primary" @disabled($pending)><x-icon name="database"/>{{ $pending ? 'Backup sedang berjalan…' : 'Backup sekarang' }}</button></form></div>
+    <div class="actions"><form method="post" action="{{ route('backups.store') }}">@csrf<button class="btn primary" @disabled($pending)><x-icon name="database"/>{{ $pending ? 'Backup sedang berjalan' : 'Backup sekarang' }}</button></form></div>
 </div>
 @unless($dirOk)
     <div class="alert error"><x-icon name="alert"/><div>Folder backup tidak terbaca oleh web. Pastikan <code>BACKUP_DIR</code> di <code>deploy/.env</code> benar lalu jalankan ulang <code>./antareja.sh up</code>.</div></div>
@@ -101,7 +101,7 @@
             <ol style="padding-left:18px;margin:0 0 10px">
                 <li>Pasang ANTAREJA di VM baru seperti biasa, dengan <code>.env</code> lama (kunci sama).</li>
                 <li>Salin berkas <code>.dump</code> ke folder backup.</li>
-                <li>Jalankan <code>./antareja.sh restore antareja-…dump</code> lalu ketik <code>PULIHKAN</code>.</li>
+                <li>Jalankan <code>./antareja.sh restore antareja-TANGGAL.dump</code> lalu ketik <code>PULIHKAN</code>.</li>
             </ol>
             <p class="muted" style="margin:0">Bila VM rusak, ambil berkas <code>.dump</code> terbaru dari tujuan <a href="#luar-server">salinan ke luar server</a>. Alternatif: arahkan <code>BACKUP_DIR</code> ke folder NAS yang di-mount di VM.</p>
         </div></section>

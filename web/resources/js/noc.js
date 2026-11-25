@@ -48,7 +48,7 @@ const icon = (n) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${n =
     : '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9.5l4 5M21 9.5l-4 5"/>'}</svg>`;
 function renderSound() {
     soundBtn.className = `n-btn ${soundOn ? 'on' : 'hint'}`;
-    soundBtn.innerHTML = soundOn ? `${icon('on')}<span>SUARA</span>` : `${icon('off')}<span>SUARA MATI · KLIK</span>`;
+    soundBtn.innerHTML = soundOn ? `${icon('on')}<span>SUARA</span>` : `${icon('off')}<span>SUARA MATI, KLIK</span>`;
 }
 function beep(level) {
     if (!soundOn) return;
@@ -132,7 +132,7 @@ function render(d) {
     alarm.innerHTML = `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${al.level === 'ok'
         ? '<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5L16 9.5"/>'
         : '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>'}</svg><span>${esc(al.text)}</span>`;
-    document.title = `${al.level === 'crit' ? '⚠ ' : ''}Layar NOC · ANTAREJA NMS`;
+    document.title = `${al.level === 'crit' ? '⚠ ' : ''}Layar NOC | ANTAREJA NMS`;
 
     // Siapa yang piket: nama dan jam selesai; kosong = beri tahu supaya ruang NOC tahu tidak ada yang dihubungi
     const oc = $('[data-oncall]');
@@ -150,10 +150,10 @@ function render(d) {
     const k = d.kpi;
     const av = k.availability;
     const ka = $('[data-k-avail]');
-    $('.val', ka).innerHTML = `${av === null ? '–' : av.toFixed(av === 100 ? 0 : 2).replace('.', ',')}<small>%</small>`;
+    $('.val', ka).innerHTML = `${av === null ? '?' : av.toFixed(av === 100 ? 0 : 2).replace('.', ',')}<small>%</small>`;
     $('.meter', ka).className = `meter ${av === null || av >= 99 ? '' : av >= 95 ? 'warn' : 'crit'}`;
     $('.meter span', ka).style.width = `${av || 0}%`;
-    $('.sub', ka).textContent = `${k.up} / ${k.up + k.down} perangkat online${k.unknown ? ` · ${k.unknown} menunggu` : ''}`;
+    $('.sub', ka).textContent = `${k.up} / ${k.up + k.down} perangkat online${k.unknown ? `, ${k.unknown} menunggu` : ''}`;
     $('[data-k-up] .val').textContent = k.up;
     $('[data-k-down] .val').textContent = k.down;
     $('[data-k-down]').className = `n-panel n-kpi ${k.down ? 'crit' : 'ok'}`;
@@ -164,9 +164,9 @@ function render(d) {
     $('[data-ports]').innerHTML = d.ports.length ? d.ports.map((p) => {
         const c = p.util >= 90 ? 'var(--crit)' : p.util >= 70 ? 'var(--warn)' : 'var(--ok)';
         return `<li><a href="${p.url}" target="_blank" rel="noopener" style="display:block;color:inherit;text-decoration:none">
-            <div class="r1"><span>${esc(p.device)} · ${esc(p.port)}</span><b style="color:${c}">${p.util.toFixed(0)}%</b></div>
+            <div class="r1"><span>${esc(p.device)}, ${esc(p.port)}</span><b style="color:${c}">${p.util.toFixed(0)}%</b></div>
             <div class="bar"><span style="width:${Math.max(2, p.util)}%;background:${c}"></span></div>
-            <div class="r2">↓ ${bps(p.in)}bps · ↑ ${bps(p.out)}bps / ${bps(p.speed)}bps</div></a></li>`;
+            <div class="r2">masuk ${bps(p.in)}bps, keluar ${bps(p.out)}bps dari ${bps(p.speed)}bps</div></a></li>`;
     }).join('') : '<li class="empty">Belum ada data trafik port</li>';
 
     // Dinding status per site, perangkat bermasalah di depan
@@ -179,11 +179,11 @@ function render(d) {
         const list = bySite[s].sort((a, b) => order[a.state] - order[b.state] || a.name.localeCompare(b.name));
         const bad = list.filter((w) => w.state === 'down').length;
         const up = list.filter((w) => ['ok', 'problem'].includes(w.state)).length;
-        return `<div class="n-wsec"><h3><b>${esc(s)}</b><em>${up}/${list.length} online${bad ? ` · <span style="color:var(--crit)">${bad} down</span>` : ''}</em></h3><div class="n-tiles">${
+        return `<div class="n-wsec"><h3><b>${esc(s)}</b><em>${up}/${list.length} online${bad ? `, <span style="color:var(--crit)">${bad} down</span>` : ''}</em></h3><div class="n-tiles">${
             list.map((w) => {
-                const sub = w.state === 'down' ? `DOWN${w.since ? ` · ${ago(w.since)}` : ''}` : w.state === 'impacted' ? 'terdampak induk' : w.state === 'maintenance' ? 'maintenance'
-                    : w.rtt != null ? `${Number(w.rtt).toFixed(w.rtt >= 100 ? 0 : 1).replace('.', ',')} ms${w.loss ? ` · loss ${Math.round(w.loss)}%` : ''}` : w.host;
-                return `<a class="n-tile ${w.state}" href="/perangkat/${w.id}" target="_blank" rel="noopener" title="${esc(`${w.name} · ${w.host}${w.reason ? ` · ${w.reason}` : ''}`)}"><span class="tn">${esc(w.name)}</span><span class="ts">${esc(sub)}</span></a>`;
+                const sub = w.state === 'down' ? `DOWN${w.since ? `, ${ago(w.since)}` : ''}` : w.state === 'impacted' ? 'terdampak induk' : w.state === 'maintenance' ? 'maintenance'
+                    : w.rtt != null ? `${Number(w.rtt).toFixed(w.rtt >= 100 ? 0 : 1).replace('.', ',')} ms${w.loss ? `, loss ${Math.round(w.loss)}%` : ''}` : w.host;
+                return `<a class="n-tile ${w.state}" href="/perangkat/${w.id}" target="_blank" rel="noopener" title="${esc(`${w.name}, ${w.host}${w.reason ? `, ${w.reason}` : ''}`)}"><span class="tn">${esc(w.name)}</span><span class="ts">${esc(sub)}</span></a>`;
             }).join('')}</div></div>`;
     }).join('') || '<div class="n-list"><div class="empty">Belum ada perangkat</div></div>';
 
@@ -194,7 +194,7 @@ function render(d) {
         const status = p.suppressed ? 'DITEKAN' : p.acked ? `ACK ${esc(p.acked_by || '')}` : 'BELUM ACK';
         return `<li class="${isNew ? 'new' : ''} ${p.acked || p.suppressed ? 'dim' : ''}"><a href="${p.url}" target="_blank" rel="noopener">
             <span class="sbar" style="background:${TONE[p.tone]}"></span>
-            <span style="min-width:0"><div class="t">${esc(p.title)}</div><div class="m">${esc(p.sev_label.toUpperCase())}${p.site ? ` · ${esc(p.site)}` : ''}${p.suppressed ? ` · ${esc(p.suppressed)}` : ''}</div></span>
+            <span style="min-width:0"><div class="t">${esc(p.title)}</div><div class="m">${esc(p.sev_label.toUpperCase())}${p.site ? `, ${esc(p.site)}` : ''}${p.suppressed ? `, ${esc(p.suppressed)}` : ''}</div></span>
             <span class="age" data-since="${p.since}">${ago(p.since)}<small class="${p.acked || p.suppressed ? '' : 'nack'}">${status}</small></span></a></li>`;
     }).join('') : '<li class="empty">TIDAK ADA PROBLEM AKTIF</li>';
     seen = ids;

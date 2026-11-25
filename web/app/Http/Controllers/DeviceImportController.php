@@ -161,6 +161,6 @@ class DeviceImportController extends Controller
             $collector->pollNow($id); // pemeriksaan pertama segera (sisanya di putaran berikutnya)
         }
 
-        return redirect()->route('devices.index')->with('ok', count($created) . ' perangkat diimpor. Status muncul dalam 1–2 menit.');
+        return redirect()->route('devices.index')->with('ok', count($created) . ' perangkat diimpor. Status muncul dalam 1 sampai 2 menit.');
     }
 }

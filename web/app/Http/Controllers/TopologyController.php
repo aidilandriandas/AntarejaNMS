@@ -66,9 +66,9 @@ class TopologyController extends Controller
         ], ['b_device_id.different' => 'Pilih dua perangkat yang berbeda.']);
         $id = DB::table('device_links')->insertGetId($d + ['created_by' => $request->user()->id, 'created_at' => now()]);
         $names = Device::whereIn('id', [$d['a_device_id'], $d['b_device_id']])->pluck('name', 'id');
-        Audit::log('created', "Sambungan manual #{$id}: {$names[$d['a_device_id']]} ↔ {$names[$d['b_device_id']]}");
+        Audit::log('created', "Sambungan manual #{$id}: {$names[$d['a_device_id']]} ke {$names[$d['b_device_id']]}");
 
-        return back()->with('ok', "Sambungan {$names[$d['a_device_id']]} ↔ {$names[$d['b_device_id']]} ditambahkan.");
+        return back()->with('ok', "Sambungan {$names[$d['a_device_id']]} ke {$names[$d['b_device_id']]} ditambahkan.");
     }
 
     public function destroyLink(int $link)

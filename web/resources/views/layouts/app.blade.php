@@ -100,7 +100,7 @@
             <button type="button" class="iconbtn menu-toggle" data-menu aria-label="Buka menu"><x-icon name="menu"/></button>
             <form class="search" action="{{ route('devices.index') }}" role="search">
                 <x-icon name="search"/>
-                <input type="search" name="q" value="{{ request()->routeIs('devices.index') ? request('q') : '' }}" placeholder="Cari perangkat, IP, sysName…" aria-label="Cari perangkat">
+                <input type="search" name="q" value="{{ request()->routeIs('devices.index') ? request('q') : '' }}" placeholder="Cari perangkat, IP, sysName" aria-label="Cari perangkat">
             </form>
             <span class="spacer"></span>
             <a class="iconbtn" href="{{ route('help') }}" title="Panduan operator" aria-label="Panduan operator"><span aria-hidden="true" style="font:700 15px var(--sans)">?</span></a>

@@ -20,7 +20,7 @@
 <section class="card">
     <form class="filters" method="get">
         @if($device)<input type="hidden" name="device" value="{{ $device->id }}">@endif
-        <input class="input" type="search" name="q" value="{{ $f['q'] ?? '' }}" placeholder="Cari teks log…" style="min-width:200px">
+        <input class="input" type="search" name="q" value="{{ $f['q'] ?? '' }}" placeholder="Cari teks log" style="min-width:200px">
         <select class="input" name="sev" aria-label="Tingkat">
             <option value="">Semua tingkat</option>
             @foreach(\App\Models\SyslogEntry::SEVERITIES as $k => [$label])<option value="{{ $k }}" @selected(isset($f['sev']) && (int) $f['sev'] === $k)>≤ {{ $label }}</option>@endforeach
@@ -59,7 +59,7 @@
     @if($more)
     <nav class="pager"><span>100 log terbaru{{ ! empty($f['before']) ? ' sebelum #' . $f['before'] : '' }}</span>
         <span style="display:flex;gap:6px">@if(! empty($f['before']))<a class="btn sm" href="{{ route('logs.index', array_diff_key($keep, ['before' => 1])) }}">« Terbaru</a>@endif
-        <a class="btn sm" href="{{ route('logs.index', $keep + ['before' => $rows->last()->id]) }}">Lebih lama ›</a></span></nav>
+        <a class="btn sm" href="{{ route('logs.index', $keep + ['before' => $rows->last()->id]) }}">Lebih lama</a></span></nav>
     @endif
 </section>
 

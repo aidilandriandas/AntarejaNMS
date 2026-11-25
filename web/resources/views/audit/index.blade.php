@@ -8,11 +8,11 @@
     @forelse($logs as $l)
         <tr>
             <td class="nowrap mono" title="{{ $l->at->format('d/m/Y H:i:s') }}">{{ $l->at->format('d/m/Y H:i') }}</td>
-            <td>{{ $l->user?->username ?? '—' }}</td>
+            <td>{{ $l->user?->username ?? 'sistem' }}</td>
             <td><span class="tag">{{ $l->action }}</span></td>
             <td>{{ $l->description }}
                 @if($l->changes)<details><summary class="muted" style="cursor:pointer;font-size:12.5px">perubahan</summary>
-                    <div class="mono" style="font-size:12px">@foreach($l->changes as $k => $v){{ $k }}: {{ is_array($v) ? json_encode($v[0]) . ' → ' . json_encode($v[1]) : $v }}<br>@endforeach</div></details>@endif</td>
+                    <div class="mono" style="font-size:12px">@foreach($l->changes as $k => $v){{ $k }}: {{ is_array($v) ? json_encode($v[0]) . ' jadi ' . json_encode($v[1]) : $v }}<br>@endforeach</div></details>@endif</td>
             <td class="mono muted">{{ $l->ip_address }}</td>
         </tr>
     @empty

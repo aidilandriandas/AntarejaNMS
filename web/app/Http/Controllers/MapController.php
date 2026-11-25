@@ -168,7 +168,7 @@ class MapController extends Controller
         }
         if ((bool) Setting::get('map.topo', true)) {
             $out[] = ['key' => 'topo', 'name' => 'Topografi', 'url' => 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-                'attr' => 'Data © kontributor OpenStreetMap, SRTM · Gaya © OpenTopoMap (CC-BY-SA)', 'max' => 17];
+                'attr' => 'Data © kontributor OpenStreetMap, SRTM, Gaya © OpenTopoMap (CC-BY-SA)', 'max' => 17];
         }
         if ($u = (string) Setting::get('map.satellite_url', '')) {
             $out[] = ['key' => 'satelit', 'name' => 'Satelit', 'url' => $u, 'attr' => (string) Setting::get('map.satellite_attribution', ''), 'max' => 19];

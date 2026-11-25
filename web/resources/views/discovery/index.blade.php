@@ -35,7 +35,7 @@
             <input class="input mono @error('cidr') is-err @enderror" id="cidr" name="cidr" value="{{ old('cidr') }}" placeholder="10.20.30.0/24" required autocomplete="off">
             <x-field-error name="cidr"/><div class="hint">Maksimal /22 (1.022 alamat). /24 selesai ± 1 menit.</div></div>
         <div class="field"><label for="site_id">Site untuk hasil</label>
-            <select class="input" id="site_id" name="site_id"><option value="">— pilih nanti —</option>
+            <select class="input" id="site_id" name="site_id"><option value="">Pilih nanti</option>
                 @foreach($sites as $st)<option value="{{ $st->id }}" @selected(old('site_id') == $st->id)>{{ $st->code }} ({{ $st->name }})</option>@endforeach</select></div>
         <div class="field"><label for="communities">Community SNMP v2c</label>
             <textarea class="input mono @error('communities') is-err @enderror" id="communities" name="communities" rows="3" placeholder="satu per baris (maks. 5)" autocomplete="off" spellcheck="false">{{ old('communities') }}</textarea>

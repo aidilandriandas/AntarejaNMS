@@ -70,7 +70,7 @@ class ReportController extends Controller
 
         return [
             'devices' => $devices,
-            'sites' => $devices->groupBy(fn ($d) => $d['site'] ?? '—')->map($agg)->sortKeys(),
+            'sites' => $devices->groupBy(fn ($d) => $d['site'] ?? 'Tanpa site')->map($agg)->sortKeys(),
             'total' => $agg($devices),
         ];
     }

@@ -14,7 +14,7 @@
 
     @if($t === 'telegram')
         <div class="field"><label for="bot_token">Token bot</label>
-            <input class="input mono @error('cfg.bot_token') is-err @enderror" id="bot_token" name="cfg[bot_token]" type="password" autocomplete="off" placeholder="{{ ($config['bot_token'] ?? '') ? '•••••• (tersimpan, kosongkan bila tetap)' : '123456789:AAF…' }}">
+            <input class="input mono @error('cfg.bot_token') is-err @enderror" id="bot_token" name="cfg[bot_token]" type="password" autocomplete="off" placeholder="{{ ($config['bot_token'] ?? '') ? '•••••• (tersimpan, kosongkan bila tetap)' : '123456789:AAF' }}">
             <x-field-error name="cfg.bot_token"/></div>
         <div class="field"><label for="chat_id">Chat ID</label>
             <input class="input mono @error('cfg.chat_id') is-err @enderror" id="chat_id" name="cfg[chat_id]" value="{{ old('cfg.chat_id', $config['chat_id'] ?? '') }}" placeholder="-1001234567890">
@@ -35,7 +35,7 @@
         </div>
         <div class="row">
             <div class="field"><label for="from">Alamat pengirim</label><input class="input @error('cfg.from') is-err @enderror" id="from" name="cfg[from]" value="{{ old('cfg.from', $config['from'] ?? '') }}" placeholder="nms@perusahaan.co.id"><x-field-error name="cfg.from"/></div>
-            <div class="field"><label for="to">Penerima</label><input class="input @error('cfg.to') is-err @enderror" id="to" name="cfg[to]" value="{{ old('cfg.to', $config['to'] ?? '') }}" placeholder="noc@…, network@…"><div class="hint">Pisahkan dengan koma.</div><x-field-error name="cfg.to"/></div>
+            <div class="field"><label for="to">Penerima</label><input class="input @error('cfg.to') is-err @enderror" id="to" name="cfg[to]" value="{{ old('cfg.to', $config['to'] ?? '') }}" placeholder="noc@perusahaan.co.id, network@perusahaan.co.id"><div class="hint">Pisahkan dengan koma.</div><x-field-error name="cfg.to"/></div>
         </div>
     @else
         <div class="field"><label for="url">URL webhook</label><input class="input mono @error('cfg.url') is-err @enderror" id="url" name="cfg[url]" value="{{ old('cfg.url', $config['url'] ?? '') }}" placeholder="https://gateway.local/hook/antareja"><x-field-error name="cfg.url"/></div>

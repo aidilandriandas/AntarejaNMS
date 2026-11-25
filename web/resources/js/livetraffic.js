@@ -47,7 +47,7 @@ async function fetchSamples(url, ports) {
         headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf() },
         body: JSON.stringify({ ports }),
     });
-    if (r.status === 429) return { samples: [], error: 'Terlalu sering — tunggu sebentar.' };
+    if (r.status === 429) return { samples: [], error: 'Terlalu sering, tunggu sebentar.' };
     if (!r.ok) return { samples: [], error: `Server menjawab ${r.status}` };
     return r.json();
 }
@@ -162,7 +162,7 @@ export function initLive() {
         card.hidden = false;
         draw();
         ['in', 'out', 'in-avg', 'out-avg', 'in-max', 'out-max', 'util'].forEach((k) => { v(k).textContent = 'tidak ada'; });
-        v('info').textContent = 'mengambil sampel pertama…';
+        v('info').textContent = 'mengambil sampel pertama';
         $$('[data-live-port]').forEach((b) => b.classList.toggle('primary', Number(b.dataset.livePort) === port.if));
         card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         resume();

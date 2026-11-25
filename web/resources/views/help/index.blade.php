@@ -3,7 +3,7 @@
 @section('content')
 <div class="page-head">
     @can('admin')<div class="actions" style="order:2"><form method="post" action="{{ route('onboarding.show') }}">@csrf<button class="btn sm">Tampilkan langkah awal di Ringkasan</button></form></div>@endcan
-    <div><h1>Panduan operator</h1><p>Arti status & warna, cara menangani problem, dan istilah yang dipakai di ANTAREJA. Angka di halaman ini adalah nilai bawaan; admin bisa mengubah ambang problem di <i>Administrasi → Notifikasi → Ambang problem</i>, dan ambang khusus per perangkat di form perangkat.</p></div>
+    <div><h1>Panduan operator</h1><p>Arti status & warna, cara menangani problem, dan istilah yang dipakai di ANTAREJA. Angka di halaman ini adalah nilai bawaan; admin bisa mengubah ambang problem di <i>Administrasi, Notifikasi, bagian Ambang problem</i>, dan ambang khusus per perangkat di form perangkat.</p></div>
 </div>
 
 <div class="help">
@@ -75,12 +75,12 @@
 
 <section class="card" id="tangani"><div class="hd"><h2>Saat ada perangkat down</h2></div><div class="bd">
     <ol class="help-steps">
-        <li><b>Cek induknya dulu.</b> Bila problem bertanda <i>terdampak: induk … down</i>, tangani perangkat induk (uplink/radio/switch di atasnya), perangkat di bawahnya biasanya ikut pulih.</li>
+        <li><b>Cek induknya dulu.</b> Bila problem bertanda <i>terdampak: induk NAMA down</i>, tangani perangkat induk (uplink/radio/switch di atasnya), perangkat di bawahnya biasanya ikut pulih.</li>
         <li><b>Lihat detail perangkat:</b> kejadian terakhir (reboot? flapping?), grafik latensi/loss sebelum down, log syslog terbaru, sensor (daya UPS, suhu, sinyal radio).</li>
         <li><b>Cek apakah satu site sekaligus</b> (dinding status / peta lokasi): bila semua perangkat satu site down, kemungkinan listrik site atau link backhaul.</li>
         <li><b>ACK problem</b> dengan catatan singkat (siapa menangani, dugaan penyebab) agar eskalasi tidak terkirim dan rekan tahu sudah ada yang menangani.</li>
         <li>Bila perbaikan terjadwal (ganti perangkat, pemadaman), buat <b>Maintenance</b> agar tidak membanjiri notifikasi & SLA tidak terhitung down.</li>
-        <li>Setelah pulih, problem selesai sendiri. Bila perangkat diganti, cek <i>Backup konfigurasi</i> (host key berubah → <i>Reset host key</i>).</li>
+        <li>Setelah pulih, problem selesai sendiri. Bila perangkat diganti, cek <i>Backup konfigurasi</i> (host key berubah: tekan <i>Reset host key</i>).</li>
     </ol>
 </div></section>
 
@@ -98,8 +98,8 @@
     <ul class="help-list">
         <li><b>Problem</b> = satu kondisi di satu perangkat. <b>Insiden</b> = satu gangguan nyata yang bisa berisi banyak problem (mis. PLN padam di satu pit: core, radio, dan kamera down sekaligus).</li>
         <li><b>Dibuat otomatis</b> bila ada problem <b>Disaster</b>, atau ≥ 3 problem <b>High</b> di satu site yang muncul dalam 10 menit. Problem baru di site yang sama dalam 60 menit, dan perangkat yang <i>terdampak induk</i>, otomatis digabung ke insiden yang sama.</li>
-        <li><b>Dibuat manual</b> (engineer/admin): di halaman <i>Problem</i>, centang problem yang berasal dari gangguan yang sama → <b>Buat insiden</b>.</li>
-        <li><b>Alur</b>: <span class="badge crit">Terbuka</span> → <span class="badge warn">Ditangani</span> (tekan <i>Saya tangani</i> atau tugaskan engineer) → <span class="badge ok">Pulih</span> (otomatis saat semua problem selesai) → <b>Ditutup</b> setelah <i>penyebab</i> dan <i>tindakan</i> diisi. Bila gangguan muncul lagi ≤ 30 menit setelah pulih, insiden dibuka kembali.</li>
+        <li><b>Dibuat manual</b> (engineer/admin): di halaman <i>Problem</i>, centang problem yang berasal dari gangguan yang sama, lalu tekan <b>Buat insiden</b>.</li>
+        <li><b>Alur</b>: <span class="badge crit">Terbuka</span>, lalu <span class="badge warn">Ditangani</span> (tekan <i>Saya tangani</i> atau tugaskan engineer), lalu <span class="badge ok">Pulih</span> (otomatis saat semua problem selesai), lalu <b>Ditutup</b> setelah <i>penyebab</i> dan <i>tindakan</i> diisi. Bila gangguan muncul lagi ≤ 30 menit setelah pulih, insiden dibuka kembali.</li>
         <li>Tulis temuan lapangan di <b>catatan</b>: semuanya masuk kronologi beserta nama dan jam, berguna untuk laporan ke manajemen. <b>MTTR</b> = rata-rata lama dari mulai gangguan sampai pulih.</li>
     </ul>
 </div></section>
@@ -107,7 +107,7 @@
 <section class="card" id="layanan"><div class="hd"><h2>SLA layanan</h2></div><div class="bd">
     <ul class="help-list">
         <li><b>Layanan</b> = sesuatu yang dipakai orang, mis. <i>CCTV Pit A</i> atau <i>Internet kantor</i>. Disusun dari <b>komponen</b>; tiap komponen berisi perangkat dan syarat <b>minimal hidup</b>.</li>
-        <li>Jalur seri (Core → Radio PTP → Switch): semua wajib hidup, isi minimal = jumlah perangkat, atau satu komponen per perangkat. Perangkat cadangan (ISP 1 &amp; ISP 2): isi minimal 1.</li>
+        <li>Jalur seri (Core, Radio PTP, lalu Switch): semua wajib hidup, isi minimal = jumlah perangkat, atau satu komponen per perangkat. Perangkat cadangan (ISP 1 &amp; ISP 2): isi minimal 1.</li>
         <li>Status: <span class="badge ok">Normal</span> semua hidup; <span class="badge warn">Tanpa cadangan</span> layanan jalan tetapi ada perangkat down (segera perbaiki sebelum cadangannya ikut mati); <span class="badge crit">Terganggu</span> layanan tidak jalan.</li>
         <li>Ketersediaan dihitung dari riwayat down perangkat (gangguan saat maintenance tidak dihitung), mulai sejak perangkat ditambahkan. <b>Sisa jatah downtime</b> = berapa lama lagi layanan boleh mati bulan ini agar tetap memenuhi target.</li>
     </ul>
@@ -125,7 +125,7 @@
 
 <section class="card" id="kapasitas"><div class="hd"><h2>Kapasitas port</h2></div><div class="bd">
     <ul class="help-list">
-        <li>Hanya port yang ditandai <b>pantau</b> (halaman perangkat → tabel port). Tandai uplink, link PTP, dan port ke ISP.</li>
+        <li>Hanya port yang ditandai <b>pantau</b> (halaman perangkat, bagian tabel port). Tandai uplink, link PTP, dan port ke ISP.</li>
         <li><b>Puncak harian</b> = persentil 95 trafik hari itu (5% waktu tersibuk diabaikan agar lonjakan sesaat tidak dihitung). Arah masuk atau keluar, mana yang lebih tinggi.</li>
         <li><b>Perkiraan penuh</b> = kapan garis tren puncak harian mencapai batas (bawaan 80% kecepatan port). Butuh minimal 7 hari data; makin panjang datanya makin bisa dipercaya. "Tren lemah" berarti trafik naik-turun tidak beraturan, perkiraannya kurang bisa diandalkan.</li>
         <li>Pastikan kecepatan port benar (radio/PTP kadang melaporkan kecepatan Ethernet, bukan kapasitas radio sebenarnya).</li>
@@ -135,7 +135,7 @@
 <section class="card" id="maintenance"><div class="hd"><h2>Maintenance & perangkat induk</h2></div><div class="bd">
     <ul class="help-list">
         <li><b>Maintenance</b> bisa untuk semua perangkat, satu site, atau perangkat terpilih, dengan jam mulai dan selesai. Selama itu problem tidak dinotifikasi dan downtime tidak dihitung di SLA. Akhiri lebih cepat dengan tombol <i>Akhiri</i>.</li>
-        <li><b>Perangkat induk</b> (di form perangkat) = perangkat di atasnya pada jalur jaringan (mis. kamera → NVR → switch → radio PTP → core). Isi dengan benar agar korelasi bekerja: saat induk down, ratusan perangkat di bawahnya tidak masing-masing mengirim alarm.</li>
+        <li><b>Perangkat induk</b> (di form perangkat) = perangkat di atasnya pada jalur jaringan (mis. urutan kamera, NVR, switch, radio PTP, core). Isi dengan benar agar korelasi bekerja: saat induk down, ratusan perangkat di bawahnya tidak masing-masing mengirim alarm.</li>
     </ul>
 </div></section>
 
@@ -260,7 +260,7 @@
     <ul class="help-list">
         <li>Login dengan akun viewer + centang <i>Ingat saya</i>, buka <i>Layar NOC</i>, tekan <kbd>F</kbd> untuk layar penuh.</li>
         <li>Klik tombol <b>SUARA</b> sekali setelah membuka (browser mewajibkan satu klik sebelum boleh berbunyi).</li>
-        <li>Pilih <b>OTOMATIS</b> agar tampilan bergantian: dinding status → topologi → peta lokasi (tiap 30 detik).</li>
+        <li>Pilih <b>OTOMATIS</b> agar tampilan bergantian: dinding status, topologi, lalu peta lokasi (tiap 30 detik).</li>
         <li>Indikator <b>LIVE</b> menguning bila layar gagal mengambil data. Alarm <b>"COLLECTOR TIDAK MELAPOR, DATA USANG"</b> berarti mesin pemantau ANTAREJA berhenti: status di layar sudah tidak bisa dipercaya, hubungi admin.</li>
     </ul>
 </div></section>
@@ -283,7 +283,7 @@
         <tr><td>Beban UPS</td><td class="num">≥ 80%</td><td class="num">≥ 95%</td><td></td></tr>
         </tbody>
     </table>
-    <p class="muted" style="padding:0 16px">Ambang bisa diatur khusus per perangkat (mis. radio PTP jarak jauh dengan sinyal normal −74 dBm) di form perangkat → <i>Ambang khusus</i>.</p>
+    <p class="muted" style="padding:0 16px">Ambang bisa diatur khusus per perangkat (mis. radio PTP jarak jauh dengan sinyal normal −74 dBm) di form perangkat, bagian <i>Ambang khusus</i>.</p>
 </div></section>
 
 <section class="card" id="istilah"><div class="hd"><h2>Istilah</h2></div><div class="bd">

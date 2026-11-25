@@ -49,7 +49,7 @@
                     <option value="all" @selected(old('scope') === 'all')>Semua perangkat</option>
                 </select></div>
             <div class="field" data-scope-show="site"><label for="site_id">Site</label>
-                <select class="input @error('site_id') is-err @enderror" id="site_id" name="site_id"><option value="">— pilih —</option>
+                <select class="input @error('site_id') is-err @enderror" id="site_id" name="site_id"><option value="">Pilih site</option>
                     @foreach($sites as $s)<option value="{{ $s->id }}" @selected(old('site_id') == $s->id)>{{ $s->code }} ({{ $s->name }})</option>@endforeach</select><x-field-error name="site_id"/></div>
             <div class="field" data-scope-show="devices"><label for="device_ids">Perangkat</label>
                 <select class="input @error('device_ids') is-err @enderror" id="device_ids" name="device_ids[]" multiple size="8" style="height:auto">

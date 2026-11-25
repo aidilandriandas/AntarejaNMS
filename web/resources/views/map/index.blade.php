@@ -35,7 +35,7 @@
         <div class="bd stack">
             <div class="field"><label for="map-target">Site / perangkat</label>
                 <select class="input" id="map-target" data-map-target>
-                    <option value="">— pilih —</option>
+                    <option value="">Pilih</option>
                     <optgroup label="Site">@foreach($sites as $s)<option value="site:{{ $s->id }}" data-lat="{{ $s->lat }}" data-lng="{{ $s->lng }}">{{ $s->code }} ({{ $s->name }}){{ $s->lat === null ? ', belum' : '' }}</option>@endforeach</optgroup>
                     <optgroup label="Perangkat (posisi sendiri, mis. menara radio)">@foreach($devices as $d)<option value="device:{{ $d->id }}" data-lat="{{ $d->lat }}" data-lng="{{ $d->lng }}">{{ $d->name }}{{ $d->site ? ', ' . $d->site->code : '' }}{{ $d->lat === null ? '' : ', ✓' }}</option>@endforeach</optgroup>
                 </select>

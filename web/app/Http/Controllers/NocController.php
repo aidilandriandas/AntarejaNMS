@@ -51,7 +51,7 @@ class NocController extends Controller
         $alarm = match (true) {
             $crit->isNotEmpty() => ['level' => 'crit', 'text' => $crit->count() . ' problem High/Disaster belum di-ACK'],
             $unacked->isNotEmpty() => ['level' => 'warn', 'text' => $unacked->count() . ' problem belum di-ACK'],
-            $problems->isNotEmpty() => ['level' => 'ok', 'text' => 'Terkendali · ' . $problems->count() . ' problem sudah di-ACK / ditekan'],
+            $problems->isNotEmpty() => ['level' => 'ok', 'text' => 'Terkendali, ' . $problems->count() . ' problem sudah di-ACK / ditekan'],
             default => ['level' => 'ok', 'text' => 'Semua sistem normal'],
         };
 
@@ -63,7 +63,7 @@ class NocController extends Controller
         // Collector tidak melapor: semua status di layar usang — peringatan ini mengalahkan alarm lain
         [$stale, , $beat] = SystemController::brief();
         if ($stale) {
-            $alarm = ['level' => 'crit', 'text' => 'COLLECTOR TIDAK MELAPOR' . ($beat ? ' SEJAK ' . $beat->format('H.i') : '') . ' — DATA USANG'];
+            $alarm = ['level' => 'crit', 'text' => 'COLLECTOR TIDAK MELAPOR' . ($beat ? ' SEJAK ' . $beat->format('H.i') : '') . ', DATA USANG'];
         }
 
         return response()->json([

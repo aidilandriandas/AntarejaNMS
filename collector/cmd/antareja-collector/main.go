@@ -22,6 +22,7 @@ import (
 	"os/signal"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"text/tabwriter"
 	"time"
@@ -188,6 +189,10 @@ func run() error {
 		go (&notify.AckBot{Disp: disp, API: cfg.TelegramAPI, Log: log}).Run(ctx)
 		inc := &incidents.Runner{DB: db, Log: log}
 		var afterMu sync.Mutex // dipanggil putaran ping pusat dan kiriman collector site: jangan bersamaan
+		// Notifikasi dikirim di jalur sendiri dengan batas waktu sendiri: kanal yang lambat atau tidak terjangkau
+		// tidak boleh memakan jatah putaran ping sehingga penilaian problem berikutnya gagal.
+		var dispBusy atomic.Bool
+		rootCtx := ctx
 		p.AfterPing = func(ctx context.Context) {
 			afterMu.Lock()
 			defer afterMu.Unlock()
@@ -202,8 +207,15 @@ func run() error {
 			if out.Opened > 0 || out.Resolved > 0 {
 				log.Info("problem", "baru", out.Opened, "selesai", out.Resolved, "terbuka", out.Open, "kondisi", out.Summary)
 			}
-			if err := disp.Run(ctx); err != nil {
-				log.Error("notifikasi gagal", "galat", err)
+			if dispBusy.CompareAndSwap(false, true) {
+				go func() {
+					defer dispBusy.Store(false)
+					dctx, cancel := context.WithTimeout(rootCtx, 5*time.Minute)
+					defer cancel()
+					if err := disp.Run(dctx); err != nil {
+						log.Error("notifikasi gagal", "galat", err)
+					}
+				}()
 			}
 		}
 

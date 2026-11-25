@@ -51,7 +51,7 @@ class MaintenanceController extends Controller
             $m->devices()->sync($d['device_ids']);
         }
         $m->load('site', 'devices');
-        Audit::log('created', "Maintenance \"{$m->title}\" ({$m->scopeLabel()}) {$m->starts_at->format('d/m H:i')}–{$m->ends_at->format('d/m H:i')}", $m);
+        Audit::log('created', "Maintenance \"{$m->title}\" ({$m->scopeLabel()}) {$m->starts_at->format('d/m H:i')} sampai {$m->ends_at->format('d/m H:i')}", $m);
 
         return back()->with('ok', "Maintenance \"{$m->title}\" dijadwalkan. Problem di dalamnya tidak dinotifikasi.");
     }
