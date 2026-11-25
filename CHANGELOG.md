@@ -16,6 +16,10 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - **Flow trafik** (NetFlow v5, v9, IPFIX di 2055/UDP; sFlow v5 di 6343/UDP): siapa dan aplikasi apa yang memakai
   bandwidth per port dan arah, ringkasan 5 menit (50 percakapan terbesar + lainnya), disimpan 7 hari; pemakai terbesar
   di halaman port. Hanya dari perangkat terdaftar. **Buka 2055/UDP dan 6343/UDP** dari subnet manajemen bila dipakai.
+- **Impor dari Zabbix**: halaman Impor perangkat menerima ekspor host Zabbix (JSON dari Data collection, Hosts, Export).
+  Nama, IP atau DNS, status aktif/nonaktif, SNMP (versi, port, community termasuk makro host; nilai makro global
+  `{$SNMP_COMMUNITY}` bisa diisi), kategori ditebak dari templat dan awalan nama, grup/templat/deskripsi Zabbix
+  masuk catatan. IP yang dipakai dua host: yang aktif diambil. Host tanpa IP (VMware, agent) dilewati. Pratinjau dulu.
 - **SLA link ISP** (Laporan, *SLA link ISP*): laporan per link internet/Metro-E dari ping ANTAREJA. Gangguan = ping
   gagal atau packet loss di atas ambang link (bawaan 10%); maintenance bisa dikecualikan; waktu tanpa data tidak
   dihitung. Periode minggu lalu/ini, bulan lalu/ini, atau tanggal pilihan. Isi: ketersediaan dengan status Memenuhi /
