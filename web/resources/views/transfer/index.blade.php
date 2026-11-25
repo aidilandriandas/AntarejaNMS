@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Ekspor & impor')
-@php($labels = ['sites' => 'Site', 'devices' => 'Perangkat', 'links' => 'Sambungan manual', 'subnets' => 'Subnet (manual)', 'cameras' => 'Kamera', 'channels' => 'Kanal notifikasi', 'report_schedules' => 'Laporan terjadwal', 'services' => 'Layanan (SLA)', 'triggers' => 'Trigger', 'site_collectors' => 'Collector site', 'checks' => 'Cek layanan', 'runbooks' => 'Runbook', 'templates' => 'Templat perangkat', 'syslog_rules' => 'Aturan log', 'modbus_points' => 'Titik Modbus', 'settings' => 'Pengaturan'])
+@php($labels = ['sites' => 'Site', 'devices' => 'Perangkat', 'links' => 'Sambungan manual', 'subnets' => 'Subnet (manual)', 'cameras' => 'Kamera', 'channels' => 'Kanal notifikasi', 'report_schedules' => 'Laporan terjadwal', 'services' => 'Layanan (SLA)', 'triggers' => 'Trigger', 'site_collectors' => 'Collector site', 'checks' => 'Cek layanan', 'runbooks' => 'Runbook', 'templates' => 'Templat perangkat', 'camera_profiles' => 'Profil login kamera', 'syslog_rules' => 'Aturan log', 'modbus_points' => 'Titik Modbus', 'settings' => 'Pengaturan'])
 @section('content')
 <div class="page-head">
     <div><h1>Ekspor & impor konfigurasi</h1><p>Satu berkas JSON berisi site, perangkat (termasuk ambang, induk, koordinat), sambungan manual, subnet, kamera, kanal notifikasi, laporan terjadwal, dan pengaturan, untuk pindah VM, membuat VM uji, atau cadangan yang bisa dibaca. Riwayat, metrik, log, dan akun pengguna tidak ikut (pakai <a href="{{ route('backups.index') }}">Backup</a> untuk itu).</p></div>

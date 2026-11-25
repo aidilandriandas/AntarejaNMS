@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Crypt;
 /** Kamera CCTV (RTSP). Password terenkripsi; URL RTSP hanya dibentuk di server untuk go2rtc. */
 class Camera extends Model
 {
-    protected $fillable = ['name', 'device_id', 'site_id', 'host', 'rtsp_port', 'channel', 'path_main', 'path_sub', 'username', 'enabled', 'sort'];
+    protected $fillable = ['name', 'device_id', 'site_id', 'host', 'rtsp_port', 'channel', 'path_main', 'path_sub', 'username', 'enabled', 'sort', 'profile_id'];
 
     protected $hidden = ['password_enc'];
 
@@ -21,6 +21,11 @@ class Camera extends Model
     public function device(): BelongsTo
     {
         return $this->belongsTo(Device::class);
+    }
+
+    public function profile(): BelongsTo
+    {
+        return $this->belongsTo(CameraProfile::class, 'profile_id');
     }
 
     public function site(): BelongsTo
@@ -55,9 +60,11 @@ class Camera extends Model
     {
         $path = str_replace('{ch}', (string) $this->channel, $q === 'main' ? $this->path_main : $this->path_sub);
         $auth = '';
-        if ($this->username) {
-            $pass = $this->password_enc ? Crypt::decryptString($this->password_enc) : '';
-            $auth = rawurlencode($this->username) . ':' . rawurlencode($pass) . '@';
+        // kamera berprofil: user & password dari profil (ganti password cukup di profil)
+        [$user, $enc] = $this->profile_id && $this->profile ? [$this->profile->username, $this->profile->password_enc] : [$this->username, $this->password_enc];
+        if ($user) {
+            $pass = $enc ? Crypt::decryptString($enc) : '';
+            $auth = rawurlencode($user) . ':' . rawurlencode($pass) . '@';
         }
 
         return 'rtsp://' . $auth . $this->host . ':' . $this->rtsp_port . '/' . ltrim($path, '/');

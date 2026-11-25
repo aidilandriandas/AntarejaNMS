@@ -191,6 +191,10 @@ Route::middleware('auth')->group(function () {
         Route::post('cctv/kamera', [CctvController::class, 'store'])->name('cctv.store');
         Route::put('cctv/kamera/{camera}', [CctvController::class, 'update'])->name('cctv.update');
         Route::delete('cctv/kamera/{camera}', [CctvController::class, 'destroy'])->name('cctv.destroy');
+        Route::post('cctv/kamera-massal', [CctvController::class, 'storeBulk'])->name('cctv.bulk');
+        Route::post('cctv/profil', [CctvController::class, 'storeProfile'])->name('cctv.profiles.store');
+        Route::put('cctv/profil/{profile}', [CctvController::class, 'updateProfile'])->name('cctv.profiles.update')->whereNumber('profile');
+        Route::delete('cctv/profil/{profile}', [CctvController::class, 'destroyProfile'])->name('cctv.profiles.destroy')->whereNumber('profile');
 
         Route::post('ipam/subnet', [IpamController::class, 'store'])->name('ipam.store');
         Route::put('ipam/subnet/{subnet}', [IpamController::class, 'update'])->name('ipam.update')->whereNumber('subnet');

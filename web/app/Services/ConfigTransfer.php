@@ -51,7 +51,7 @@ class ConfigTransfer
         $collectorName = DB::table('site_collectors')->pluck('name', 'id');
         $points = DB::table('modbus_points')->orderBy('position')->orderBy('id')->get()->groupBy('device_id');
         $devKey = $devices->mapWithKeys(fn ($d) => [$d->id => ['name' => $d->name, 'host' => $d->host]]);
-        $secrets = ['devices' => [], 'cameras' => [], 'channels' => []];
+        $secrets = ['devices' => [], 'cameras' => [], 'channels' => [], 'camera_profiles' => []];
         $dec = fn (?string $v) => $v ? Crypt::decryptString($v) : null;
 
         $out = [
@@ -90,6 +90,13 @@ class ConfigTransfer
                 'b' => $devKey[$l->b_device_id] ?? null, 'b_if' => $l->b_if_index, 'note' => $l->note])->filter(fn ($l) => $l['a'] && $l['b'])->values(),
             'subnets' => DB::table('subnets')->where('source', 'manual')->orderBy('cidr')->get()->map(fn ($s) => ['cidr' => $s->cidr, 'name' => $s->name,
                 'site' => $siteCode[$s->site_id] ?? null, 'vlan' => $s->vlan, 'note' => $s->note])->values(),
+            'camera_profiles' => DB::table('camera_profiles')->orderBy('name')->get()->map(function ($p) use ($withSecrets, &$secrets, $dec) {
+                if ($withSecrets && $p->password_enc) {
+                    $secrets['camera_profiles'][$p->name] = ['password' => $dec($p->password_enc)];
+                }
+
+                return ['name' => $p->name, 'username' => $p->username, 'rtsp_port' => $p->rtsp_port, 'path_main' => $p->path_main, 'path_sub' => $p->path_sub];
+            })->values(),
             'cameras' => DB::table('cameras')->orderBy('sort')->orderBy('name')->get()->map(function ($c) use ($siteCode, $devKey, $withSecrets, &$secrets, $dec) {
                 if ($withSecrets && $c->password_enc) {
                     $secrets['cameras'][$c->name . '|' . $c->host . '|' . $c->channel] = ['password' => $dec($c->password_enc)];
@@ -97,7 +104,8 @@ class ConfigTransfer
 
                 return ['name' => $c->name, 'host' => $c->host, 'channel' => $c->channel, 'rtsp_port' => $c->rtsp_port, 'path_main' => $c->path_main,
                     'path_sub' => $c->path_sub, 'username' => $c->username, 'enabled' => (bool) $c->enabled, 'sort' => $c->sort,
-                    'site' => $siteCode[$c->site_id] ?? null, 'device' => $c->device_id ? ($devKey[$c->device_id] ?? null) : null];
+                    'site' => $siteCode[$c->site_id] ?? null, 'device' => $c->device_id ? ($devKey[$c->device_id] ?? null) : null,
+                    'profile' => $c->profile_id ? DB::table('camera_profiles')->where('id', $c->profile_id)->value('name') : null];
             })->values(),
             'channels' => DB::table('notify_channels')->orderBy('name')->get()->map(function ($c) use ($siteCode, $withSecrets, &$secrets) {
                 $cfg = json_decode(Crypt::decryptString($c->config_enc), true) ?: [];
@@ -196,7 +204,7 @@ class ConfigTransfer
         if ((int) ($d['version'] ?? 0) > self::VERSION) {
             throw new RuntimeException('Berkas dari versi ANTAREJA yang lebih baru, perbarui aplikasi dulu.');
         }
-        foreach (['sites', 'site_collectors', 'devices', 'links', 'subnets', 'cameras', 'channels', 'report_schedules', 'services', 'triggers', 'checks', 'runbooks', 'templates', 'syslog_rules'] as $k) {
+        foreach (['sites', 'site_collectors', 'devices', 'links', 'subnets', 'cameras', 'channels', 'report_schedules', 'services', 'triggers', 'checks', 'runbooks', 'templates', 'syslog_rules', 'camera_profiles'] as $k) {
             $d[$k] = array_values(array_filter((array) ($d[$k] ?? []), 'is_array'));
         }
         $d['settings'] = is_array($d['settings'] ?? null) ? $d['settings'] : [];
@@ -216,6 +224,8 @@ class ConfigTransfer
         $cidrs = DB::table('subnets')->pluck('id', 'cidr')->mapWithKeys(fn ($v, $k) => [(string) $k => $v]);
         $p['subnets'] = $this->count($d['subnets'], fn ($s) => isset($cidrs[(string) ($s['cidr'] ?? '')]));
         $cams = DB::table('cameras')->get(['name', 'host', 'channel'])->map(fn ($c) => $c->name . '|' . $c->host . '|' . $c->channel)->flip();
+        $cp = DB::table('camera_profiles')->pluck('id', 'name');
+        $p['camera_profiles'] = $this->count($d['camera_profiles'], fn ($x) => isset($cp[$x['name'] ?? '']));
         $p['cameras'] = $this->count($d['cameras'], fn ($c) => isset($cams[($c['name'] ?? '') . '|' . ($c['host'] ?? '') . '|' . ($c['channel'] ?? '')]));
         $chs = DB::table('notify_channels')->get(['name', 'type'])->map(fn ($c) => $c->name . '|' . $c->type)->flip();
         $p['channels'] = $this->count($d['channels'], fn ($c) => isset($chs[($c['name'] ?? '') . '|' . ($c['type'] ?? '')]));
@@ -348,12 +358,12 @@ class ConfigTransfer
     /** Terapkan impor dalam satu transaksi. */
     public function apply(array $d, ?string $pass): array
     {
-        $sec = ['devices' => [], 'cameras' => [], 'channels' => []];
+        $sec = ['devices' => [], 'cameras' => [], 'channels' => [], 'camera_profiles' => []];
         if (isset($d['secrets']) && $pass !== null && $pass !== '') {
             $sec = self::open($d['secrets'], $pass) + $sec;
         }
         $enc = fn (?string $v) => $v !== null && $v !== '' ? Crypt::encryptString($v) : null;
-        $res = ['templates' => 0, 'syslog_rules' => 0, 'site_collectors' => 0, 'checks' => 0, 'runbooks' => 0, 'modbus_points' => 0, 'sites' => 0, 'devices' => 0, 'links' => 0, 'subnets' => 0, 'cameras' => 0, 'channels' => 0, 'report_schedules' => 0, 'services' => 0, 'triggers' => 0, 'settings' => 0, 'skipped' => 0];
+        $res = ['camera_profiles' => 0, 'templates' => 0, 'syslog_rules' => 0, 'site_collectors' => 0, 'checks' => 0, 'runbooks' => 0, 'modbus_points' => 0, 'sites' => 0, 'devices' => 0, 'links' => 0, 'subnets' => 0, 'cameras' => 0, 'channels' => 0, 'report_schedules' => 0, 'services' => 0, 'triggers' => 0, 'settings' => 0, 'skipped' => 0];
 
         DB::transaction(function () use ($d, $sec, $enc, &$res) {
             $now = now();
@@ -529,6 +539,24 @@ class ConfigTransfer
                 $res['subnets']++;
             }
 
+            // Profil login kamera (dicocokkan lewat nama), sebelum kamera
+            foreach ($d['camera_profiles'] as $p) {
+                $pname = self::str($p['name'] ?? null, 80);
+                if (! $pname) {
+                    $res['skipped']++;
+                    continue;
+                }
+                $prow = ['username' => self::str($p['username'] ?? null, 64), 'rtsp_port' => self::int($p['rtsp_port'] ?? 554, 1, 65535, 554),
+                    'path_main' => self::str($p['path_main'] ?? null, 255) ?? '/Streaming/Channels/{ch}01', 'path_sub' => self::str($p['path_sub'] ?? null, 255) ?? '/Streaming/Channels/{ch}02',
+                    'updated_at' => $now];
+                $ppw = $sec['camera_profiles'][$pname]['password'] ?? null;
+                if (is_string($ppw) && $ppw !== '') {
+                    $prow['password_enc'] = $enc($ppw);
+                }
+                DB::table('camera_profiles')->updateOrInsert(['name' => $pname], $prow);
+                $res['camera_profiles']++;
+            }
+
             // Kamera
             foreach ($d['cameras'] as $c) {
                 $name = self::str($c['name'] ?? null, 128);
@@ -541,7 +569,8 @@ class ConfigTransfer
                 $row = ['rtsp_port' => self::int($c['rtsp_port'] ?? 554, 1, 65535, 554), 'path_main' => self::str($c['path_main'] ?? null, 255) ?? '/Streaming/Channels/{ch}01',
                     'path_sub' => self::str($c['path_sub'] ?? null, 255) ?? '/Streaming/Channels/{ch}02', 'username' => self::str($c['username'] ?? null, 64),
                     'enabled' => (bool) ($c['enabled'] ?? true), 'sort' => self::int($c['sort'] ?? 0, 0, 100000, 0),
-                    'site_id' => $siteId($c['site'] ?? null), 'device_id' => is_array($c['device'] ?? null) ? $devId($c['device']) : null, 'updated_at' => $now];
+                    'site_id' => $siteId($c['site'] ?? null), 'device_id' => is_array($c['device'] ?? null) ? $devId($c['device']) : null, 'updated_at' => $now,
+                    'profile_id' => is_string($c['profile'] ?? null) ? DB::table('camera_profiles')->where('name', $c['profile'])->value('id') : null];
                 $pw = $sec['cameras'][$name . '|' . $host . '|' . $ch]['password'] ?? null;
                 if (is_string($pw) && $pw !== '') {
                     $row['password_enc'] = $enc($pw);

@@ -55,7 +55,10 @@ func (c *Checker) Run(ctx context.Context) error {
 		c.prev, c.same, c.fails = map[int64]uint64{}, map[int64]int{}, map[int64]int{}
 	}
 	c.mu.Unlock()
-	rows, err := c.DB.Query(ctx, `SELECT id, name, host, rtsp_port, channel, path_sub, COALESCE(username, ''), password_enc FROM cameras WHERE enabled`)
+	rows, err := c.DB.Query(ctx, `SELECT c.id, c.name, c.host, c.rtsp_port, c.channel, c.path_sub,
+		CASE WHEN c.profile_id IS NOT NULL THEN COALESCE(p.username, '') ELSE COALESCE(c.username, '') END,
+		CASE WHEN c.profile_id IS NOT NULL THEN p.password_enc ELSE c.password_enc END
+		FROM cameras c LEFT JOIN camera_profiles p ON p.id = c.profile_id WHERE c.enabled`)
 	if err != nil {
 		return err
 	}

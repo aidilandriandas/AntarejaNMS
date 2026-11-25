@@ -700,3 +700,18 @@ if (document.querySelector('[data-flow-chart]')) {
 if (document.querySelector('[data-isp-report]')) {
     import('./ispsla.js').then(({ initIspSla }) => initIspSla());
 }
+
+// Daftar centang dengan saringan (tambah kamera massal): saring teks, centang yang tampil, hitung terpilih
+$$('[data-pick-list]').forEach((form) => {
+    const rows = $$('[data-pick-row]', form);
+    const count = form.querySelector('[data-pick-count]');
+    const sync = () => { count.textContent = `${rows.filter((r) => r.querySelector('input').checked).length} dipilih`; };
+    form.querySelector('[data-pick-filter]')?.addEventListener('input', (e) => {
+        const q = e.target.value.trim().toLowerCase();
+        rows.forEach((r) => { r.hidden = q !== '' && !r.dataset.text.includes(q); });
+    });
+    form.querySelector('[data-pick-all]')?.addEventListener('click', () => { rows.forEach((r) => { if (!r.hidden) r.querySelector('input').checked = true; }); sync(); });
+    form.querySelector('[data-pick-none]')?.addEventListener('click', () => { rows.forEach((r) => { r.querySelector('input').checked = false; }); sync(); });
+    form.addEventListener('change', sync);
+    sync();
+});
