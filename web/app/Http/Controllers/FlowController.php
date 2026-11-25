@@ -28,6 +28,79 @@ class FlowController extends Controller
         return isset(self::PORTS[$port]) ? self::PORTS[$port] . ' (' . $p . ' ' . $port . ')' : $p . ' ' . $port;
     }
 
+    /** Nama tampilan kunci seri: "6/443" untuk aplikasi, IP (dengan nama perangkat bila dikenal) untuk sumber/tujuan. */
+    private function label(string $by, string $key, array $names): string
+    {
+        if ($key === 'lainnya' || $key === '') {
+            return 'Lainnya';
+        }
+        if ($by === 'app') {
+            [$p, $port] = array_map('intval', explode('/', $key) + [1 => 0]);
+
+            return self::app($p, $port);
+        }
+
+        return isset($names[$key]) ? $names[$key] . ' (' . $key . ')' : $key;
+    }
+
+    private function params(Request $r): array
+    {
+        $d = $r->validate(['perangkat' => ['required', 'integer'], 'port' => ['required', 'integer', 'min:0'], 'arah' => ['required', 'in:i,o'],
+            'per' => ['required', 'in:app,src,dst'], 'rentang' => ['nullable', 'in:' . implode(',', array_keys(self::RANGES))]]);
+        abort_unless(\App\Models\Device::whereKey($d['perangkat'])->exists(), 404);
+
+        return $d;
+    }
+
+    /** Grafik riwayat: laju (bit/s) per bucket 5 menit, 8 kunci teratas + lainnya. */
+    public function data(Request $request)
+    {
+        $d = $this->params($request);
+        $secs = self::RANGES[$d['rentang'] ?? '1h'][1];
+        $base = fn () => DB::table('flow_stats')->where('device_id', $d['perangkat'])->where('if_index', $d['port'])->where('dir', $d['arah'])
+            ->where('bucket', '>=', now()->subSeconds($secs));
+        $col = ['app' => "proto || '/' || port", 'src' => 'host(src)', 'dst' => 'host(dst)'][$d['per']];
+        $top = $base()->whereNotNull('src')->groupByRaw($col)->orderByRaw('sum(bytes) DESC')->limit(8)->pluck(DB::raw("$col AS k"))->all();
+        // percakapan di luar 50 teratas per bucket tersimpan tanpa src (NULL): ikut "lainnya"
+        $rows = $base()->groupBy('bucket')->groupByRaw("CASE WHEN src IS NULL THEN 'lainnya' ELSE $col END")->orderBy('bucket')
+            ->get(['bucket', DB::raw("CASE WHEN src IS NULL THEN 'lainnya' ELSE $col END AS k"), DB::raw('sum(bytes) AS b')]);
+        $isTop = array_flip($top);
+        $names = $this->names();
+        $times = [];
+        for ($t = (int) (floor((time() - $secs) / 300) * 300); $t <= time() - 300; $t += 300) {
+            $times[] = $t;
+        }
+        $keys = array_merge($top, $rows->contains(fn ($r) => ! isset($isTop[$r->k])) ? ['lainnya'] : []);
+        $vals = array_fill_keys($keys, array_fill_keys($times, 0.0));
+        foreach ($rows as $r) {
+            $t = (int) strtotime($r->bucket);
+            $k = isset($isTop[$r->k]) ? $r->k : 'lainnya';
+            if (array_key_exists($t, $vals[$k] ?? [])) {
+                $vals[$k][$t] += $r->b * 8 / 300;
+            }
+        }
+
+        return response()->json(['t' => $times, 'series' => collect($keys)->map(fn ($k) => ['key' => (string) $k, 'label' => $this->label($d['per'], (string) $k, $names),
+            'values' => array_values($vals[$k])])->values()]);
+    }
+
+    /** Grafik live: diteruskan dari collector (token collector tidak pernah sampai ke browser). */
+    public function live(Request $request, \App\Services\Collector $collector)
+    {
+        $d = $this->params($request);
+        try {
+            $r = $collector->flowLive((int) $d['perangkat'], (int) $d['port'], $d['arah'], $d['per']);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => 'Collector tidak dapat dihubungi: ' . mb_substr($e->getMessage(), 0, 150)], 502);
+        }
+        $names = $this->names();
+        $pts = $r['points'] ?? [];
+        $keys = collect($pts)->flatMap(fn ($p) => array_keys($p['by'] ?? []))->unique()->sortBy(fn ($k) => $k === 'lainnya' ? 1 : 0)->values();
+
+        return response()->json(['t' => array_column($pts, 't'), 'series' => $keys->map(fn ($k) => ['key' => (string) $k, 'label' => $this->label($d['per'], (string) $k, $names),
+            'values' => array_map(fn ($p) => (float) ($p['by'][$k] ?? 0), $pts)])->values()]);
+    }
+
     public function index(Request $request)
     {
         $range = array_key_exists($request->query('rentang'), self::RANGES) ? $request->query('rentang') : '1h';

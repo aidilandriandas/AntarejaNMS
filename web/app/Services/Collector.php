@@ -131,6 +131,17 @@ class Collector
         return $res->json();
     }
 
+    /** Laju flow 10 detik (5 menit terakhir) untuk satu port; sekaligus menandai port ditonton di collector. */
+    public function flowLive(int $deviceId, int $ifIndex, string $dir, string $by): array
+    {
+        $res = $this->http()->timeout(5)->get('/v1/flow/live', ['device' => $deviceId, 'if' => $ifIndex, 'dir' => $dir, 'by' => $by]);
+        if (! $res->successful()) {
+            throw new RuntimeException($res->json('error') ?? ('collector menjawab ' . $res->status()));
+        }
+
+        return $res->json();
+    }
+
     /** Scrape exporter satu perangkat sekarang (URL dari database). */
     public function exporterTest(int $deviceId): array
     {

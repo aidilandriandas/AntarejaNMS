@@ -690,3 +690,8 @@ $$('[data-toggle-target]').forEach((cb) => {
     cb.addEventListener('change', sync);
     sync();
 });
+
+// Grafik flow (halaman Flow trafik)
+if (document.querySelector('[data-flow-chart]')) {
+    import('./flowchart.js').then(({ initFlowChart }) => initFlowChart());
+}

@@ -11,7 +11,7 @@
 <section class="card"><div class="bd notes">
     <p style="margin-top:0">Belum ada data flow. Aktifkan ekspor flow di router ke IP server ANTAREJA port <b>2055/UDP</b> (NetFlow v5, v9, atau IPFIX) atau <b>6343/UDP</b> (sFlow v5). Hanya router yang terdaftar sebagai perangkat (IP manajemen atau IP interface-nya) yang diterima.</p>
     <p class="muted">MikroTik RouterOS 7:</p>
-    <pre class="code">/ip traffic-flow set enabled=yes interfaces=all
+    <pre class="code">/ip traffic-flow set enabled=yes interfaces=all active-flow-timeout=1m
 /ip traffic-flow target add dst-address=IP_SERVER_ANTAREJA port=2055 version=ipfix</pre>
     <p class="muted">Cisco IOS (Flexible NetFlow) memakai flow exporter tujuan IP server port 2055, transport udp 2055.</p>
 </div></section>
@@ -27,6 +27,21 @@
     <div class="kpis" style="margin-bottom:0">
         <div class="kpi"><span class="lbl">Total</span><span class="val">{{ $bytes($total) }}</span><span class="note">rata-rata {{ $rate($total) }}</span></div>
         <div class="kpi"><span class="lbl">Di luar 50 teratas</span><span class="val">{{ $pct($other) }}%</span><span class="note">{{ $bytes($other) }}</span></div>
+    </div>
+</section>
+<section class="card" data-flow-chart data-data-url="{{ route('flow.data') }}" data-live-url="{{ route('flow.live') }}" data-dev="{{ $dev }}" data-if="{{ $if }}" data-dir="{{ $dir }}" data-range="{{ $range }}">
+    <div class="hd"><h2>Grafik</h2>
+        <div class="seg" role="tablist" aria-label="Kelompokkan per">
+            <button type="button" role="tab" class="on" aria-selected="true" data-flow-per="app">Aplikasi</button>
+            <button type="button" role="tab" aria-selected="false" data-flow-per="src">Sumber</button>
+            <button type="button" role="tab" aria-selected="false" data-flow-per="dst">Tujuan</button>
+        </div>
+        <label class="check" title="Potongan 10 detik, 5 menit terakhir, diperbarui tiap 10 detik"><input type="checkbox" data-flow-live><span>Live</span></label>
+    </div>
+    <div class="bd">
+        <div data-flow-plot class="flow-plot"></div>
+        <p class="hint muted" data-flow-status role="status" style="margin:0"></p>
+        <p class="hint muted" style="margin:var(--space-xs) 0 0">8 teratas, sisanya digabung Lainnya; arahkan kursor ke grafik untuk angka tiap seri. Agar mode live mengikuti, set <i>active timeout</i> flow di router 1 menit (NetFlow/IPFIX baru dikirim saat flow selesai atau saat batas itu tercapai); sFlow sudah langsung.</p>
     </div>
 </section>
 @if($total === 0)

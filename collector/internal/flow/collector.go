@@ -161,6 +161,7 @@ type Collector struct {
 
 	dec       *Decoder
 	agg       Aggregator
+	Live      Live         // potongan 10 detik untuk port yang sedang dibuka di web
 	exporters atomic.Value // map[netip.Addr]int64
 	Received  atomic.Int64
 	Unknown   atomic.Int64
@@ -249,6 +250,7 @@ func (c *Collector) read(ctx context.Context, pc net.PacketConn) {
 		}
 		now := time.Now()
 		for _, r := range recs {
+			c.Live.add(dev, r, now)
 			if rows := c.agg.add(dev, r, now); rows != nil {
 				go c.save(ctx, rows)
 			}

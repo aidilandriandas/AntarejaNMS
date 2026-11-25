@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/aidilandriandas/antarejanms/collector/internal/checks"
+	"github.com/aidilandriandas/antarejanms/collector/internal/flow"
 	"github.com/aidilandriandas/antarejanms/collector/internal/modbus"
 	"github.com/aidilandriandas/antarejanms/collector/internal/notify"
 	"github.com/aidilandriandas/antarejanms/collector/internal/offsite"
@@ -53,6 +54,7 @@ type Server struct {
 	// Modbus (opsional)
 	Modbus   *modbus.Runner
 	Exporter *promx.Runner
+	Flow     *flow.Collector // opsional; nil bila penerima flow mati
 	Token    string
 	Log      *slog.Logger
 
@@ -70,6 +72,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /v1/checks/{id}/run", s.auth(s.checkRun))
 	mux.HandleFunc("POST /v1/devices/{id}/modbus/test", s.auth(s.modbusTest))
 	mux.HandleFunc("POST /v1/devices/{id}/exporter/test", s.auth(s.exporterTest))
+	mux.HandleFunc("GET /v1/flow/live", s.auth(s.flowLive))
 	mux.HandleFunc("POST /v1/channels/{id}/test", s.auth(s.testChannel))
 	mux.HandleFunc("POST /v1/live", s.auth(s.live))
 	mux.HandleFunc("GET /v1/reports/{id}/preview", s.auth(s.reportPreview))
@@ -483,4 +486,25 @@ func (s *Server) exporterTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "kind": kind, "readings": res})
+}
+
+// flowLive: laju 10 detik selama 5 menit terakhir untuk satu port & arah; sekaligus menandai port ditonton.
+func (s *Server) flowLive(w http.ResponseWriter, r *http.Request) {
+	if s.Flow == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "penerima flow tidak aktif"})
+		return
+	}
+	q := r.URL.Query()
+	dev, err1 := strconv.ParseInt(q.Get("device"), 10, 64)
+	ifi, err2 := strconv.ParseUint(q.Get("if"), 10, 32)
+	dir := q.Get("dir")
+	by := q.Get("by")
+	if err1 != nil || err2 != nil || dev <= 0 || (dir != "i" && dir != "o") || (by != "app" && by != "src" && by != "dst") {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "parameter tidak valid"})
+		return
+	}
+	now := time.Now()
+	s.Flow.Live.Watch(dev, uint32(ifi), dir[0], now)
+	writeJSON(w, http.StatusOK, map[string]any{"slot_s": int(flow.LiveSlot.Seconds()),
+		"points": s.Flow.Live.Snapshot(dev, uint32(ifi), dir[0], by, 8, now)})
 }

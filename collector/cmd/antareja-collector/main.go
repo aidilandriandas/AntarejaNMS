@@ -292,8 +292,9 @@ func run() error {
 		}()
 
 		// NetFlow v5/v9 dan IPFIX dari router (ringkasan 5 menit), retensi dibersihkan tiap jam
+		var fc *flow.Collector
 		if cfg.FlowUDP != "" {
-			fc := &flow.Collector{DB: db, Log: log, Addr: cfg.FlowUDP}
+			fc = &flow.Collector{DB: db, Log: log, Addr: cfg.FlowUDP}
 			go func() {
 				if err := fc.Run(ctx); err != nil {
 					log.Error("penerima NetFlow gagal", "galat", err)
@@ -410,7 +411,7 @@ func run() error {
 		}()
 
 		if cfg.APIAddr != "" {
-			api := &http.Server{Addr: cfg.APIAddr, Handler: (&apiserver.Server{Poller: p, Notify: disp, Report: reports.Preview, Offsite: off, Checks: checkRunner, Modbus: modbusRunner, Exporter: exporterRunner, Token: apiserver.Token(box.Key()), Log: log}).Handler(),
+			api := &http.Server{Addr: cfg.APIAddr, Handler: (&apiserver.Server{Poller: p, Notify: disp, Report: reports.Preview, Offsite: off, Checks: checkRunner, Modbus: modbusRunner, Exporter: exporterRunner, Flow: fc, Token: apiserver.Token(box.Key()), Log: log}).Handler(),
 				ReadHeaderTimeout: 5 * time.Second, WriteTimeout: 60 * time.Second}
 			go func() {
 				if err := api.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

@@ -205,6 +205,8 @@ Route::middleware('auth')->group(function () {
     Route::get('dampak', [ImpactController::class, 'index'])->name('impact.index');
     Route::get('cek-layanan', [CheckController::class, 'index'])->name('checks.index');
     Route::get('flow', [FlowController::class, 'index'])->name('flow.index');
+    Route::get('flow/data', [FlowController::class, 'data'])->name('flow.data');
+    Route::get('flow/live', [FlowController::class, 'live'])->name('flow.live')->middleware('throttle:30,1');
     Route::get('versi', [VersionController::class, 'index'])->name('versions.index');
     Route::get('routing', [RoutingController::class, 'index'])->name('routing.index');
     Route::get('vlan', [VlanController::class, 'index'])->name('vlans.index');

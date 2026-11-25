@@ -28,6 +28,9 @@
   --color-rule: #dde3e8;
   --color-rule-strong: #b9c3cc;
   /* skala beban link (peta beban): sepi ke penuh, berurutan terang ke pekat lalu hangat */
+  /* palet kategori grafik (urutan tetap, divalidasi CVD): flow per aplikasi / IP */
+  --color-cat-1: #2a78d6; --color-cat-2: #eb6834; --color-cat-3: #1baf7a; --color-cat-4: #eda100;
+  --color-cat-5: #e87ba4; --color-cat-6: #008300; --color-cat-7: #6250d6; --color-cat-8: #e34948;
   --color-load-1: #8fc3bc; --color-load-2: #0b6b63; --color-load-3: #b07a00; --color-load-4: #c9561c; --color-load-5: #c4232f;
   --color-field: #7d8995;      /* tepi field 3,5:1 di atas putih */
 
@@ -73,6 +76,8 @@
   --color-muted: #93a2b0;
   --color-rule: #1f2b35;
   --color-rule-strong: #34434f;
+  --color-cat-1: #3987e5; --color-cat-2: #d95926; --color-cat-3: #199e70; --color-cat-4: #c98500;
+  --color-cat-5: #d55181; --color-cat-6: #0ca30c; --color-cat-7: #9085e9; --color-cat-8: #e66767;
   --color-load-1: #2c6b64; --color-load-2: #4fc7b9; --color-load-3: #e7b24c; --color-load-4: #f08a4b; --color-load-5: #ff7a83;
   --color-field: #66757f;
   --color-accent: #4fc7b9;

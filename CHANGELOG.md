@@ -16,6 +16,10 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - **Flow trafik** (NetFlow v5, v9, IPFIX di 2055/UDP; sFlow v5 di 6343/UDP): siapa dan aplikasi apa yang memakai
   bandwidth per port dan arah, ringkasan 5 menit (50 percakapan terbesar + lainnya), disimpan 7 hari; pemakai terbesar
   di halaman port. Hanya dari perangkat terdaftar. **Buka 2055/UDP dan 6343/UDP** dari subnet manajemen bila dipakai.
+- **Grafik flow**: halaman Flow trafik punya grafik bertumpuk per aplikasi, IP sumber, atau IP tujuan (8 teratas +
+  lainnya). Riwayat dari ringkasan 5 menit sesuai rentang; mode *Live* menampilkan potongan 10 detik selama 5 menit
+  terakhir, diperbarui tiap 10 detik. Data live hanya disimpan di memori collector untuk port yang sedang dibuka
+  (maks. 50 port, berhenti 2 menit setelah tidak dilihat). Untuk NetFlow/IPFIX set active timeout router 1 menit.
 - **Templat perangkat dan makro** (Pemantauan, *Templat*): satu set ambang, makro, URL exporter dan layanannya, cek
   layanan, dan trigger (cakupan *Perangkat bertemplat*) dipasang ke banyak perangkat lewat form perangkat atau Ubah
   massal, *Pasang templat*. Ubah templat sekali, semua perangkatnya ikut. Ambang perangkat sendiri menang. Makro
