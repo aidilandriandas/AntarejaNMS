@@ -170,6 +170,9 @@ func (p *Poller) MeasureSNMP(d store.Device, cr snmp.Credentials, credErr error,
 		if fdb, err := p.SNMP.FDB(d.Host, cr); err == nil {
 			s.FDB = fdb
 		}
+	}
+	// VLAN & STP: switch, router, firewall, dan semua MikroTik (bridge VLAN bisa ada di router mana pun)
+	if fdbCategories[d.Category] || arpCategories[d.Category] || strings.HasPrefix(sys.ObjectID, ".1.3.6.1.4.1.14988") {
 		if l2, err := p.SNMP.L2(d.Host, cr); err == nil {
 			s.L2 = &l2
 		}

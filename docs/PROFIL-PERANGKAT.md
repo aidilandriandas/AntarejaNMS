@@ -87,7 +87,9 @@ Kode: `collector/internal/snmp/routing.go`. Dibaca dari router kategori Core, Di
 
 ## VLAN dan STP
 
-Kode: `collector/internal/snmp/l2.go`. Dibaca dari switch kategori Core, Distribution, dan Access.
+Kode: `collector/internal/snmp/l2.go`. Dibaca dari kategori Core, Distribution, Access, Firewall, dan semua MikroTik.
+Selain itu web mengenali interface VLAN dari IF-MIB: ifType l2vlan (135) atau l3ipvlan (136) (IANAifType-MIB), atau
+nama berpola `vlan<n>` / `<port>.<n>`; nomor VLAN diambil dari nama karena IF-MIB tidak memuatnya.
 
 - Q-BRIDGE-MIB (RFC 4363): `dot1qVlanStaticName` .1.3.6.1.2.1.17.7.1.4.3.1.1 (indeks VLAN ID), `dot1qPvid`
   .1.3.6.1.2.1.17.7.1.4.5.1.1 (indeks base port, dipetakan ke ifIndex lewat `dot1dBasePortIfIndex`).

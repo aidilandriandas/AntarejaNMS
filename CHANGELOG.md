@@ -16,6 +16,10 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - **Flow trafik** (NetFlow v5, v9, IPFIX di 2055/UDP; sFlow v5 di 6343/UDP): siapa dan aplikasi apa yang memakai
   bandwidth per port dan arah, ringkasan 5 menit (50 percakapan terbesar + lainnya), disimpan 7 hari; pemakai terbesar
   di halaman port. Hanya dari perangkat terdaftar. **Buka 2055/UDP dan 6343/UDP** dari subnet manajemen bila dipakai.
+- **VLAN dari interface router**: halaman VLAN & STP kini juga mengenali VLAN yang berupa interface (MikroTik
+  `/interface vlan`, Cisco `Vlan20` atau subinterface `Gi0/0.20`) lewat tipe interface l2vlan (135) / l3ipvlan (136)
+  atau pola nama, bukan hanya tabel VLAN switch. Tabel VLAN switch dan STP kini dibaca juga dari perangkat kategori
+  Firewall dan semua MikroTik. Ada daftar perangkat SNMP yang belum melaporkan VLAN beserta hal yang perlu dicek.
 - **Grafik flow**: halaman Flow trafik punya grafik bertumpuk per aplikasi, IP sumber, atau IP tujuan (8 teratas +
   lainnya). Riwayat dari ringkasan 5 menit sesuai rentang; mode *Live* menampilkan potongan 10 detik selama 5 menit
   terakhir, diperbarui tiap 10 detik. Data live hanya disimpan di memori collector untuk port yang sedang dibuka
