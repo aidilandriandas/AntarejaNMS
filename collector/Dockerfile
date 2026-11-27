@@ -1,5 +1,5 @@
 # Build: dari root repo -> docker build -f collector/Dockerfile -t antareja-collector .
-FROM golang:1.25-alpine AS build
+FROM golang:1.26-alpine AS build
 WORKDIR /src
 COPY collector/go.mod collector/go.sum ./
 RUN go mod download

@@ -125,6 +125,8 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
   - Data sesi dienkripsi (`SESSION_ENCRYPT=true`). **Semua pengguna perlu login sekali lagi setelah pembaruan.**
   - Pemindaian kerentanan dependensi di GitHub Actions (govulncheck, composer audit, npm audit), juga tiap minggu.
     Paket Symfony diperbarui ke 7.4.24 untuk menutup 5 CVE (routing, http-kernel, mailer).
+    Collector dibangun dengan Go 1.26.11 (sebelumnya 1.25.0) serta `golang.org/x/net` 0.63 dan `x/crypto` 0.59, yang
+    menutup kerentanan pustaka standar dan modul yang ditemukan govulncheck.
 - Perbaikan Layar NOC: alarm, jumlah problem, dan grafik severity sebelumnya dihitung dari 30 problem teratas saja
   (tertulis "30 problem High/Disaster belum di-ACK" padahal ratusan). Sekarang dihitung dari semua problem terbuka.
 - Layar NOC memeriksa perubahan tiap 5 detik lewat permintaan ringan dan langsung memuat ulang bila ada problem baru,
