@@ -106,6 +106,7 @@ services:
       SESSION_DRIVER: database
       SESSION_LIFETIME: "720"
       SESSION_SECURE_COOKIE: "true"
+      SESSION_ENCRYPT: "true"
       CACHE_STORE: database
       LOG_CHANNEL: stderr
       ANTAREJA_COLLECTOR_URL: http://collector:9274

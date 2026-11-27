@@ -111,6 +111,20 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - Perbaikan: keterangan kamera di grid CCTV tidak lagi diawali koma untuk kamera tanpa site, dan nama perangkat tidak
   diulang bila sama dengan nama kamera (kamera hasil tambah massal).
 - Teks layar, pesan notifikasi, dan laporan tidak lagi memakai titik tengah, panah, tanda pisah, atau elipsis.
+- **Kontrol ISO/IEC 27001:2022** (pemetaan lengkap di `docs/ISO27001.md`). Migrasi 0050 dan 0051 otomatis.
+  - Log audit tahan ubah: hash SHA-256 berantai per baris; database menolak ubah dan hapus kecuali pemangkasan
+    sesuai batas simpan. Halaman *Jejak audit* punya saringan (pengguna, aksi, tanggal, teks), *Ekspor CSV* beserta
+    hash, dan *Periksa keutuhan*. Logout dan keluar karena diam ikut tercatat. Kolom rahasia apa pun (`*_enc`,
+    password, secret, token) tidak pernah tercatat.
+  - Kebijakan baru di *Pengguna, Kebijakan login*: keluar otomatis bila admin/engineer diam (bawaan 30 menit),
+    nonaktifkan akun tak dipakai (opsional), batas simpan log audit, pemberitahuan di halaman login.
+  - *Tinjauan hak akses*: unduhan CSV semua akun (peran, site, 2FA, sumber login, terakhir aktif). Akun tidak dipakai
+    lebih dari 90 hari ditandai. *Terakhir aktif* juga menghitung sesi "Ingat saya".
+  - Salinan backup ke luar server bisa dienkripsi (AES-256-GCM, kunci Argon2id dari frasa sandi). Buka dengan
+    `./antareja.sh decrypt`.
+  - Data sesi dienkripsi (`SESSION_ENCRYPT=true`). **Semua pengguna perlu login sekali lagi setelah pembaruan.**
+  - Pemindaian kerentanan dependensi di GitHub Actions (govulncheck, composer audit, npm audit), juga tiap minggu.
+    Paket Symfony diperbarui ke 7.4.24 untuk menutup 5 CVE (routing, http-kernel, mailer).
 - Perbaikan Layar NOC: alarm, jumlah problem, dan grafik severity sebelumnya dihitung dari 30 problem teratas saja
   (tertulis "30 problem High/Disaster belum di-ACK" padahal ratusan). Sekarang dihitung dari semua problem terbuka.
 - Layar NOC memeriksa perubahan tiap 5 detik lewat permintaan ringan dan langsung memuat ulang bila ada problem baru,

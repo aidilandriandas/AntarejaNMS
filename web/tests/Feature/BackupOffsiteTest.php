@@ -32,6 +32,18 @@ class BackupOffsiteTest extends TestCase
         $this->actingAs($admin)->put('/backup/luar-server', $sftp + ['keep' => 25])->assertSessionHas('ok');
         $this->assertSame('sandi-nas-rahasia', json_decode(Crypt::decryptString(Setting::get('backup.offsite_secret')), true)['password']);
         $this->assertSame('SHA256:abc', Setting::get('backup.offsite_hostkey'), 'host sama: host key tetap');
+        // frasa enkripsi: minimal 12, harus sama; tersimpan terenkripsi; kosong = tetap; dicentang = mati
+        $this->actingAs($admin)->put('/backup/luar-server', $sftp + ['passphrase' => 'pendek', 'passphrase_confirmation' => 'pendek'])->assertSessionHasErrors('passphrase');
+        $this->actingAs($admin)->put('/backup/luar-server', $sftp + ['passphrase' => 'frasa-backup-tambang-2026', 'passphrase_confirmation' => 'beda'])->assertSessionHasErrors('passphrase');
+        $this->actingAs($admin)->put('/backup/luar-server', $sftp + ['passphrase' => 'frasa-backup-tambang-2026', 'passphrase_confirmation' => 'frasa-backup-tambang-2026'])->assertSessionHas('ok');
+        $sec = json_decode(Crypt::decryptString(Setting::get('backup.offsite_secret')), true);
+        $this->assertSame(['sandi-nas-rahasia', 'frasa-backup-tambang-2026'], [$sec['password'], $sec['passphrase']]);
+        $this->actingAs($admin)->get('/backup')->assertOk()->assertSee('Salinan dienkripsi (AES-256)')->assertDontSee('frasa-backup-tambang-2026');
+        $this->actingAs($admin)->put('/backup/luar-server', $sftp)->assertSessionHas('ok');
+        $this->assertSame('frasa-backup-tambang-2026', json_decode(Crypt::decryptString(Setting::get('backup.offsite_secret')), true)['passphrase']);
+        $this->actingAs($admin)->put('/backup/luar-server', $sftp + ['clear_passphrase' => 1])->assertSessionHas('ok');
+        $this->assertSame('', json_decode(Crypt::decryptString(Setting::get('backup.offsite_secret')), true)['passphrase']);
+
         // ganti server: host key dicatat ulang
         $this->actingAs($admin)->put('/backup/luar-server', ['host' => 'nas2.kantor.local'] + $sftp)->assertSessionHas('ok');
         $this->assertSame('', Setting::get('backup.offsite_hostkey'));

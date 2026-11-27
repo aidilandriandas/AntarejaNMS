@@ -2,8 +2,9 @@
 @section('title', 'Kebijakan login')
 @section('content')
 <div class="crumbs"><a href="{{ route('users.index') }}">Pengguna</a> / Kebijakan login</div>
-<div class="page-head"><div><h1>Kebijakan login</h1><p>Verifikasi dua langkah dan login dengan akun kantor (LDAP / Active Directory)</p></div></div>
+<div class="page-head"><div><h1>Kebijakan login</h1><p>Verifikasi dua langkah, login dengan akun kantor (LDAP / Active Directory), dan kebijakan sesi, akun, serta log audit</p></div></div>
 <div class="grid g-2">
+    <div class="stack">
     <section class="card" id="kebijakan-2fa"><div class="hd"><h2>Verifikasi dua langkah</h2></div><div class="bd">
         <form method="post" action="{{ route('auth.settings.policy') }}" class="form">@csrf @method('PUT')
             <div class="field"><label for="require_2fa">Wajib 2FA</label><select class="input" id="require_2fa" name="require_2fa">
@@ -13,6 +14,23 @@
         </form>
         <p class="hint muted" style="margin:var(--space-sm) 0 0">Bila seorang pengguna kehilangan HP dan kode cadangan, buka akunnya di halaman Pengguna lalu klik Reset 2FA.</p>
     </div></section>
+
+    <section class="card" id="keamanan"><div class="hd"><h2>Sesi, akun, dan log audit</h2></div><div class="bd">
+        <form method="post" action="{{ route('auth.settings.security') }}" class="form">@csrf @method('PUT')
+            <div class="row">
+                <div class="field"><label for="idle_minutes">Keluar otomatis bila diam (menit)</label><input class="input @error('idle_minutes') is-err @enderror" type="number" id="idle_minutes" name="idle_minutes" min="0" max="480" value="{{ old('idle_minutes', $security['idle_minutes']) }}">
+                    <div class="hint">Untuk admin dan engineer. 0 = mati. Akun viewer untuk Layar NOC tidak terkena.</div><x-field-error name="idle_minutes"/></div>
+                <div class="field"><label for="disable_inactive_days">Nonaktifkan akun tak dipakai (hari)</label><input class="input @error('disable_inactive_days') is-err @enderror" type="number" id="disable_inactive_days" name="disable_inactive_days" min="0" max="730" value="{{ old('disable_inactive_days', $security['disable_inactive_days']) }}">
+                    <div class="hint">Akun yang tidak login selama itu dinonaktifkan tiap malam dan dicatat di log audit. Admin aktif terakhir tidak pernah dinonaktifkan. 0 = mati.</div><x-field-error name="disable_inactive_days"/></div>
+            </div>
+            <div class="field"><label for="audit_keep_days">Simpan log audit (hari)</label><input class="input @error('audit_keep_days') is-err @enderror" type="number" id="audit_keep_days" name="audit_keep_days" min="0" max="3650" value="{{ old('audit_keep_days', $security['audit_keep_days']) }}">
+                <div class="hint">0 = selamanya. Minimal 365 hari bila diisi. Catatan yang lebih tua dihapus tiap malam; selain itu log audit tidak bisa dihapus.</div><x-field-error name="audit_keep_days"/></div>
+            <div class="field"><label for="login_notice">Pemberitahuan di halaman login</label><textarea class="input @error('login_notice') is-err @enderror" id="login_notice" name="login_notice" rows="2" maxlength="300">{{ old('login_notice', $security['login_notice']) }}</textarea>
+                <div class="hint">Tampil di bawah form login. Kosongkan untuk menyembunyikan.</div><x-field-error name="login_notice"/></div>
+            <div class="form-foot"><button class="btn primary">Simpan kebijakan</button></div>
+        </form>
+    </div></section>
+    </div>
 
     <section class="card" id="ldap"><div class="hd"><h2>Login LDAP / Active Directory</h2>@if($ldap['enabled'])<span class="badge ok">aktif</span>@else<span class="badge">mati</span>@endif</div><div class="bd">
         @unless($ldapAvailable)<p class="alert warn"><x-icon name="alert"/><span>Ekstensi PHP ldap tidak tersedia di server web ini, jadi login LDAP tidak bisa dipakai.</span></p>@endunless
@@ -59,5 +77,6 @@
         @endif
         <p class="hint muted" style="margin:var(--space-sm) 0 0">Akun kantor yang login pertama kali dibuat otomatis dengan peran dari grupnya ({{ $counts['ldapUsers'] }} akun LDAP saat ini). Akun lokal, termasuk admin, tetap login dengan password ANTAREJA walau server LDAP mati. Password akun layanan terenkripsi di database. Akun layanan cukup punya hak baca.</p>
     </div></section>
+
 </div>
 @endsection

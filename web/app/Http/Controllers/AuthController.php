@@ -136,6 +136,7 @@ class AuthController extends Controller
         $request->session()->regenerate();
         $request->session()->forget('2fa');
         $user->forceFill(['last_login_at' => now()])->save();
+        $request->session()->put('last_active', time());
         Audit::log('login', "{$user->username} login" . ($user->totp_enabled_at ? ' (2FA)' : '') . ($user->auth_source === 'ldap' ? ' lewat LDAP' : ''));
 
         return redirect()->intended(route('dashboard'));
@@ -210,6 +211,9 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        if ($request->user()) {
+            Audit::log('logout', "{$request->user()->username} logout");
+        }
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

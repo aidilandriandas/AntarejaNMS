@@ -24,6 +24,12 @@ class EnsureActiveUser
             return redirect()->route('login')->withErrors(['username' => 'Akun Anda dinonaktifkan. Hubungi admin.']);
         }
 
+        // Terakhir aktif, untuk tinjauan hak akses dan penonaktifan akun yang lama tidak dipakai (paling sering tiap 10 menit)
+        if ($u && (! $u->last_seen_at || $u->last_seen_at->lt(now()->subMinutes(10)))) {
+            \Illuminate\Support\Facades\DB::table('users')->where('id', $u->id)->update(['last_seen_at' => now()]);
+            $u->last_seen_at = now();
+        }
+
         return $next($request);
     }
 }

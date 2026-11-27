@@ -8,7 +8,7 @@ berlisensi tertutup milik perusahaan. Lihat [`LICENSE`](LICENSE), [`docs/CLEAN-R
 > **Status:** semua fitur di bawah sudah diuji di lingkungan uji (agen SNMP/SSH/SMTP tiruan). Yang masih perlu
 > dilakukan di jaringan tambang: **verifikasi profil sensor dengan `snmpwalk` perangkat asli** dan profil Hikvision
 > (lihat [Langkah 9](#9-verifikasi-dengan-perangkat-asli)). Arsitektur & peta jalan: [`docs/RANCANGAN.md`](docs/RANCANGAN.md).
-> Keamanan: [`docs/KEAMANAN.md`](docs/KEAMANAN.md).
+> Keamanan: [`docs/KEAMANAN.md`](docs/KEAMANAN.md). Pemetaan ke ISO/IEC 27001:2022: [`docs/ISO27001.md`](docs/ISO27001.md).
 
 ## Daftar isi
 
@@ -131,7 +131,7 @@ berlisensi tertutup milik perusahaan. Lihat [`LICENSE`](LICENSE), [`docs/CLEAN-R
 | **Peta lokasi** | Site & perangkat berkoordinat (menara radio, NVR) di atas peta jalan atau **topografi** (+ satelit bila perusahaan punya penyedia berlisensi), daftar site untuk lompat ke lokasi yang berjauhan: warna = status (down berdenyut), jumlah down, garis sambungan antarperangkat (merah bila putus). Posisi diatur dengan klik/geser di peta atau tempel koordinat. Sumber gambar peta bisa diganti ke server tile internal untuk ruang kontrol tanpa internet. **Denah tambang**: unggah gambar denah/pit (PNG/JPG/WebP) sebagai latar pengganti peta dunia — posisi per denah terpisah, gambar ikut backup database |
 | **Layar NOC** | Layar penuh untuk TV ruang kontrol (tombol `F`): alarm bertingkat (merah hanya untuk High/Disaster belum di-ACK) dengan **bunyi**, dinding status per site bergantian dengan peta topologi dan **peta lokasi** (peta jalan versi gelap), problem aktif, kejadian 1 jam, port tersibuk. Perubahan dicek tiap 5 detik, alert baru tampil dalam hitungan detik |
 
-Keamanan: lihat [`docs/KEAMANAN.md`](docs/KEAMANAN.md) — kontrol yang diterapkan, batasan yang diketahui, dan daftar periksa pemasangan.
+Keamanan: lihat [`docs/KEAMANAN.md`](docs/KEAMANAN.md) untuk kontrol yang diterapkan, batasan yang diketahui, dan daftar periksa pemasangan, serta [`docs/ISO27001.md`](docs/ISO27001.md) untuk pemetaan ke Annex A ISO/IEC 27001:2022.
 
 ## Arsitektur singkat
 

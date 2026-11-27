@@ -73,15 +73,21 @@ class BackupController extends Controller
             'prefix' => ['nullable', 'string', 'max:200', 'regex:/^[A-Za-z0-9._\-\/]*$/'],
             'access_key' => [$type === 's3' ? 'required' : 'nullable', 'string', 'max:128'],
             'secret_key' => ['nullable', 'string', 'max:255'],
-        ], ['bucket.regex' => 'Nama bucket huruf kecil, angka, titik, atau strip (3 sampai 63 karakter).', 'host.regex' => 'Isi nama host atau IP saja.']);
+            'passphrase' => ['nullable', 'string', 'min:12', 'max:200', 'confirmed'],
+        ], ['passphrase.min' => 'Frasa sandi minimal 12 karakter.', 'passphrase.confirmed' => 'Ulangi frasa sandi yang sama.','bucket.regex' => 'Nama bucket huruf kecil, angka, titik, atau strip (3 sampai 63 karakter).', 'host.regex' => 'Isi nama host atau IP saja.']);
         $old = self::offsiteSecret();
         $sec = [
             'password' => filled($d['password'] ?? null) ? $d['password'] : ($old['password'] ?? ''),
             'private_key' => filled($d['private_key'] ?? null) ? trim($d['private_key']) . "\n" : ($old['private_key'] ?? ''),
             'secret_key' => filled($d['secret_key'] ?? null) ? $d['secret_key'] : ($old['secret_key'] ?? ''),
+            // Frasa enkripsi salinan (ISO/IEC 27001 A.8.13, A.8.24): kosong = tetap; dibuang hanya bila dicentang
+            'passphrase' => filled($d['passphrase'] ?? null) ? $d['passphrase'] : ($old['passphrase'] ?? ''),
         ];
+        if ($request->boolean('clear_passphrase')) {
+            $sec['passphrase'] = '';
+        }
         if ($request->boolean('clear_secret')) {
-            $sec = ['password' => '', 'private_key' => '', 'secret_key' => ''];
+            $sec = ['password' => '', 'private_key' => '', 'secret_key' => '', 'passphrase' => $sec['passphrase']];
         }
         if ($type === 'sftp' && $sec['password'] === '' && $sec['private_key'] === '') {
             return back()->withInput()->withErrors(['password' => 'Isi password atau private key untuk SFTP.']);
@@ -105,7 +111,8 @@ class BackupController extends Controller
             // tujuan baru: backup berhasil yang masih ada (maks. sebanyak retensi lokal) ikut disalin
             DB::table('backups')->where('status', 'ok')->update(['offsite_status' => null, 'offsite_tries' => 0, 'offsite_error' => null]);
         }
-        Audit::log('updated', 'Salinan backup ke luar server: ' . ($type === 'off' ? 'dimatikan' : $type . ' ' . ($type === 'sftp' ? $cfg['user'] . '@' . $cfg['host'] . ':' . $cfg['dir'] : $cfg['endpoint'] . '/' . $cfg['bucket'])));
+        $encNote = ($old['passphrase'] ?? '') !== $sec['passphrase'] ? ($sec['passphrase'] === '' ? ', enkripsi dimatikan' : ', frasa enkripsi diganti') : ($sec['passphrase'] !== '' ? ', terenkripsi' : ', TANPA enkripsi');
+        Audit::log('updated', 'Salinan backup ke luar server: ' . ($type === 'off' ? 'dimatikan' : $type . ' ' . ($type === 'sftp' ? $cfg['user'] . '@' . $cfg['host'] . ':' . $cfg['dir'] : $cfg['endpoint'] . '/' . $cfg['bucket']) . $encNote));
 
         return back()->with('ok', $type === 'off' ? 'Salinan ke luar server dimatikan.' : 'Setelan disimpan. Tekan Uji koneksi untuk memastikan; backup berikutnya disalin otomatis.');
     }

@@ -15,9 +15,49 @@ class AuthSettingsController extends Controller
 {
     public const POLICIES = ['none' => 'Tidak wajib', 'admin' => 'Wajib untuk admin', 'all' => 'Wajib untuk semua akun'];
 
+    /** Bawaan kebijakan keamanan (ISO/IEC 27001 A.8.5, A.5.18, A.8.15, A.5.10). 0 = tidak dipakai. */
+    public const SECURITY_DEFAULTS = ['idle_minutes' => 30, 'disable_inactive_days' => 0, 'audit_keep_days' => 0,
+        'login_notice' => 'Sistem ini hanya untuk pengguna berwenang. Aktivitas di sistem ini dicatat dan dapat diperiksa.'];
+
+    public static function security(): array
+    {
+        return [
+            'idle_minutes' => (int) Setting::get('auth.idle_minutes', self::SECURITY_DEFAULTS['idle_minutes']),
+            'disable_inactive_days' => (int) Setting::get('auth.disable_inactive_days', 0),
+            'audit_keep_days' => (int) Setting::get('audit.keep_days', 0),
+            'login_notice' => (string) Setting::get('auth.login_notice', self::SECURITY_DEFAULTS['login_notice']),
+        ];
+    }
+
+    public function securityUpdate(Request $request)
+    {
+        $d = $request->validate([
+            'idle_minutes' => ['required', 'integer', function ($a, $v, $fail) { if ($v != 0 && ($v < 5 || $v > 480)) { $fail('Isi 0 (mati) atau 5 sampai 480 menit.'); } }],
+            'disable_inactive_days' => ['required', 'integer', function ($a, $v, $fail) { if ($v != 0 && ($v < 30 || $v > 730)) { $fail('Isi 0 (mati) atau 30 sampai 730 hari.'); } }],
+            'audit_keep_days' => ['required', 'integer', function ($a, $v, $fail) { if ($v != 0 && ($v < 365 || $v > 3650)) { $fail('Isi 0 (simpan selamanya) atau 365 sampai 3650 hari.'); } }],
+            'login_notice' => ['nullable', 'string', 'max:300'],
+        ]);
+        $old = self::security();
+        $d['login_notice'] = trim((string) ($d['login_notice'] ?? ''));
+        Setting::put('auth.idle_minutes', (int) $d['idle_minutes']);
+        Setting::put('auth.disable_inactive_days', (int) $d['disable_inactive_days']);
+        Setting::put('audit.keep_days', (int) $d['audit_keep_days']);
+        Setting::put('auth.login_notice', $d['login_notice']);
+        $changes = [];
+        foreach ($old as $k => $v) {
+            if ((string) $v !== (string) $d[$k]) {
+                $changes[$k] = [$v, $d[$k]];
+            }
+        }
+        Audit::log('updated', 'Kebijakan keamanan diubah', null, $changes ?: null);
+
+        return redirect()->to(route('auth.settings') . '#keamanan')->with('ok', 'Kebijakan keamanan disimpan.');
+    }
+
     public function index()
     {
         return view('users.login-settings', [
+            'security' => self::security(),
             'policy' => (string) Setting::get('auth.require_2fa', 'none'),
             'ldap' => Directory::config() + ['enabled' => false],
             'hasBindPassword' => (string) Setting::get('auth.ldap_bind_password', '') !== '',

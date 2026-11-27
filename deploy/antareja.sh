@@ -18,6 +18,7 @@ Pemakaian: ./antareja.sh <perintah>
   logs [layanan]     log (collector, web, backup, db, metrics)
   backup             backup database sekarang (menunggu sampai selesai)
   backups            daftar berkas backup
+  decrypt <berkas>   buka salinan terenkripsi dari luar server (.dump.enc) jadi .dump, minta frasa sandi
   restore <berkas>   PULIHKAN database dari berkas backup (data saat ini DIGANTI)
   cek                periksa pemasangan (.env, container, web, collector, backup terakhir)
 USAGE
@@ -63,6 +64,17 @@ case "${1:-}" in
             sleep 5
         done
         echo "Belum selesai setelah 30 menit — cek: ./antareja.sh logs backup"; exit 1 ;;
+    decrypt)
+        f="${2:-}"
+        case "$f" in *.enc) ;; *) echo "Sebutkan berkas .enc hasil unduhan dari tujuan backup, mis. ./antareja.sh decrypt antareja-20261122-013000.dump.enc"; exit 1 ;; esac
+        [ -f "$f" ] || { echo "Berkas tidak ditemukan: $f"; exit 1; }
+        dir=$(cd "$(dirname "$f")" && pwd); name=$(basename "$f"); out="${name%.enc}"
+        printf "Frasa sandi backup: "; stty -echo 2>/dev/null || true; read -r ANTAREJA_BACKUP_PASSPHRASE; stty echo 2>/dev/null || true; echo
+        export ANTAREJA_BACKUP_PASSPHRASE
+        $DC run --rm --no-deps -T -e ANTAREJA_BACKUP_PASSPHRASE -v "$dir:/work" --entrypoint /usr/local/bin/antareja-collector collector decrypt-backup "/work/$name" "/work/$out"
+        unset ANTAREJA_BACKUP_PASSPHRASE
+        echo "Selesai. Pulihkan dengan: ./antareja.sh restore $dir/$out"
+        ;;
     restore)
         f="${2:-}"
         [ -n "$f" ] || { echo "Sebutkan berkas, mis. ./antareja.sh restore antareja-20261122-013000.dump"; ./antareja.sh backups; exit 1; }

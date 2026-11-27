@@ -117,6 +117,17 @@ func (p *Poller) Run(ctx context.Context) {
 		if _, err := p.Store.PrunePortChanges(ctx, time.Now().Add(-eventKeep)); err != nil {
 			p.Log.Warn("pembersihan riwayat port gagal", "galat", err)
 		}
+		// ISO/IEC 27001 A.8.15 dan A.5.18: batas simpan log audit, akun yang lama tidak dipakai
+		if n, err := p.Store.PruneAudit(ctx); err != nil {
+			p.Log.Warn("pemangkasan log audit gagal", "galat", err)
+		} else if n > 0 {
+			p.Log.Info("log audit lama dihapus sesuai batas simpan", "jumlah", n)
+		}
+		if names, err := p.Store.DisableInactiveUsers(ctx); err != nil {
+			p.Log.Warn("penonaktifan akun tidak aktif gagal", "galat", err)
+		} else if len(names) > 0 {
+			p.Log.Info("akun tidak aktif dinonaktifkan", "akun", names)
+		}
 		n, err := p.Store.PruneEvents(ctx, time.Now().Add(-eventKeep))
 		if n > 0 {
 			p.Log.Info("kejadian lama dihapus", "jumlah", n)

@@ -18,4 +18,6 @@
         <label class="check"><input type="checkbox" name="remember" value="1"><span>Ingat saya<small>Untuk PC ruang kontrol / layar NOC</small></span></label>
         <button class="btn primary" style="width:100%;justify-content:center;height:40px">Masuk</button>
     </form>
+    @php($notice = \App\Http\Controllers\AuthSettingsController::security()['login_notice'])
+    @if($notice !== '')<p class="hint muted" style="margin:16px 0 0">{{ $notice }}</p>@endif
 @endsection

@@ -27,9 +27,10 @@ Perbarui dokumen ini setiap ada fitur yang menyentuh kredensial, perangkat, atau
 | Akun nonaktif | Langsung keluar pada permintaan berikutnya, termasuk sesi "Ingat saya" |
 | Ganti password | Semua sesi lain akun itu otomatis keluar (`AuthenticateSession`); juga saat admin mereset password pengguna |
 | Admin terakhir | Tidak bisa dinonaktifkan/diturunkan bila tidak ada admin aktif lain |
-| Cookie sesi | `Secure`, `HttpOnly`, `SameSite=Lax`; seluruh web dipaksa HTTPS |
+| Cookie sesi | `Secure`, `HttpOnly`, `SameSite=Lax`; isi sesi terenkripsi; seluruh web dipaksa HTTPS |
+| Sesi diam | Admin dan engineer keluar otomatis setelah diam (bawaan 30 menit, diatur di Kebijakan login); viewer layar NOC tidak terkena |
 | CSRF | Semua POST/PUT/DELETE web memakai token Laravel |
-| Jejak audit | Perubahan perangkat, pengguna, kanal, ambang, backup, posisi peta, tautan status, dll. |
+| Jejak audit | Perubahan perangkat, pengguna, kanal, ambang, backup, posisi peta, tautan status, login, logout, ekspor, dll. Tiap baris dikunci hash SHA-256 berantai, database menolak ubah dan hapus; ekspor CSV dan pemeriksaan keutuhan di halaman Jejak audit. Lihat `docs/ISO27001.md` |
 
 ## 3. Header HTTP
 

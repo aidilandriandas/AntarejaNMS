@@ -86,6 +86,15 @@
                         <div class="field"><label for="off-sk">Secret key</label><input class="input @error('secret_key') is-err @enderror" type="password" id="off-sk" name="secret_key" autocomplete="new-password" placeholder="{{ ! empty($offsiteHasSecret['secret_key']) ? 'tersimpan, kosongkan bila tidak diganti' : '' }}"><x-field-error name="secret_key"/></div>
                     </div>
                 </div>
+                <div class="stack-sm" data-show-if="type=sftp,s3">
+                    <div class="row">
+                        <div class="field"><label for="off-pp">Frasa sandi enkripsi</label><input class="input @error('passphrase') is-err @enderror" type="password" id="off-pp" name="passphrase" autocomplete="new-password" minlength="12" placeholder="{{ ! empty($offsiteHasSecret['passphrase']) ? 'tersimpan, kosongkan bila tidak diganti' : 'minimal 12 karakter' }}"><x-field-error name="passphrase"/></div>
+                        <div class="field"><label for="off-pp2">Ulangi frasa sandi</label><input class="input" type="password" id="off-pp2" name="passphrase_confirmation" autocomplete="new-password"></div>
+                    </div>
+                    <div class="hint">{{ ! empty($offsiteHasSecret['passphrase']) ? 'Salinan dienkripsi (AES-256) sebelum dikirim; di tujuan tersimpan sebagai .dump.enc.' : 'Disarankan: salinan dienkripsi (AES-256) sebelum dikirim, jadi isi database tidak terbaca di server tujuan.' }}
+                        Simpan frasa ini di tempat lain (mis. brankas password tim). Tanpa frasa ini salinan tidak bisa dipulihkan; buka dengan <code>./antareja.sh decrypt</code>.</div>
+                    @if(! empty($offsiteHasSecret['passphrase']))<label class="check"><input type="checkbox" name="clear_passphrase" value="1"><span>Matikan enkripsi salinan</span></label>@endif
+                </div>
                 <div class="form-foot"><button class="btn primary">Simpan</button></div>
             </form>
             @if($offsite['type'] !== 'off')

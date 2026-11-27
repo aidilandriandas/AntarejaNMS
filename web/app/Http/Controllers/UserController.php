@@ -17,6 +17,30 @@ class UserController extends Controller
             'limits' => DB::table('user_sites as us')->join('sites as s', 's.id', '=', 'us.site_id')->orderBy('s.code')->get(['us.user_id', 's.code'])->groupBy('user_id')]);
     }
 
+    /**
+     * Tinjauan hak akses (ISO/IEC 27001:2022 A.5.18): semua akun dengan peran, batas site, 2FA, sumber login, dan
+     * kapan terakhir dipakai. Diunduh berkala (mis. tiap triwulan), diperiksa pemilik sistem, lalu disimpan sebagai bukti.
+     */
+    public function review()
+    {
+        $limits = DB::table('user_sites as us')->join('sites as s', 's.id', '=', 'us.site_id')->orderBy('s.code')->get(['us.user_id', 's.code'])->groupBy('user_id');
+        $users = User::orderBy('username')->get();
+        Audit::log('exported', 'Tinjauan hak akses diunduh (' . $users->count() . ' akun)');
+
+        return response()->streamDownload(function () use ($users, $limits) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, ['username', 'nama', 'email', 'peran', 'site yang boleh dilihat', 'status', 'alasan nonaktif', '2fa', 'sumber login', 'dibuat', 'login terakhir', 'terakhir aktif', 'hari tidak aktif', 'catatan peninjau']);
+            foreach ($users as $u) {
+                $seen = $u->lastActive();
+                fputcsv($out, [$u->username, $u->name, $u->email, $u->roleLabel(), isset($limits[$u->id]) ? $limits[$u->id]->pluck('code')->implode(' ') : 'semua',
+                    $u->active ? 'aktif' : 'nonaktif', $u->disabled_reason, $u->totp_enabled_at ? 'ya' : 'tidak', $u->auth_source === 'ldap' ? 'LDAP' : 'lokal',
+                    $u->created_at?->format('Y-m-d'), $u->last_login_at?->format('Y-m-d H:i'), $seen?->format('Y-m-d H:i'), $seen ? (int) $seen->diffInDays(now()) : '', '']);
+            }
+            fclose($out);
+        }, 'tinjauan-hak-akses-' . now()->format('Ymd') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
     public function create()
     {
         return view('users.form', ['user' => new User(['role' => 'viewer', 'active' => true]), 'sites' => \App\Models\Site::orderBy('code')->get(), 'userSites' => []]);
@@ -55,6 +79,11 @@ class UserController extends Controller
             if ($user->getOriginal('role') === 'admin' && $user->getOriginal('active') && (! $user->active || $user->role !== 'admin')
                 && User::where('role', 'admin')->where('active', true)->whereKeyNot($user->id)->lockForUpdate()->doesntExist()) {
                 abort(422, 'Harus tersisa minimal satu admin aktif.');
+            }
+            // Diaktifkan lagi oleh admin: hitung sejak sekarang supaya tidak langsung dinonaktifkan lagi malam ini
+            if ($user->active && ! $user->getOriginal('active')) {
+                $user->disabled_reason = null;
+                $user->last_seen_at = now();
             }
             $changes = Audit::diff($user);
             $user->save();

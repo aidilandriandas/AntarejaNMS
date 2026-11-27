@@ -51,6 +51,8 @@ type secrets struct {
 	Password   string `json:"password"`
 	PrivateKey string `json:"private_key"`
 	SecretKey  string `json:"secret_key"`
+	// Frasa sandi enkripsi salinan (opsional). Tanpa frasa ini salinan tidak bisa dipulihkan.
+	Passphrase string `json:"passphrase"`
 }
 
 const maxTries = 6
@@ -64,6 +66,8 @@ type Runner struct {
 	Box *secret.Box
 	Log *slog.Logger
 	Dir string // folder backup yang di-mount ke collector (bawaan /backups)
+
+	pass string // frasa enkripsi dari rahasia tujuan, diisi load
 }
 
 func (r *Runner) load(ctx context.Context) (Config, Target, error) {
@@ -87,6 +91,7 @@ func (r *Runner) load(ctx context.Context) (Config, Target, error) {
 		}
 		_ = json.Unmarshal([]byte(plain), &sec)
 	}
+	r.pass = sec.Passphrase
 	switch c.Type {
 	case "sftp":
 		var hk string
@@ -192,6 +197,14 @@ func (r *Runner) copyOne(ctx context.Context, t Target, file string) error {
 			return fmt.Errorf("berkas backup tidak terbaca di %s: %w", r.dir(), err)
 		}
 		st, _ := f.Stat()
+		if r.pass != "" {
+			err = putEncrypted(ctx, t, name+EncSuffix, f, st.Size(), r.pass)
+			f.Close()
+			if err != nil {
+				return err
+			}
+			continue
+		}
 		h := md5.New()
 		if _, err := io.Copy(h, f); err != nil {
 			f.Close()
@@ -210,6 +223,27 @@ func (r *Runner) copyOne(ctx context.Context, t Target, file string) error {
 	return nil
 }
 
+// putEncrypted mengenkripsi berkas dua kali dengan parameter yang sama: pertama untuk MD5 (S3 Content-MD5),
+// kedua langsung dialirkan ke tujuan. Tidak ada salinan polos atau sementara di disk.
+func putEncrypted(ctx context.Context, t Target, name string, f *os.File, size int64, pass string) error {
+	p, err := NewParams()
+	if err != nil {
+		return err
+	}
+	h := md5.New()
+	if err := Encrypt(h, f, pass, p); err != nil {
+		return err
+	}
+	if _, err := f.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
+	pr, pw := io.Pipe()
+	go func() { pw.CloseWithError(Encrypt(pw, f, pass, p)) }()
+	err = t.Put(ctx, name, pr, EncryptedSize(size), base64.StdEncoding.EncodeToString(h.Sum(nil)))
+	pr.CloseWithError(io.ErrClosedPipe) // hentikan penulis bila Put berhenti lebih awal
+	return err
+}
+
 // prune menyimpan keep backup terbaru di tujuan (nama antareja-*.dump berurutan waktu), sisanya dihapus beserta manifest.
 func prune(ctx context.Context, t Target, keep int) error {
 	names, err := t.List(ctx)
@@ -218,7 +252,7 @@ func prune(ctx context.Context, t Target, keep int) error {
 	}
 	var dumps []string
 	for _, n := range names {
-		if strings.HasPrefix(n, "antareja-") && strings.HasSuffix(n, ".dump") {
+		if strings.HasPrefix(n, "antareja-") && (strings.HasSuffix(n, ".dump") || strings.HasSuffix(n, ".dump"+EncSuffix)) {
 			dumps = append(dumps, n)
 		}
 	}
@@ -230,7 +264,11 @@ func prune(ctx context.Context, t Target, keep int) error {
 		if err := t.Delete(ctx, n); err != nil {
 			return err
 		}
-		_ = t.Delete(ctx, strings.TrimSuffix(n, ".dump")+".json")
+		if base, ok := strings.CutSuffix(n, ".dump"+EncSuffix); ok {
+			_ = t.Delete(ctx, base+".json"+EncSuffix)
+		} else {
+			_ = t.Delete(ctx, strings.TrimSuffix(n, ".dump")+".json")
+		}
 	}
 	return nil
 }

@@ -22,6 +22,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'active' => 'boolean',
             'last_login_at' => 'datetime',
+            'last_seen_at' => 'datetime',
             'dashboard' => 'array',
             'totp_enabled_at' => 'datetime',
             'totp_recovery' => 'array',
@@ -55,5 +56,11 @@ class User extends Authenticatable
     public function roleLabel(): string
     {
         return self::ROLES[$this->role] ?? $this->role;
+    }
+
+    /** Terakhir benar-benar dipakai: login lewat form atau sesi "Ingat saya". */
+    public function lastActive(): ?\Illuminate\Support\Carbon
+    {
+        return collect([$this->last_login_at, $this->last_seen_at])->filter()->max();
     }
 }

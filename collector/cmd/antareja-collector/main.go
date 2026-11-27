@@ -81,10 +81,12 @@ func main() {
 		err = testHost(args)
 	case "health":
 		err = health()
+	case "decrypt-backup":
+		err = decryptBackup(args)
 	case "version", "-v", "--version":
 		fmt.Println("antareja-collector", version)
 	default:
-		err = fmt.Errorf("perintah tidak dikenal: %s (run | migrate | device add|list | test | health | version)", cmd)
+		err = fmt.Errorf("perintah tidak dikenal: %s (run | migrate | device add|list | test | health | decrypt-backup | version)", cmd)
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "galat:", err)
@@ -770,4 +772,45 @@ func firstLine(s string) string {
 		s = s[:120] + "…"
 	}
 	return s
+}
+
+// decryptBackup membuka salinan backup terenkripsi dari luar server: decrypt-backup <berkas.enc> <keluaran>.
+// Frasa sandi dari ANTAREJA_BACKUP_PASSPHRASE atau baris pertama stdin. Keluaran ditulis ke berkas sementara dan
+// baru diganti nama setelah seluruh isi terbukti utuh, jadi tidak pernah ada berkas setengah jadi yang bisa dipulihkan.
+func decryptBackup(args []string) error {
+	if len(args) != 2 {
+		return errors.New("pemakaian: decrypt-backup <berkas.enc> <keluaran>")
+	}
+	pass := os.Getenv("ANTAREJA_BACKUP_PASSPHRASE")
+	if pass == "" {
+		line, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+		pass = strings.TrimRight(line, "\r\n")
+	}
+	if pass == "" {
+		return errors.New("frasa sandi kosong")
+	}
+	in, err := os.Open(args[0])
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	tmp := args[1] + ".part"
+	out, err := os.OpenFile(tmp, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
+	if err != nil {
+		return err
+	}
+	if err := offsite.Decrypt(out, in, pass); err != nil {
+		out.Close()
+		os.Remove(tmp)
+		return err
+	}
+	if err := out.Close(); err != nil {
+		os.Remove(tmp)
+		return err
+	}
+	if err := os.Rename(tmp, args[1]); err != nil {
+		return err
+	}
+	fmt.Println("backup dibuka:", args[1])
+	return nil
 }

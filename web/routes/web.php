@@ -301,6 +301,7 @@ Route::middleware('auth')->group(function () {
         Route::post('peta/denah', [MapController::class, 'planStore'])->name('map.plan.store')->middleware('throttle:10,1');
         Route::delete('peta/denah/{plan}', [MapController::class, 'planDestroy'])->name('map.plan.destroy')->whereNumber('plan');
         Route::get('pengguna', [UserController::class, 'index'])->name('users.index');
+        Route::get('pengguna/tinjauan', [UserController::class, 'review'])->name('users.review')->middleware('throttle:10,1');
         Route::get('pengguna/tambah', [UserController::class, 'create'])->name('users.create');
         Route::post('pengguna', [UserController::class, 'store'])->name('users.store');
         Route::get('pengguna/{user}/ubah', [UserController::class, 'edit'])->name('users.edit');
@@ -309,8 +310,11 @@ Route::middleware('auth')->group(function () {
         Route::get('pengguna/kebijakan-login', [AuthSettingsController::class, 'index'])->name('auth.settings');
         Route::put('pengguna/kebijakan-login/2fa', [AuthSettingsController::class, 'policy'])->name('auth.settings.policy');
         Route::put('pengguna/kebijakan-login/ldap', [AuthSettingsController::class, 'ldap'])->name('auth.settings.ldap');
+        Route::put('pengguna/kebijakan-login/keamanan', [AuthSettingsController::class, 'securityUpdate'])->name('auth.settings.security');
         Route::post('pengguna/kebijakan-login/ldap/uji', [AuthSettingsController::class, 'ldapTest'])->name('auth.settings.ldap.test')->middleware('throttle:10,1');
         Route::get('audit', [AuditController::class, 'index'])->name('audit.index');
+        Route::get('audit/ekspor', [AuditController::class, 'export'])->name('audit.export')->middleware('throttle:10,1');
+        Route::post('audit/periksa', [AuditController::class, 'verify'])->name('audit.verify')->middleware('throttle:10,1');
 
         Route::get('notifikasi', [ChannelController::class, 'index'])->name('channels.index');
         Route::put('anomali/setelan', [AnomalyController::class, 'settings'])->name('anomalies.settings');
