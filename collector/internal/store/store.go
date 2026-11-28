@@ -291,7 +291,8 @@ func (s Store) SaveNeighbors(ctx context.Context, deviceID int64, rows []Neighbo
 		return err
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck
-	if _, err := tx.Exec(ctx, `DELETE FROM neighbors WHERE device_id = $1`, deviceID); err != nil {
+	// tetangga 'wifi' dikelola SaveWireless
+	if _, err := tx.Exec(ctx, `DELETE FROM neighbors WHERE device_id = $1 AND protocol <> 'wifi'`, deviceID); err != nil {
 		return err
 	}
 	for _, r := range rows {
@@ -549,7 +550,10 @@ func matchNeighbors(ctx context.Context, db execer, where, portWhere string, arg
 // RematchNeighbors mencocokkan ulang tetangga yang belum dikenal (mis. perangkatnya baru ditambahkan atau baru
 // terbaca sysName-nya) tanpa menunggu perangkat pelapor di-poll lagi. Murah: hanya baris tanpa remote_device_id.
 func (s Store) RematchNeighbors(ctx context.Context) error {
-	return matchNeighbors(ctx, s.DB, `n.remote_device_id IS NULL`, `n.remote_if_index IS NULL`)
+	if err := matchNeighbors(ctx, s.DB, `n.remote_device_id IS NULL`, `n.remote_if_index IS NULL`); err != nil {
+		return err
+	}
+	return syncWirelessRemote(ctx, s.DB, `w.remote_device_id IS NULL`)
 }
 
 // SaveInventory menyimpan versi, model, dan serial. Nilai kosong tidak menimpa nilai lama.

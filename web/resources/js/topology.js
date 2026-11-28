@@ -208,7 +208,10 @@ export function createTopology(el, opt) {
         } else if (util != null) {
             color = util >= 90 ? P.down : util >= 70 ? P.problem : P.accent;
             width = 2 + Math.min(5, util / 18);
-        } else if (inB != null || e.sources.includes('lldp') || e.sources.includes('cdp')) color = P.accent;
+        } else if (e.radio && e.radio.signal != null) {
+            // Link radio: warna dari sinyal terlemah kedua arah (ambang sama dengan sensor sinyal)
+            color = e.radio.signal <= -78 ? P.down : e.radio.signal <= -70 ? P.problem : P.accent;
+        } else if (inB != null || e.sources.includes('lldp') || e.sources.includes('cdp') || e.sources.includes('wifi')) color = P.accent;
         const ports = [e.label_a, e.label_b].filter(Boolean).join(' ke ');
         return {
             id: e.id, from: e.from, to: e.to,
@@ -217,12 +220,16 @@ export function createTopology(el, opt) {
             dashes: e.down ? [8, 5] : e.logical ? [5, 5] : e.external ? [2, 4] : false,
             label: opt.loadMode && util != null && !e.down && t(e).speed
                 ? `${pct(inB, t(e).speed)} / ${pct(outB, t(e).speed)}`
-                : opt.live && (inB != null || outB != null) && !e.down ? `masuk ${bps(inB)} keluar ${bps(outB)}bps` : undefined,
+                : opt.live && (inB != null || outB != null) && !e.down ? `masuk ${bps(inB)} keluar ${bps(outB)}bps`
+                    : e.radio && e.radio.signal != null && !e.down ? `${Math.round(e.radio.signal)} dBm` : undefined,
             font: { color: P.ink2, strokeColor: P.bg, background: undefined },
             title: [ports || (e.logical ? 'Hubungan induk (tanpa data port)' : 'Port tidak diketahui'),
-                `Sumber: ${e.sources.join(', ').replace('induk', 'perangkat induk')}`,
+                `Sumber: ${e.sources.join(', ').replace('induk', 'perangkat induk').replace('wifi', 'link radio')}`,
                 util != null ? `Pemakaian ${util.toFixed(1)}% dari ${bps(t(e).speed)}bps` : null,
-                inB != null ? `Masuk ${bps(inB)}bps, keluar ${bps(outB)}bps` : null, e.note, e.down ? 'Putus: salah satu ujung down atau port down' : null]
+                inB != null ? `Masuk ${bps(inB)}bps, keluar ${bps(outB)}bps` : null,
+                e.radio ? [`Radio ${e.radio.kind}`, e.radio.signal != null ? `sinyal terlemah ${Math.round(e.radio.signal)} dBm` : null,
+                    e.radio.ccq != null ? `CCQ ${Math.round(e.radio.ccq)}%` : null, e.radio.distance_km ? `${String(e.radio.distance_km).replace('.', ',')} km` : null]
+                    .filter(Boolean).join(', ') : null, e.note, e.down ? 'Putus: salah satu ujung down atau port down' : null]
                 .filter(Boolean).join('\n'),
         };
     };

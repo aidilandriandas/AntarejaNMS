@@ -110,6 +110,7 @@ class DeviceController extends Controller
             'problems' => $device->problems()->whereNull('resolved_at')->triage()->get(),
             'sensors' => $device->sensors()->get()->groupBy('grp'),
             'bgp' => RoutingController::bgp($device->id),
+            'radio' => \App\Support\Wireless::forDevice($device->id),
             'vlans' => \Illuminate\Support\Facades\DB::table('device_vlans')->where('device_id', $device->id)->orderBy('vlan_id')->pluck('vlan_id'),
             'ospf' => RoutingController::ospf($device->id),
             'configs' => \Illuminate\Support\Facades\DB::table('device_configs')->where('device_id', $device->id)->orderByDesc('taken_at')->limit(8)

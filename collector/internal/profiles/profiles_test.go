@@ -190,3 +190,28 @@ func TestJudgeOverride(t *testing.T) {
 		t.Fatalf("tegangan 11.2 V dengan ambang 11.5/10.8 = peringatan, dapat %s", r.Status)
 	}
 }
+
+func TestAirFiber(t *testing.T) {
+	q := fakeQ{afLinkState + ".1": 1.0, afRxPow0 + ".1": -55.0, afRxPow0Valid + ".1": 1.0, afRxPow1 + ".1": -90.0, afRxPow1Valid + ".1": 2.0,
+		afRmPow0 + ".1": -58.0, afRxCap + ".1": 701000000.0, afDistM + ".1": 5200.0}
+	ids := Detect(q, ".1.3.6.1.4.1.41112.1.3")
+	if !strings.Contains(strings.Join(ids, ","), "ubiquiti-airfiber") {
+		t.Fatal("airFiber harus terdeteksi", ids)
+	}
+	got := map[string]Reading{}
+	for _, r := range airfiber(q) {
+		got[r.Key] = r
+	}
+	if got["af:link:1"].Text != "tersambung" || got["af:rx0:1"].Value != -55 || got["af:rrx0:1"].Value != -58 || got["af:rxcap:1"].Value != 701 || got["af:dist:1"].Value != 5.2 {
+		t.Fatalf("pembacaan salah: %+v", got)
+	}
+	if _, ok := got["af:rx1:1"]; ok {
+		t.Fatal("rantai tidak sah dilewati")
+	}
+	q[afLinkState+".1"] = 0.0
+	for _, r := range airfiber(q) {
+		if r.Key == "af:link:1" && r.Status != "crit" {
+			t.Fatal("link putus = kritis")
+		}
+	}
+}

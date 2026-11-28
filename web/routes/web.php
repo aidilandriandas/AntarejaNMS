@@ -218,6 +218,7 @@ Route::middleware('auth')->group(function () {
     Route::get('flow/live', [FlowController::class, 'live'])->name('flow.live')->middleware('throttle:30,1');
     Route::get('versi', [VersionController::class, 'index'])->name('versions.index');
     Route::get('routing', [RoutingController::class, 'index'])->name('routing.index');
+    Route::get('link-radio', [\App\Http\Controllers\WirelessController::class, 'index'])->name('wireless.index');
     Route::get('vlan', [VlanController::class, 'index'])->name('vlans.index');
     Route::get('prediksi', [ForecastController::class, 'index'])->name('forecast.index');
     Route::get('runbook', [RunbookController::class, 'index'])->name('runbooks.index');

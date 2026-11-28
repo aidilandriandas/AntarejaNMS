@@ -59,10 +59,13 @@ type SNMPSample struct {
 	ARP     []snmp.ARPEntry `json:"arp,omitempty"`
 	FDB     []snmp.FDBEntry `json:"fdb,omitempty"` // tabel MAC switch
 
-	Routing *snmp.Routing   `json:"routing,omitempty"` // sesi BGP & tetangga OSPF (router)
-	L2      *snmp.L2        `json:"l2,omitempty"`      // VLAN, PVID, STP (switch)
-	Clock   *snmp.Clock     `json:"clock,omitempty"`   // selisih jam perangkat
-	Inv     *snmp.Inventory `json:"inv,omitempty"`     // versi & model, dibaca tiap 24 jam
+	Routing *snmp.Routing `json:"routing,omitempty"` // sesi BGP & tetangga OSPF (router)
+	L2      *snmp.L2      `json:"l2,omitempty"`      // VLAN, PVID, STP (switch)
+	// Link radio Ubiquiti (station airMAX/LTU, pasangan airFiber)
+	Wireless   []snmp.WirelessLink `json:"wireless,omitempty"`
+	WirelessOK bool                `json:"wireless_ok,omitempty"`
+	Clock      *snmp.Clock         `json:"clock,omitempty"` // selisih jam perangkat
+	Inv        *snmp.Inventory     `json:"inv,omitempty"`   // versi & model, dibaca tiap 24 jam
 }
 
 // Ambang selisih jam (detik, nilai mutlak). Log, sertifikat, dan korelasi kejadian kacau bila jam perangkat meleset.
@@ -177,8 +180,17 @@ func (p *Poller) MeasureSNMP(d store.Device, cr snmp.Credentials, credErr error,
 			s.L2 = &l2
 		}
 	}
+	// Radio Ubiquiti (airMAX, airFiber, LTU): siapa tersambung dan kualitas sinyalnya
+	if strings.HasPrefix(sys.ObjectID, ".1.3.6.1.4.1.41112") || strings.HasPrefix(sys.ObjectID, ".1.3.6.1.4.1.10002") || wirelessCategories[d.Category] {
+		if wl, err := p.SNMP.Wireless(d.Host, cr); err == nil {
+			s.Wireless, s.WirelessOK = wl, true
+		}
+	}
 	return s
 }
+
+// wirelessCategories: kategori yang tabel radio Ubiquiti-nya dibaca walau sysObjectID tidak dikenali.
+var wirelessCategories = map[string]bool{"wireless": true, "ptp": true}
 
 // storeProfiles: profil dari database (dideteksi ulang bila sysObjectID berubah atau tiap 24 jam).
 func (p *Poller) storeProfiles(ctx context.Context, d store.Device) ProfileFunc {
@@ -358,6 +370,24 @@ func (p *Poller) ApplySNMP(ctx context.Context, d store.Device, s SNMPSample) bo
 		}
 		for _, m := range evs {
 			_ = p.Store.Event(ctx, d.ID, "routing", m, nil, now)
+		}
+	}
+	if s.WirelessOK {
+		rows := make([]store.WirelessRow, 0, len(s.Wireless))
+		for _, w := range s.Wireless {
+			rows = append(rows, store.WirelessRow{Kind: w.Kind, MAC: w.MAC, Name: w.Name, IP: w.IP, Signal: w.Signal, RemoteSignal: w.RemoteSignal,
+				Noise: w.Noise, CCQ: w.CCQ, Quality: w.Quality, Cap: w.Cap, DistanceM: w.DistanceM, TxMbps: w.TxMbps, RxMbps: w.RxMbps,
+				UptimeS: w.UptimeS, Connected: w.Connected})
+		}
+		lost, back, err := p.Store.SaveWireless(ctx, d.ID, rows)
+		if err != nil {
+			p.Log.Warn("simpan link wireless gagal", "perangkat", d.ID, "galat", err)
+		}
+		for _, n := range lost {
+			_ = p.Store.Event(ctx, d.ID, "wireless", "Link radio terputus: "+n, nil, now)
+		}
+		for _, n := range back {
+			_ = p.Store.Event(ctx, d.ID, "wireless", "Link radio tersambung lagi: "+n, nil, now)
 		}
 	}
 	if s.L2 != nil && s.IfErr == "" { // setelah interface tersimpan, supaya PVID/STP menempel ke baris port

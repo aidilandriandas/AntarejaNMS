@@ -111,6 +111,16 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - Perbaikan: keterangan kamera di grid CCTV tidak lagi diawali koma untuk kamera tanpa site, dan nama perangkat tidak
   diulang bila sama dengan nama kamera (kamera hasil tambah massal).
 - Teks layar, pesan notifikasi, dan laporan tidak lagi memakai titik tengah, panah, tanda pisah, atau elipsis.
+- **Link radio Ubiquiti** (migrasi 0052 otomatis): collector membaca tabel station airMAX dan LTU serta status
+  airFiber lewat SNMP. Hasilnya ada di menu *Link radio* dan di halaman perangkat: kartu *Link radio* di AP, dan
+  *Tersambung lewat radio ke* di CPE. Lawan yang terdaftar dicocokkan lewat IP atau MAC lalu otomatis jadi garis
+  di Topologi, berwarna sesuai sinyal (di bawah -70 dBm kuning, di bawah -78 dBm merah) dengan label dBm. Lawan yang
+  belum terdaftar tampil sebagai kotak *baru*. Station yang lepas atau kembali dicatat di Kejadian.
+  - Profil sensor baru **Ubiquiti airFiber**: daya terima rantai 0 dan 1, daya terima sisi lawan, kapasitas kirim
+    dan terima, jarak, suhu radio, status link (putus = problem kritis). Semua perangkat SNMP dideteksi ulang sekali
+    setelah pembaruan supaya airFiber yang sudah terdaftar langsung terbaca.
+  - OID dari teks MIB Ubiquiti (UBNT-AirMAX-MIB, UBNT-AirFIBER-MIB, UBNT-AFLTU-MIB). Perlu dicek di perangkat
+    asli: satuan rate station airMAX (dianggap Kbps), jarak station (dianggap meter), dan lama tersambung.
 - **Cari kamera di halaman CCTV**: kolom cari menyaring kotak kamera saat mengetik (nama, site, perangkat, IP); Enter
   membuka live view bila tinggal satu. Halaman perangkat kamera punya tombol **Lihat CCTV** yang langsung membuka live
   view, dan daftar Perangkat menampilkan tombol *Lihat* di baris kamera. Sebelumnya klik dari hasil cari selalu ke

@@ -30,6 +30,7 @@ class DeviceEvent extends Model
         'firmware' => ['Versi berubah', 'info', 'rotate'],
         'routing' => ['Routing berubah', 'warn', 'share'],
         'stp' => ['STP berubah', 'warn', 'share'],
+        'wireless' => ['Link radio', 'warn', 'antenna'],
     ];
 
     protected function casts(): array

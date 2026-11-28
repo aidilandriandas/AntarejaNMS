@@ -64,6 +64,22 @@
         </section>
         @endif
 
+        @if($radio['own']->isNotEmpty())
+        <section class="card"><div class="hd"><h2>Link radio</h2><span class="sub">{{ $radio['own']->where('connected', true)->count() }} tersambung{{ $radio['own']->where('connected', false)->count() ? ', ' . $radio['own']->where('connected', false)->count() . ' terputus' : '' }}</span><a class="sub" href="{{ route('wireless.index') }}">Semua link radio</a></div>
+            <div class="bd flush">@include('wireless._table', ['links' => $radio['own'], 'showReporter' => false])</div></section>
+        @endif
+        @if($radio['peer']->isNotEmpty())
+        <section class="card"><div class="hd"><h2>Tersambung lewat radio ke</h2></div><div class="bd flush">
+            <div class="table-wrap"><table class="t"><thead><tr><th>Radio</th><th class="num">Sinyal</th><th class="num">CCQ</th><th class="num">Jarak</th><th>Tersambung</th></tr></thead><tbody>
+            @foreach($radio['peer'] as $w)
+                <tr><td class="name"><a href="{{ route('devices.show', $w->device_id) }}">{{ $w->dev_name }}</a><small>{{ \App\Support\Wireless::KINDS[$w->kind] ?? $w->kind }}</small></td>
+                    <td class="num">@if($w->signal_dbm !== null)<span class="badge {{ \App\Support\Wireless::tone((float) $w->signal_dbm) }} plain">{{ round((float) $w->signal_dbm) }} dBm</span>@endif</td>
+                    <td class="num">{{ $w->ccq_pct !== null ? round((float) $w->ccq_pct) . '%' : '' }}</td>
+                    <td class="num">{{ $w->distance_m ? number_format($w->distance_m / 1000, 1, ',', '.') . ' km' : '' }}</td>
+                    <td>{{ \App\Support\Wireless::uptime($w->uptime_s) ?? 'ya' }}</td></tr>
+            @endforeach
+            </tbody></table></div></div></section>
+        @endif
         @if($device->snmp_enabled)
         <section class="card" data-ports-card>
             <div class="hd"><h2>Port</h2><span class="sub">{{ $device->ports->count() }} port, klik nama port untuk grafik lengkap, baris untuk grafik ringkas, <b>Live</b> untuk trafik saat ini</span>

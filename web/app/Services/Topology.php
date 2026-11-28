@@ -150,6 +150,7 @@ class Topology
         }
 
         $state = $devices->pluck('status', 'id');
+        $radio = \App\Support\Wireless::edgeInfo();
         foreach ($edges as &$e) {
             // Sisi yang dipakai untuk membaca trafik: sisi ber-SNMP yang port-nya diketahui
             $side = null;
@@ -169,6 +170,7 @@ class Topology
             $e['down'] = ($state[$e['from']] ?? '') === 'down' || ($state[$e['to']] ?? '') === 'down'
                 || ($pa && $pa->oper_up === false) || ($pb && $pb->oper_up === false);
             $e['logical'] = $e['sources'] === ['induk'];
+            $e['radio'] = in_array('wifi', $e['sources'], true) ? ($radio[min($e['from'], $e['to']) . '-' . max($e['from'], $e['to'])] ?? null) : null;
             unset($e['pair']);
         }
         unset($e);
