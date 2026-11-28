@@ -102,3 +102,25 @@ func TestParseWirelessMikrotik(t *testing.T) {
 		t.Fatalf("MikroTik salah: %+v", l)
 	}
 }
+
+func TestParseWirelessRouterOS7(t *testing.T) {
+	idx := ".76.94.12.9.8.7.12" // 4c:5e:0c:09:08:07, interface wifi 12
+	rows := map[string]any{
+		oidMtxrWifiReg + ".3" + idx: []byte("PIT-A-5G"), oidMtxrWifiReg + ".4" + idx: uint32(360000),
+		oidMtxrWifiReg + ".6" + idx: -58, oidMtxrWifiReg + ".9" + idx: uint(866700000), oidMtxrWifiReg + ".10" + idx: uint(650000000),
+	}
+	got, err := parseWireless(fakeWalk(rows))
+	if err != nil || len(got) != 1 {
+		t.Fatal(len(got), err)
+	}
+	l := got[0]
+	if l.Kind != "mikrotik" || l.MAC != "4c:5e:0c:09:08:07" || *l.Signal != -58 || *l.TxMbps != 866.7 || *l.RxMbps != 650 || *l.UptimeS != 3600 {
+		t.Fatalf("RouterOS 7 salah: %+v", l)
+	}
+	// sinyal di luar rentang wajar (0 = tidak ada) diabaikan
+	rows[oidMtxrWifiReg+".6"+idx] = 0
+	got, _ = parseWireless(fakeWalk(rows))
+	if got[0].Signal != nil {
+		t.Fatal("sinyal 0 bukan pengukuran")
+	}
+}

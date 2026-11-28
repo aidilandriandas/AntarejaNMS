@@ -28,6 +28,10 @@ import (
 //   - MIKROTIK-MIB mtxrWlRtabTable .1.3.6.1.4.1.14988.1.1.1.2.1, INDEX { mtxrWlRtabAddr (MAC lawan), mtxrWlRtabIface }:
 //     3 Strength (dBm), 8 TxRate, 9 RxRate (bit/s), 11 Uptime (TimeTicks), 12 SignalToNoise (dB, 0 = tidak ada),
 //     20 RadioName. Tidak ada kolom IP lawan; IP dicari dari tabel ARP saat disimpan.
+//   - MIKROTIK-MIB mtxrWifiRegistrationTable (paket wifi RouterOS 7) .1.3.6.1.4.1.14988.1.1.21.4.1,
+//     INDEX { mtxrWifiRegistrationMacAddress, mtxrWifiRegistrationInterface }: 3 Ssid, 4 Uptime (TimeTicks),
+//     6 Signal, 9 TxRate, 10 RxRate. MIB tidak menulis satuan Signal dan TxRate/RxRate; dianggap dBm dan bit/s
+//     seperti tabel wireless lama (VERIFIKASI di perangkat asli). Tidak ada IP maupun nama lawan.
 //
 // VERIFIKASI di perangkat asli: satuan ubntStaTxRate/RxRate (dianggap Kbps seperti ubntWlStatTxRate),
 // ubntStaDistance (dianggap meter), dan ubntStaConnTime (SYNTAX TimeTicks, dibaca seperdua ratus detik).
@@ -36,6 +40,7 @@ const (
 	oidAirFiberStat = ".1.3.6.1.4.1.41112.1.3.2.1"
 	oidLTUSta       = ".1.3.6.1.4.1.41112.1.10.1.4.1"
 	oidMtxrRtab     = ".1.3.6.1.4.1.14988.1.1.1.2.1"
+	oidMtxrWifiReg  = ".1.3.6.1.4.1.14988.1.1.21.4.1"
 )
 
 // WirelessLink satu lawan bicara radio: station di AP airMAX/LTU, atau ujung lain link airFiber.
@@ -341,6 +346,43 @@ func parseWireless(walk func(base string, fn func(idx string, v gosnmp.SnmpPDU))
 	if err4 == nil {
 		okAny = true
 	}
+	// RouterOS 7 paket wifi: indeks sama (m1..m6.interface), kolom berbeda
+	err5 := walk(oidMtxrWifiReg, func(idx string, v gosnmp.SnmpPDU) {
+		parts := strings.Split(idx, ".")
+		if len(parts) != 8 {
+			return
+		}
+		mac, ok := macFromIdx(parts[1:7])
+		if !ok {
+			return
+		}
+		key := "w7/" + mac + "/" + parts[7]
+		l := mt[key]
+		if l == nil {
+			l = &WirelessLink{Kind: "mikrotik", MAC: mac, Connected: true}
+			mt[key] = l
+		}
+		switch parts[0] {
+		case "4":
+			t := int64(num(v) / 100)
+			l.UptimeS = &t
+		case "6":
+			if f := num(v); f < 0 && f > -120 {
+				l.Signal = fptr(f)
+			}
+		case "9":
+			if f := num(v); f > 0 {
+				l.TxMbps = fptr(f / 1e6)
+			}
+		case "10":
+			if f := num(v); f > 0 {
+				l.RxMbps = fptr(f / 1e6)
+			}
+		}
+	})
+	if err5 == nil {
+		okAny = true
+	}
 	mkeys := make([]string, 0, len(mt))
 	for k := range mt {
 		mkeys = append(mkeys, k)
@@ -360,7 +402,7 @@ func parseWireless(walk func(base string, fn func(idx string, v gosnmp.SnmpPDU))
 	}
 
 	if !okAny {
-		return nil, errors.Join(fmt.Errorf("tabel wireless tidak terbaca"), err1, err2, err3, err4)
+		return nil, errors.Join(fmt.Errorf("tabel wireless tidak terbaca"), err1, err2, err3, err4, err5)
 	}
 	return out, nil
 }

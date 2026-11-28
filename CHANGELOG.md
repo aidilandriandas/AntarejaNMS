@@ -120,7 +120,9 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - **Link radio MikroTik** (migrasi 0054 otomatis): registration table wireless MikroTik (MIKROTIK-MIB
   mtxrWlRtabTable) dibaca seperti Ubiquiti: sinyal, noise floor (dari SNR), rate, lama tersambung, nama radio.
   Tabel ini tidak memuat IP lawan, jadi IP dicari dari tabel ARP router yang dipantau, lalu dicocokkan ke perangkat
-  dan jadi garis topologi. Tabel *wifi* RouterOS 7 (wifiwave2) belum dibaca.
+  dan jadi garis topologi. Paket *wifi* RouterOS 7 (wifiwave2) ikut dibaca dari mtxrWifiRegistrationTable: sinyal,
+  rate, lama tersambung. Satuan sinyal dan rate di tabel RouterOS 7 tidak ditulis di MIB (dianggap dBm dan bit/s),
+  perlu dicek di perangkat asli.
 - Perbaikan: putaran SNMP melewati perangkat yang sedang down menurut ping. Sebelumnya ratusan perangkat yang tidak
   terjangkau (mis. satu site padam) menghabiskan waktu putaran dengan timeout, dan hasil baca perangkat yang sehat
   ikut gagal disimpan. Hasil yang sudah terbaca kini disimpan dengan batas waktu sendiri.
