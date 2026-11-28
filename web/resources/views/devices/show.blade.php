@@ -6,13 +6,17 @@
     <div><h1>{{ $device->name }} <x-status :device="$device"/></h1>
         @if($device->collector)<p class="muted">Dipantau dari collector site @can('admin')<a href="{{ route('collectors.show', $device->collector) }}">{{ $device->collector->name }}</a>@else{{ $device->collector->name }}@endcan @if($device->collector->state() !== 'online'), <span class="txt-warn">collector {{ $device->collector->stateLabel() }}{{ $device->collector->last_seen_at ? ' sejak ' . $device->collector->last_seen_at->format('d/m H.i') : '' }}: status di bawah adalah hasil terakhir yang diterima</span>@endif</p>@endif
         <div class="meta" style="margin-top:6px"><span class="mono">{{ $device->host }}</span><span>{{ $device->categoryLabel() }}</span>@if($device->status === 'down' && $device->status_reason)<span style="color:var(--color-crit);white-space:normal">{{ $device->status_reason }}</span>@endif</div></div>
-    @can('manage-devices')
+    @if($cams->isNotEmpty() || auth()->user()->can('manage-devices'))
         <div class="actions">
+            @if($cams->count() === 1)<a class="btn primary" href="{{ route('cctv.index', ['kamera' => $cams->first()->id]) }}"><x-icon name="camera"/>Lihat CCTV</a>
+            @elseif($cams->count() > 1)<a class="btn primary" href="{{ route('cctv.index', ['q' => $device->host]) }}"><x-icon name="camera"/>Lihat CCTV ({{ $cams->count() }} kamera)</a>@endif
+            @can('manage-devices')
             <form method="post" action="{{ route('devices.poll', $device) }}">@csrf<button class="btn"><x-icon name="refresh"/>Periksa sekarang</button></form>
             @if($device->snmp_enabled)<a class="btn" href="{{ route('devices.diagnose', $device) }}" title="Berkas JSON hasil baca SNMP (tanpa kredensial) untuk membuat profil perangkat yang belum dikenal. Butuh sampai 1 menit."><x-icon name="download"/>Diagnosa SNMP</a>@endif
             <a class="btn" href="{{ route('devices.edit', $device) }}"><x-icon name="edit"/>Ubah</a>
+            @endcan
         </div>
-    @endcan
+    @endif
 </div>
 
 <div class="kpis">

@@ -25,7 +25,8 @@ class CctvController extends Controller
             $go2rtc->ensure($c, 'sub'); // thumbnail dari sub-stream (ringan)
         }
 
-        return view('cctv.index', ['cams' => $cams, 'sites' => Site::orderBy('code')->get(),
+        return view('cctv.index', ['cams' => $cams, 'sites' => Site::orderBy('code')->get(), 'q' => mb_substr((string) $request->query('q', ''), 0, 100),
+            'openCam' => $cams->firstWhere('id', $request->integer('kamera'))?->id,
             'disabled' => Camera::where('enabled', false)->count()]);
     }
 

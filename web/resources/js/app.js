@@ -496,7 +496,7 @@ if (cctv) {
         // Snapshot tiap 10 detik (gambar dari sub-stream lewat /live/frame.jpeg)
         const refresh = () => {
             if (document.hidden) return;
-            $$('img[data-snap]', cctv).forEach((img) => {
+            $$('img[data-snap]', cctv).filter((img) => !img.closest('.cam').hidden).forEach((img) => {
                 const next = new Image();
                 next.onload = () => { img.src = next.src; img.closest('.cam').classList.remove('nosignal'); };
                 next.onerror = () => img.closest('.cam').classList.add('nosignal');
@@ -529,6 +529,44 @@ if (cctv) {
         $('[data-cam-close]', modal).addEventListener('click', close);
         modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) close(); });
+
+        // Cari kamera: saring kotak langsung saat mengetik (nama, site, perangkat, IP); Enter membuka bila tinggal satu
+        const tiles = $$('[data-cam]', cctv);
+        const filter = $('[data-cam-filter]');
+        const count = $('[data-cam-count]');
+        const none = $('[data-cam-none]');
+        const shown = () => tiles.filter((el) => !el.hidden);
+        const apply = (load) => {
+            const words = filter.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+            tiles.forEach((el) => { el.hidden = !words.every((w) => el.dataset.camText.includes(w)); });
+            const n = shown().length;
+            count.hidden = !words.length;
+            count.textContent = `${n} dari ${tiles.length} kamera cocok${n === 1 ? ', tekan Enter untuk membuka' : ''}`;
+            none.hidden = n > 0;
+            const u = new URL(location.href);
+            if (words.length) u.searchParams.set('q', filter.value.trim()); else u.searchParams.delete('q');
+            u.searchParams.delete('kamera');
+            history.replaceState(null, '', u);
+            if (load) refresh();
+        };
+        if (filter) {
+            let t = null;
+            filter.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => apply(true), 120); });
+            filter.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter') return;
+                e.preventDefault();
+                const s = shown();
+                if (s.length === 1) open(s[0].dataset.cam, s[0].dataset.camName, 'sub');
+            });
+            if (filter.value.trim()) apply(false);
+            if (!cctv.dataset.open) filter.focus();
+        }
+        // Dibuka dari halaman perangkat (?kamera=id): langsung live view
+        const want = cctv.dataset.open && tiles.find((el) => el.dataset.cam === cctv.dataset.open);
+        if (want) {
+            want.scrollIntoView({ block: 'center' });
+            open(want.dataset.cam, want.dataset.camName, 'sub');
+        }
     });
 }
 

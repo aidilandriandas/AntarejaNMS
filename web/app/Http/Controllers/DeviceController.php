@@ -32,8 +32,14 @@ class DeviceController extends Controller
         // Bermasalah di atas: down, menunggu, lalu online; nonaktif paling bawah
         $q->orderByRaw("enabled desc, case status when 'down' then 0 when 'unknown' then 1 else 2 end, name");
 
+        $devices = $q->paginate(100)->withQueryString();
+
         return view('devices.index', [
-            'devices' => $q->paginate(100)->withQueryString(),
+            'devices' => $devices,
+            // Kamera CCTV per perangkat di halaman ini: ikon live view di samping nama
+            'camOf' => \App\Support\SiteScope::current() === null
+                ? \App\Models\Camera::where('enabled', true)->whereIn('device_id', $devices->pluck('id'))->orderBy('sort')->get(['id', 'device_id'])->unique('device_id')->pluck('id', 'device_id')
+                : collect(),
             'sites' => Site::orderBy('code')->get(),
             'parents' => $request->user()->can('manage-devices') ? Device::orderBy('name')->get(['id', 'name', 'host']) : collect(),
             'collectors' => \App\Models\SiteCollector::orderBy('name')->get(['id', 'name']),
@@ -91,6 +97,10 @@ class DeviceController extends Controller
                 WHERE i.device_id = ? AND i.mac IS NOT NULL AND ml.device_id <> ? AND ml.last_seen > now() - interval '1 day'
             SQL . \App\Support\SiteScope::sqlIn('sw.site_id') . ' ORDER BY ml.device_id, ml.if_index, ml.first_seen', [$device->id, $device->id]),
             'checks' => \App\Models\ServiceCheck::where('device_id', $device->id)->orderBy('name')->get(),
+            // Kamera yang tertaut ke perangkat ini (atau berhost sama): tombol Lihat CCTV langsung ke live view
+            'cams' => \App\Support\SiteScope::current() === null
+                ? \App\Models\Camera::where('enabled', true)->where(fn ($q) => $q->where('device_id', $device->id)->orWhere('host', $device->host))->orderBy('sort')->orderBy('name')->get(['id', 'name'])
+                : collect(),
             'runbooks' => \App\Models\Runbook::where('enabled', true)->with('site', 'device')->get()->filter(fn ($r) => $r->matches($device, null))
                 ->sortByDesc(fn ($r) => $r->score())->values(),
             'traffic' => $traffic,

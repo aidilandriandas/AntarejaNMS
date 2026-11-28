@@ -111,6 +111,10 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - Perbaikan: keterangan kamera di grid CCTV tidak lagi diawali koma untuk kamera tanpa site, dan nama perangkat tidak
   diulang bila sama dengan nama kamera (kamera hasil tambah massal).
 - Teks layar, pesan notifikasi, dan laporan tidak lagi memakai titik tengah, panah, tanda pisah, atau elipsis.
+- **Cari kamera di halaman CCTV**: kolom cari menyaring kotak kamera saat mengetik (nama, site, perangkat, IP); Enter
+  membuka live view bila tinggal satu. Halaman perangkat kamera punya tombol **Lihat CCTV** yang langsung membuka live
+  view, dan daftar Perangkat menampilkan tombol *Lihat* di baris kamera. Sebelumnya klik dari hasil cari selalu ke
+  halaman perangkat (ping dan grafik), bukan ke gambar kamera.
 - **Kontrol ISO/IEC 27001:2022** (pemetaan lengkap di `docs/ISO27001.md`). Migrasi 0050 dan 0051 otomatis.
   - Log audit tahan ubah: hash SHA-256 berantai per baris; database menolak ubah dan hapus kecuali pemangkasan
     sesuai batas simpan. Halaman *Jejak audit* punya saringan (pengguna, aksi, tanggal, teks), *Ekspor CSV* beserta

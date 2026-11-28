@@ -70,7 +70,7 @@
         @forelse($devices as $d)
             <tr class="{{ ! $d->enabled ? 'is-off' : ($d->status === 'down' ? 'is-down' : '') }}">
                 @if($bulk)<td class="pick"><input type="checkbox" name="ids[]" value="{{ $d->id }}" form="massal" aria-label="Pilih {{ $d->name }}"></td>@endif
-                <td class="name"><a href="{{ route('devices.show', $d) }}">{{ $d->name }}</a><small class="mono">{{ $d->host }}@if($d->sys_name && $d->sys_name !== $d->name), {{ $d->sys_name }}@endif</small></td>
+                <td class="name"><a href="{{ route('devices.show', $d) }}">{{ $d->name }}</a>@if(isset($camOf[$d->id]))<a class="btn sm" style="margin-left:8px;vertical-align:middle" href="{{ route('cctv.index', ['kamera' => $camOf[$d->id]]) }}" title="Buka live view kamera ini" aria-label="Lihat CCTV {{ $d->name }}"><x-icon name="camera"/>Lihat</a>@endif<small class="mono">{{ $d->host }}@if($d->sys_name && $d->sys_name !== $d->name), {{ $d->sys_name }}@endif</small></td>
                 <td><x-status :device="$d"/>@if($d->status === 'down' && $d->status_changed_at)<div class="muted" style="font-size:12px;margin-top:2px">{{ $d->status_changed_at->diffForHumans(short: true) }}</div>@endif</td>
                 <td>{{ $d->site?->code ?? 'tidak ada' }}</td>
                 <td><span class="nowrap"><x-icon :name="\App\Models\Device::CATEGORY_ICONS[$d->category] ?? 'box'" class="i muted"/> {{ $d->categoryLabel() }}</span></td>

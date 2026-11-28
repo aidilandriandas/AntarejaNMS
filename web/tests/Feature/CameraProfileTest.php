@@ -31,6 +31,17 @@ class CameraProfileTest extends TestCase
         $this->assertCount(2, $cams);
         $this->assertSame(['10.17.34.135', (int) $site, (int) $pid, null], [$cams[0]->host, (int) $cams[0]->site_id, (int) $cams[0]->profile_id, $cams[0]->password_enc]);
         $this->assertSame('rtsp://viewer:Rahasia%231@10.17.34.135:554/Streaming/Channels/102', $cams[0]->rtspUrl('sub'));
+        // cari & buka kamera: halaman perangkat dan daftar perangkat menautkan ke live view; viewer juga bisa
+        $camA = Camera::where('device_id', $a)->value('id');
+        $this->flushSession();
+        $viewer = $this->user('viewer');
+        $this->actingAs($viewer)->get("/perangkat/{$a}")->assertOk()->assertSee('Lihat CCTV')->assertSee("/cctv?kamera={$camA}", false);
+        $this->actingAs($viewer)->get('/perangkat?q=ANGGREK')->assertOk()->assertSee("/cctv?kamera={$camA}", false);
+        $this->actingAs($viewer)->get("/cctv?kamera={$camA}&q=anggrek")->assertOk()->assertSee('data-open="' . $camA . '"', false)
+            ->assertSee('data-cam-text="cctv - mess anggrek 04', false)->assertSee('value="anggrek"', false);
+        $this->actingAs($viewer)->get('/perangkat/' . DB::table('devices')->where('name', 'Switch mess')->value('id'))->assertOk()->assertDontSee('Lihat CCTV');
+        $this->flushSession();
+
         // sudah ada: dilewati; daftar kandidat kosong
         $this->actingAs($eng)->post('/cctv/kamera-massal', ['devices' => [$a], 'profile_id' => $pid, 'channel' => 1])->assertSessionHas('ok', fn ($m) => str_contains($m, '1 dilewati'));
         $this->actingAs($eng)->get('/cctv/kelola')->assertSee('Semua perangkat berkategori Kamera CCTV sudah ada');
