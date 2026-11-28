@@ -25,6 +25,9 @@ import (
 //     1 TxRate, 2 RxRate (kelipatan modulasi "x", tidak dipakai), 3 TxCapacity, 4 RxCapacity (Kbps),
 //     5 RxPower0, 6 RxPower1 (dBm), 13 RemoteDevName, 16 RemoteRxPower0, 17 RemoteRxPower1 (dBm),
 //     23 RemoteDistance (km), 25 RemoteLastIp.
+//   - MIKROTIK-MIB mtxrWlRtabTable .1.3.6.1.4.1.14988.1.1.1.2.1, INDEX { mtxrWlRtabAddr (MAC lawan), mtxrWlRtabIface }:
+//     3 Strength (dBm), 8 TxRate, 9 RxRate (bit/s), 11 Uptime (TimeTicks), 12 SignalToNoise (dB, 0 = tidak ada),
+//     20 RadioName. Tidak ada kolom IP lawan; IP dicari dari tabel ARP saat disimpan.
 //
 // VERIFIKASI di perangkat asli: satuan ubntStaTxRate/RxRate (dianggap Kbps seperti ubntWlStatTxRate),
 // ubntStaDistance (dianggap meter), dan ubntStaConnTime (SYNTAX TimeTicks, dibaca seperdua ratus detik).
@@ -32,11 +35,12 @@ const (
 	oidUbntSta      = ".1.3.6.1.4.1.41112.1.4.7.1"
 	oidAirFiberStat = ".1.3.6.1.4.1.41112.1.3.2.1"
 	oidLTUSta       = ".1.3.6.1.4.1.41112.1.10.1.4.1"
+	oidMtxrRtab     = ".1.3.6.1.4.1.14988.1.1.1.2.1"
 )
 
 // WirelessLink satu lawan bicara radio: station di AP airMAX/LTU, atau ujung lain link airFiber.
 type WirelessLink struct {
-	Kind           string // airmax | airfiber | ltu
+	Kind           string // airmax | airfiber | ltu | mikrotik
 	MAC            string // aa:bb:cc:dd:ee:ff
 	Name, IP       string
 	Signal         *float64 // dBm, diterima radio ini dari lawan
@@ -86,13 +90,23 @@ func best(vals ...*float64) *float64 {
 
 // Wireless membaca tabel station airMAX, status airFiber, dan station LTU. Tabel yang tidak ada di perangkat
 // dilewati; galat hanya bila tidak satu pun tabel bisa dibaca (supaya daftar lama tidak terhapus karena timeout).
-func (c Client) Wireless(host string, cr Credentials) ([]WirelessLink, error) {
+func (c Client) Wireless(host string, cr Credentials, sysObjectID string) ([]WirelessLink, error) {
 	g, err := c.connect(host, cr)
 	if err != nil {
 		return nil, err
 	}
 	defer g.Conn.Close()
-	return parseWireless(walker(g))
+	w := walker(g)
+	// Hanya tabel milik vendor perangkat (sysObjectID); tidak dikenal = coba semua
+	ubnt := strings.HasPrefix(sysObjectID, ".1.3.6.1.4.1.41112") || strings.HasPrefix(sysObjectID, ".1.3.6.1.4.1.10002")
+	mtik := strings.HasPrefix(sysObjectID, ".1.3.6.1.4.1.14988")
+	return parseWireless(func(base string, fn func(idx string, v gosnmp.SnmpPDU)) error {
+		isMT := strings.HasPrefix(base, ".1.3.6.1.4.1.14988")
+		if (ubnt && isMT) || (mtik && !isMT) {
+			return nil
+		}
+		return w(base, fn)
+	})
 }
 
 // parseWireless mengurai tabel lewat fungsi walk (dipisah supaya bisa diuji tanpa perangkat).
@@ -282,8 +296,71 @@ func parseWireless(walk func(base string, fn func(idx string, v gosnmp.SnmpPDU))
 		out = append(out, *ltu[m])
 	}
 
+	// MikroTik: indeks = m1..m6.ifIndex (MAC lawan lalu interface wireless lokal)
+	mt := map[string]*WirelessLink{}
+	var snr = map[string]float64{}
+	err4 := walk(oidMtxrRtab, func(idx string, v gosnmp.SnmpPDU) {
+		parts := strings.Split(idx, ".")
+		if len(parts) != 8 {
+			return
+		}
+		mac, ok := macFromIdx(parts[1:7])
+		if !ok {
+			return
+		}
+		key := mac + "/" + parts[7]
+		l := mt[key]
+		if l == nil {
+			l = &WirelessLink{Kind: "mikrotik", MAC: mac, Connected: true}
+			mt[key] = l
+		}
+		switch parts[0] {
+		case "3":
+			if f := num(v); f != 0 {
+				l.Signal = fptr(f)
+			}
+		case "8":
+			if f := num(v); f > 0 {
+				l.TxMbps = fptr(f / 1e6)
+			}
+		case "9":
+			if f := num(v); f > 0 {
+				l.RxMbps = fptr(f / 1e6)
+			}
+		case "11":
+			t := int64(num(v) / 100)
+			l.UptimeS = &t
+		case "12":
+			if f := num(v); f != 0 {
+				snr[key] = f
+			}
+		case "20":
+			l.Name = text(v.Value)
+		}
+	})
+	if err4 == nil {
+		okAny = true
+	}
+	mkeys := make([]string, 0, len(mt))
+	for k := range mt {
+		mkeys = append(mkeys, k)
+	}
+	sort.Strings(mkeys)
+	seenMT := map[string]bool{}
+	for _, k := range mkeys {
+		l := mt[k]
+		if s, ok := snr[k]; ok && l.Signal != nil {
+			l.Noise = fptr(*l.Signal - s) // noise floor = sinyal - SNR
+		}
+		if seenMT[l.MAC] { // MAC sama di dua interface: simpan sekali
+			continue
+		}
+		seenMT[l.MAC] = true
+		out = append(out, *l)
+	}
+
 	if !okAny {
-		return nil, errors.Join(fmt.Errorf("tabel wireless tidak terbaca"), err1, err2, err3)
+		return nil, errors.Join(fmt.Errorf("tabel wireless tidak terbaca"), err1, err2, err3, err4)
 	}
 	return out, nil
 }

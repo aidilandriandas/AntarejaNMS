@@ -85,3 +85,20 @@ func TestParseWirelessPTMP(t *testing.T) {
 		seen[l.MAC] = true
 	}
 }
+
+func TestParseWirelessMikrotik(t *testing.T) {
+	idx := ".76.94.12.1.2.3.5" // 4c:5e:0c:01:02:03, wlan ifIndex 5
+	rows := map[string]any{
+		oidMtxrRtab + ".3" + idx: -67, oidMtxrRtab + ".8" + idx: uint(130000000), oidMtxrRtab + ".9" + idx: uint(117000000),
+		oidMtxrRtab + ".11" + idx: uint32(720000), oidMtxrRtab + ".12" + idx: 38, oidMtxrRtab + ".20" + idx: []byte("STATION-MT18"),
+	}
+	got, err := parseWireless(fakeWalk(rows))
+	if err != nil || len(got) != 1 {
+		t.Fatal(len(got), err)
+	}
+	l := got[0]
+	if l.Kind != "mikrotik" || l.MAC != "4c:5e:0c:01:02:03" || l.Name != "STATION-MT18" || *l.Signal != -67 || *l.Noise != -105 ||
+		*l.TxMbps != 130 || *l.RxMbps != 117 || *l.UptimeS != 7200 || l.IP != "" {
+		t.Fatalf("MikroTik salah: %+v", l)
+	}
+}

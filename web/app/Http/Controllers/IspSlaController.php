@@ -49,7 +49,7 @@ class IspSlaController extends Controller
     public function index(Request $request, IspSla $sla)
     {
         [$s, $e, $p, $label] = self::period($request);
-        $links = IspLink::with('device.site')->orderBy('name')->get();
+        $links = IspLink::with('device.site', 'pingDevice')->orderBy('name')->get();
         $rows = $links->map(fn ($l) => ['link' => $l, 'r' => $sla->report($l, $s, $e)]);
 
         return view('isp.index', ['rows' => $rows, 'periode' => $p, 'label' => $label, 'start' => $s, 'end' => $e]);
@@ -58,7 +58,7 @@ class IspSlaController extends Controller
     public function show(Request $request, IspLink $isp, IspSla $sla)
     {
         [$s, $e, $p, $label] = self::period($request);
-        $isp->load('device.site');
+        $isp->load('device.site', 'pingDevice');
 
         return view('isp.show', ['link' => $isp, 'r' => $sla->report($isp, $s, $e), 'periode' => $p, 'label' => $label, 'start' => $s, 'end' => $e]);
     }
@@ -78,6 +78,15 @@ class IspSlaController extends Controller
             foreach ($r['days'] as $d) {
                 fputcsv($out, [$d['date'], $n($d['availability']), $n($d['downtime_s'] / 60, 0), $n($d['latency']), $n($d['jitter']), $n($d['loss'])], ';');
             }
+            if ($t = $r['traffic']) {
+                fputcsv($out, [], ';');
+                fputcsv($out, ['Trafik (Mbps)', 'Rata-rata', 'Puncak', 'Persentil 95', 'Pemakaian p95 (%)'], ';');
+                foreach (['in' => 'Masuk (unduh)', 'out' => 'Keluar (unggah)'] as $k => $lbl) {
+                    if ($t[$k]) {
+                        fputcsv($out, [$lbl, $n($t[$k]['avg']), $n($t[$k]['max']), $n($t[$k]['p95']), $n($t[$k]['util_p95'], 1)], ';');
+                    }
+                }
+            }
             fputcsv($out, [], ';');
             fputcsv($out, ['No', 'Mulai', 'Pulih', 'Durasi (menit)', 'Severity', 'Penyebab'], ';');
             foreach ($r['incidents'] as $i => $x) {
@@ -94,7 +103,7 @@ class IspSlaController extends Controller
         $links = IspLink::with('device')->orderBy('name')->get();
 
         return view('isp.manage', ['links' => $links, 'edit' => $request->integer('ubah') ? $links->firstWhere('id', $request->integer('ubah')) : null,
-            'devices' => Device::where('ping_enabled', true)->orderBy('name')->get(['id', 'name', 'host'])]);
+            'devices' => Device::orderBy('name')->get(['id', 'name', 'host', 'ping_enabled', 'snmp_enabled'])]);
     }
 
     public function store(Request $request)
@@ -128,7 +137,10 @@ class IspSlaController extends Controller
         $d = $r->validate([
             'name' => ['required', 'string', 'max:80', Rule::unique('isp_links', 'name')->ignore($l)],
             'provider' => ['nullable', 'string', 'max:80'],
-            'device_id' => ['required', 'integer', 'exists:devices,id', Rule::unique('isp_links', 'device_id')->ignore($l)],
+            'device_id' => ['required', 'integer', 'exists:devices,id'],
+            'if_index' => ['nullable', 'integer', 'min:0'],
+            'ping_device_id' => ['nullable', 'integer', 'exists:devices,id'],
+            'bandwidth_mbps' => ['nullable', 'numeric', 'gt:0', 'max:1000000'],
             'target_pct' => ['required', 'numeric', 'between:50,100'],
             'warn_pct' => ['required', 'numeric', 'between:50,100', 'lte:target_pct'],
             'loss_down_pct' => ['required', 'numeric', 'between:1,100'],
@@ -136,8 +148,20 @@ class IspSlaController extends Controller
             'jitter_target_ms' => ['required', 'numeric', 'between:0.1,100000'],
             'loss_target_pct' => ['required', 'numeric', 'between:0,100'],
             'notes' => ['nullable', 'string', 'max:500'],
-        ], ['device_id.unique' => 'Perangkat ini sudah dipakai link lain.', 'warn_pct.lte' => 'Batas peringatan harus di bawah atau sama dengan target.']);
+        ], ['warn_pct.lte' => 'Batas peringatan harus di bawah atau sama dengan target.']);
         $d['exclude_maintenance'] = $r->boolean('exclude_maintenance');
+        $d['if_index'] = $d['if_index'] ?? null;
+        if ($d['if_index'] !== null && ! \Illuminate\Support\Facades\DB::table('interfaces')->where('device_id', $d['device_id'])->where('if_index', $d['if_index'])->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['if_index' => 'Port tidak ada di router ini. Pastikan SNMP router aktif dan port sudah terbaca.']);
+        }
+        if ($d['if_index'] === null) {
+            $d['ping_device_id'] = null; // link lama: ping perangkatnya sendiri
+        }
+        $dup = IspLink::where('device_id', $d['device_id'])->where(fn ($q) => $d['if_index'] === null ? $q->whereNull('if_index') : $q->where('if_index', $d['if_index']))
+            ->when($l, fn ($q) => $q->whereKeyNot($l->id))->exists();
+        if ($dup) {
+            throw \Illuminate\Validation\ValidationException::withMessages([$d['if_index'] === null ? 'device_id' : 'if_index' => 'Router dan port ini sudah dipakai link lain.']);
+        }
 
         return $d;
     }

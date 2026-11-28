@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 /** Link radio Ubiquiti (airMAX, airFiber, LTU) hasil baca collector: siapa tersambung ke siapa dan kualitasnya. */
 class Wireless
 {
-    public const KINDS = ['airmax' => 'airMAX', 'airfiber' => 'airFiber', 'ltu' => 'LTU'];
+    public const KINDS = ['airmax' => 'airMAX', 'airfiber' => 'airFiber', 'ltu' => 'LTU', 'mikrotik' => 'MikroTik'];
 
     /** Ambang sinyal bawaan (dBm), sama dengan sensor sinyal radio: di bawah -70 peringatan, di bawah -78 kritis. */
     public const SIGNAL_WARN = -70;

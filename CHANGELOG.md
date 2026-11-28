@@ -111,6 +111,19 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - Perbaikan: keterangan kamera di grid CCTV tidak lagi diawali koma untuk kamera tanpa site, dan nama perangkat tidak
   diulang bila sama dengan nama kamera (kamera hasil tambah massal).
 - Teks layar, pesan notifikasi, dan laporan tidak lagi memakai titik tengah, panah, tanda pisah, atau elipsis.
+- **SLA link ISP berbasis port** (migrasi 0053 otomatis): link ISP sekarang dipilih sebagai router dan port yang
+  mengarah ke ISP; satu router boleh punya beberapa port ISP. Ketersediaan dari status port (port down = gangguan
+  "Port ke ISP down"), trafik masuk/keluar port per langkah (rata-rata, puncak, persentil 95) dan pemakaian
+  dibanding bandwidth kontrak (atau kecepatan port), latensi/jitter/loss dari ping ke perangkat di ujung ISP bila
+  dipilih (ping gagal juga gangguan). Grafik trafik dengan garis bandwidth kontrak, kolom trafik di daftar, dan baris
+  trafik di CSV. Link lama tanpa port tetap dihitung dari ping seperti sebelumnya sampai portnya dipilih.
+- **Link radio MikroTik** (migrasi 0054 otomatis): registration table wireless MikroTik (MIKROTIK-MIB
+  mtxrWlRtabTable) dibaca seperti Ubiquiti: sinyal, noise floor (dari SNR), rate, lama tersambung, nama radio.
+  Tabel ini tidak memuat IP lawan, jadi IP dicari dari tabel ARP router yang dipantau, lalu dicocokkan ke perangkat
+  dan jadi garis topologi. Tabel *wifi* RouterOS 7 (wifiwave2) belum dibaca.
+- Perbaikan: putaran SNMP melewati perangkat yang sedang down menurut ping. Sebelumnya ratusan perangkat yang tidak
+  terjangkau (mis. satu site padam) menghabiskan waktu putaran dengan timeout, dan hasil baca perangkat yang sehat
+  ikut gagal disimpan. Hasil yang sudah terbaca kini disimpan dengan batas waktu sendiri.
 - **Link radio Ubiquiti** (migrasi 0052 otomatis): collector membaca tabel station airMAX dan LTU serta status
   airFiber lewat SNMP. Hasilnya ada di menu *Link radio* dan di halaman perangkat: kartu *Link radio* di AP, dan
   *Tersambung lewat radio ke* di CPE. Lawan yang terdaftar dicocokkan lewat IP atau MAC lalu otomatis jadi garis

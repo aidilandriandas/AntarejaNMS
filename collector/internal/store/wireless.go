@@ -49,9 +49,14 @@ func (s Store) SaveWireless(ctx context.Context, deviceID int64, rows []Wireless
 	rs.Close()
 
 	seen := make([]string, 0, len(rows))
-	for _, r := range rows {
+	for i := range rows {
+		r := &rows[i]
 		if r.MAC == "" {
 			continue
+		}
+		// Tabel registrasi MikroTik tidak memuat IP lawan: cari dari tabel ARP router yang dipantau
+		if r.IP == "" && !strings.HasPrefix(r.MAC, "ip:") {
+			_ = tx.QueryRow(ctx, `SELECT host(ip) FROM arp_entries WHERE mac = lower($1) ORDER BY last_seen DESC LIMIT 1`, r.MAC).Scan(&r.IP)
 		}
 		seen = append(seen, r.MAC)
 		label := r.Name
@@ -98,7 +103,7 @@ func (s Store) SaveWireless(ctx context.Context, deviceID int64, rows []Wireless
 	if _, err := tx.Exec(ctx, `DELETE FROM neighbors WHERE device_id = $1 AND protocol = 'wifi'`, deviceID); err != nil {
 		return nil, nil, err
 	}
-	platform := map[string]string{"airmax": "Ubiquiti airMAX", "airfiber": "Ubiquiti airFiber", "ltu": "Ubiquiti LTU"}
+	platform := map[string]string{"airmax": "Ubiquiti airMAX", "airfiber": "Ubiquiti airFiber", "ltu": "Ubiquiti LTU", "mikrotik": "MikroTik wireless"}
 	for _, r := range rows {
 		if r.MAC == "" || !r.Connected {
 			continue

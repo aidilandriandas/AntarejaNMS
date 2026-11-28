@@ -8,7 +8,11 @@
 <div class="crumbs"><a href="{{ route('isp.index', $q) }}">SLA link ISP</a> / {{ $link->name }}</div>
 <div class="page-head">
     <div><h1>{{ $link->name }}</h1>
-        <p>{{ $link->provider ? $link->provider . '. ' : '' }}Diukur dari ping ke <a href="{{ route('devices.show', $link->device_id) }}">{{ $link->device?->name }}</a> ({{ $link->device?->host }}). Gangguan = ping gagal atau packet loss {{ $S::num($link->loss_down_pct, 0) }}% ke atas{{ $link->exclude_maintenance ? '; waktu maintenance tidak dihitung' : '' }}.</p></div>
+        <p>{{ $link->provider ? $link->provider . '. ' : '' }}@if($link->if_index !== null)Port <a href="{{ route('ports.show', [$link->device_id, $link->if_index]) }}">{{ $link->sourceLabel() }}</a>.
+            Gangguan = port down{{ $link->pingDevice ? ', atau ping ke ' . $link->pingDevice->name . ' gagal / packet loss ' . $S::num($link->loss_down_pct, 0) . '% ke atas' : '' }}.
+            @if(! $link->pingDevice)Latensi, jitter, dan loss kosong karena belum ada ping ke ujung ISP (atur di Atur link).@endif
+            @else Diukur dari ping ke <a href="{{ route('devices.show', $link->device_id) }}">{{ $link->device?->name }}</a> ({{ $link->device?->host }}). Gangguan = ping gagal atau packet loss {{ $S::num($link->loss_down_pct, 0) }}% ke atas. Pilih port ke ISP di Atur link supaya status port dan trafik ikut dihitung.@endif
+            {{ $link->exclude_maintenance ? 'Waktu maintenance tidak dihitung.' : '' }}</p></div>
     <div class="actions">
         <a class="btn" href="{{ route('isp.csv', [$link] + $q) }}"><x-icon name="download"/>CSV (Excel)</a>
         <button class="btn" type="button" data-print>Cetak / PDF</button>
@@ -26,8 +30,18 @@
     <div class="kpi {{ $over($r['loss'], $link->loss_target_pct) ? 'warn' : '' }}"><div class="lbl">Packet loss rata-rata</div><div class="val">{{ $r['loss'] !== null ? $S::num($r['loss']) . '%' : '' }}</div><div class="note">target di bawah {{ $S::num($link->loss_target_pct, 1) }}%; {{ number_format($r['samples'], 0, ',', '.') }} sampel ping</div></div>
 </div>
 
+@if($t = $r['traffic'])
+<div class="kpis">
+    @foreach(['in' => 'Trafik masuk (unduh)', 'out' => 'Trafik keluar (unggah)'] as $k => $lbl)
+    @php($x = $t[$k])
+    <div class="kpi {{ ($x['util_p95'] ?? 0) >= 90 ? 'crit' : (($x['util_p95'] ?? 0) >= 70 ? 'warn' : '') }}"><div class="lbl">{{ $lbl }}, persentil 95</div>
+        <div class="val">{{ $x ? $S::num($x['p95'], 1) : '' }}<small> Mbps</small></div>
+        <div class="note">@if($x)rata-rata {{ $S::num($x['avg'], 1) }}, puncak {{ $S::num($x['max'], 1) }} Mbps{{ $x['util_p95'] !== null ? ', ' . $S::num($x['util_p95'], 0) . '% dari ' . $S::num($t['capacity_mbps'], 0) . ' Mbps ' . $t['capacity_from'] : '' }}@else belum ada data trafik port @endif</div></div>
+    @endforeach
+</div>
+@endif
 <div class="isp-charts" data-isp-report="{{ json_encode(['days' => $r['days'], 'detail' => $r['detail'], 'target' => $link->target_pct, 'warn' => $link->warn_pct,
-    'latency' => $link->latency_target_ms, 'jitter' => $link->jitter_target_ms, 'loss' => $link->loss_target_pct, 'lossDown' => $link->loss_down_pct, 'tz' => config('app.timezone')]) }}">
+    'latency' => $link->latency_target_ms, 'jitter' => $link->jitter_target_ms, 'loss' => $link->loss_target_pct, 'lossDown' => $link->loss_down_pct, 'capacity' => $r['traffic']['capacity_mbps'] ?? null, 'tz' => config('app.timezone')]) }}">
 <section class="card"><div class="hd"><h2>Tren harian</h2><span class="sub">rata-rata per hari</span></div><div class="bd">
     <div class="grid g-2 isp-grid">
         <figure class="isp-fig"><figcaption>Ketersediaan (%)</figcaption><div data-isp-plot="sla"></div></figure>
@@ -38,6 +52,7 @@
     <p class="hint muted" style="margin:var(--space-xs) 0 0">Garis putus-putus = target. Arahkan kursor ke grafik untuk angka tiap hari; angka lengkap ada di tabel di bawah.</p>
 </div></section>
 <section class="card"><div class="hd"><h2>Detail</h2><span class="sub">{{ $r['step'] >= 120 ? 'per ' . intdiv($r['step'], 60) . ' menit' : 'per menit' }}, pita merah = gangguan</span></div><div class="bd">
+    @if($r['traffic'])<figure class="isp-fig"><figcaption>Trafik port (Mbps), masuk dan keluar</figcaption><div data-isp-plot="traffic"></div></figure>@endif
     <figure class="isp-fig"><figcaption>Packet loss (%)</figcaption><div data-isp-plot="loss"></div></figure>
     <div class="grid g-2 isp-grid">
         <figure class="isp-fig"><figcaption>Latensi (ms)</figcaption><div data-isp-plot="latency"></div></figure>

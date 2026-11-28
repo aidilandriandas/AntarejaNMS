@@ -61,3 +61,23 @@ func TestSaveWirelessDB(t *testing.T) {
 		t.Fatal("harus tercatat tersambung lagi", back)
 	}
 }
+
+func TestSaveWirelessMikrotikARPDB(t *testing.T) {
+	db := dbtest.Open(t)
+	ctx := context.Background()
+	s := Store{DB: db}
+	ap := dbtest.ID(t, db, `INSERT INTO devices (name, host, category) VALUES ('AP MT', '10.17.60.1', 'wireless') RETURNING id`)
+	st := dbtest.ID(t, db, `INSERT INTO devices (name, host, category) VALUES ('STATION MT-18', '10.17.60.18', 'ptp') RETURNING id`)
+	// registration table MikroTik tidak punya IP; ARP router menyimpan pasangan MAC dan IP
+	dbtest.Exec(t, db, `INSERT INTO arp_entries (reporter_id, if_index, ip, mac) VALUES ($1, 5, '10.17.60.18', '4c:5e:0c:01:02:03')`, ap)
+	sig := -67.0
+	if _, _, err := s.SaveWireless(ctx, ap, []WirelessRow{{Kind: "mikrotik", MAC: "4c:5e:0c:01:02:03", Name: "STATION-MT18", Signal: &sig, Connected: true}}); err != nil {
+		t.Fatal(err)
+	}
+	var ip string
+	var rem *int64
+	_ = db.QueryRow(ctx, `SELECT ip, remote_device_id FROM wireless_links WHERE device_id = $1`, ap).Scan(&ip, &rem)
+	if ip != "10.17.60.18" || rem == nil || *rem != st {
+		t.Fatal("IP dari ARP dan perangkat lawan harus terisi", ip, rem)
+	}
+}

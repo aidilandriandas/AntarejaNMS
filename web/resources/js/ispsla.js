@@ -96,6 +96,24 @@ export function initIspSla() {
         }, [t, vals]);
     }
 
+    // Trafik port: dua garis (masuk, keluar) dalam satu satuan Mbps, garis putus-putus = bandwidth kontrak
+    function traffic(el) {
+        const t = R.detail.t;
+        const max = Math.max(R.capacity ?? 0, ...R.detail.in.filter((v) => v != null), ...R.detail.out.filter((v) => v != null));
+        const fmtT = (v) => { const d = parts(v); return `${two(d.getDate())}/${two(d.getMonth() + 1)} ${two(d.getHours())}.${two(d.getMinutes())}`; };
+        const tick = (v) => { const d = parts(v); return d.getHours() === 0 && d.getMinutes() === 0 ? `${DAYS[d.getDay()]} ${d.getDate()}` : `${two(d.getHours())}.${two(d.getMinutes())}`; };
+        const val = (u, v, si, idx) => (idx == null ? '' : v == null ? 'tanpa data' : `${num(v, 1)} Mbps`);
+        make(el, {
+            tzDate,
+            scales: { x: { time: true }, y: { range: () => [0, max > 0 ? max * 1.1 : 1] } },
+            axes: [{ ...axis(tick), size: 30 }, axis((v) => num(v, 0))],
+            series: [{ label: 'Waktu', value: (u, v) => (v == null ? '' : fmtT(v)) },
+                { label: 'Masuk', stroke: accent, width: 1.5, points: { show: false }, value: val },
+                { label: 'Keluar', stroke: css('--color-cat-2'), width: 1.5, points: { show: false }, value: val }],
+            hooks: { drawClear: [badBands(t, R.detail.bad, css('--crit-soft'))], draw: [thresholdLines([[R.capacity, target]])] },
+        }, [t, R.detail.in, R.detail.out]);
+    }
+
     const at = (k) => root.querySelector(`[data-isp-plot="${k}"]`);
     if (R.days.length) {
         daily('availability', at('sla'), '%', null, 2, false);
@@ -103,6 +121,7 @@ export function initIspSla() {
         daily('jitter', at('d-jitter'), 'ms', R.jitter, 1);
         daily('loss', at('d-loss'), '%', R.loss, 2);
     }
+    if (R.detail.t.length && R.detail.in && at('traffic')) traffic(at('traffic'));
     if (R.detail.t.length) {
         detail('loss', at('loss'), '%', R.lossDown, 1);
         detail('rtt', at('latency'), 'ms', R.latency, 0);

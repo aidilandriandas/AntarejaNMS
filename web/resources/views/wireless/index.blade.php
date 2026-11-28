@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Link radio')
 @section('content')
-<div class="page-head"><div><h1>Link radio</h1><p>Station yang tersambung ke AP Ubiquiti airMAX dan LTU, serta pasangan link airFiber, dibaca lewat SNMP tiap putaran. Lawan yang terdaftar di ANTAREJA otomatis jadi garis di Topologi. Sinyal di bawah {{ \App\Support\Wireless::SIGNAL_WARN }} dBm ditandai lemah.</p></div></div>
+<div class="page-head"><div><h1>Link radio</h1><p>Station yang tersambung ke AP Ubiquiti airMAX, LTU, dan MikroTik, serta pasangan link airFiber, dibaca lewat SNMP tiap putaran. Lawan yang terdaftar di ANTAREJA otomatis jadi garis di Topologi. Sinyal di bawah {{ \App\Support\Wireless::SIGNAL_WARN }} dBm ditandai lemah.</p></div></div>
 <div class="kpis">
     <a class="kpi" href="{{ route('wireless.index') }}"><div class="lbl">Link tersambung</div><div class="val">{{ $stats['total'] }}</div></a>
     <a class="kpi {{ $stats['weak'] ? 'warn' : '' }}" href="{{ route('wireless.index', ['kondisi' => 'lemah']) }}"><div class="lbl">Sinyal lemah</div><div class="val">{{ $stats['weak'] }}</div></a>

@@ -785,3 +785,15 @@ $$('[data-row-filter-card]').forEach((card) => {
     state?.addEventListener('change', apply);
     apply();
 });
+
+// Pilihan port mengikuti perangkat terpilih (mis. Atur link ISP): data-port-src="<id select port>"
+$$('[data-port-src]').forEach((sel) => sel.addEventListener('change', async () => {
+    const portSel = document.getElementById(sel.dataset.portSrc);
+    if (!portSel) return;
+    const keep = portSel.options[0];
+    portSel.replaceChildren(keep);
+    if (!sel.value) return;
+    const r = await fetch(`${sel.dataset.portsUrl}/${sel.value}`, { headers: { Accept: 'application/json' } });
+    if (!r.ok) return;
+    (await r.json()).forEach((p) => { const o = document.createElement('option'); o.value = p.if_index; o.textContent = p.label; portSel.appendChild(o); });
+}));

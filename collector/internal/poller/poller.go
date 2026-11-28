@@ -323,8 +323,15 @@ func (p *Poller) snmpCycle(ctx context.Context) error {
 			}
 		}()
 	}
+	skipped := 0
 	for _, d := range devs {
 		if !d.SNMPEnabled || d.CollectorID != nil {
+			continue
+		}
+		// Ping menyatakan down: SNMP pasti tidak menjawab. Dilewati supaya ratusan timeout (mis. satu site padam)
+		// tidak menghabiskan waktu putaran dan menggagalkan penyimpanan perangkat yang sehat.
+		if d.PingEnabled && d.Status == "down" {
+			skipped++
 			continue
 		}
 		select {
@@ -342,7 +349,7 @@ func (p *Poller) snmpCycle(ctx context.Context) error {
 	}
 	p.RecomputeMACs(mctx)
 	p.lastSNMP.Store(time.Now().Unix())
-	p.Log.Info("putaran SNMP", "berhasil", ok.Load(), "gagal", fail.Load(), "durasi", time.Since(began).Round(100*time.Millisecond))
+	p.Log.Info("putaran SNMP", "berhasil", ok.Load(), "gagal", fail.Load(), "dilewati_down", skipped, "durasi", time.Since(began).Round(100*time.Millisecond))
 	return ctx.Err()
 }
 
@@ -380,7 +387,11 @@ func (p *Poller) Credentials(d store.Device) (snmp.Credentials, error) {
 
 func (p *Poller) pollSNMP(ctx context.Context, d store.Device) bool {
 	cr, err := p.Credentials(d)
-	return p.ApplySNMP(ctx, d, p.MeasureSNMP(d, cr, err, p.storeProfiles(ctx, d)))
+	sample := p.MeasureSNMP(d, cr, err, p.storeProfiles(ctx, d))
+	// Hasil yang sudah terbaca tetap disimpan walau batas waktu putaran hampir habis
+	sctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+	defer cancel()
+	return p.ApplySNMP(sctx, d, sample)
 }
 
 func (p *Poller) event(ctx context.Context, id int64, kind, msg string, dur *int64, at time.Time) {

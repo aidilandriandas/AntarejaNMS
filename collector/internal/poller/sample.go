@@ -180,9 +180,10 @@ func (p *Poller) MeasureSNMP(d store.Device, cr snmp.Credentials, credErr error,
 			s.L2 = &l2
 		}
 	}
-	// Radio Ubiquiti (airMAX, airFiber, LTU): siapa tersambung dan kualitas sinyalnya
-	if strings.HasPrefix(sys.ObjectID, ".1.3.6.1.4.1.41112") || strings.HasPrefix(sys.ObjectID, ".1.3.6.1.4.1.10002") || wirelessCategories[d.Category] {
-		if wl, err := p.SNMP.Wireless(d.Host, cr); err == nil {
+	// Radio Ubiquiti (airMAX, airFiber, LTU) dan wireless MikroTik: siapa tersambung dan kualitas sinyalnya
+	if strings.HasPrefix(sys.ObjectID, ".1.3.6.1.4.1.41112") || strings.HasPrefix(sys.ObjectID, ".1.3.6.1.4.1.10002") ||
+		strings.HasPrefix(sys.ObjectID, ".1.3.6.1.4.1.14988") || wirelessCategories[d.Category] {
+		if wl, err := p.SNMP.Wireless(d.Host, cr, sys.ObjectID); err == nil {
 			s.Wireless, s.WirelessOK = wl, true
 		}
 	}
