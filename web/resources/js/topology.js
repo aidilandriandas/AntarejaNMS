@@ -224,7 +224,7 @@ export function createTopology(el, opt) {
                     : e.radio && e.radio.signal != null && !e.down ? `${Math.round(e.radio.signal)} dBm` : undefined,
             font: { color: P.ink2, strokeColor: P.bg, background: undefined },
             title: [ports || (e.logical ? 'Hubungan induk (tanpa data port)' : 'Port tidak diketahui'),
-                `Sumber: ${e.sources.join(', ').replace('induk', 'perangkat induk').replace('wifi', 'link radio')}`,
+                `Sumber: ${e.sources.join(', ').replace('induk', 'perangkat induk').replace('wifi', 'link radio').replace('mac', 'tabel MAC switch')}`,
                 util != null ? `Pemakaian ${util.toFixed(1)}% dari ${bps(t(e).speed)}bps` : null,
                 inB != null ? `Masuk ${bps(inB)}bps, keluar ${bps(outB)}bps` : null,
                 e.radio ? [`Radio ${e.radio.kind}`, e.radio.signal != null ? `sinyal terlemah ${Math.round(e.radio.signal)} dBm` : null,

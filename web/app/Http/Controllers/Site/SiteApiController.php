@@ -33,6 +33,9 @@ class SiteApiController extends Controller
             'id' => $d->id, 'name' => $d->name, 'host' => $d->host, 'category' => $d->category,
             'ping_enabled' => (bool) $d->ping_enabled, 'snmp_enabled' => (bool) $d->snmp_enabled,
             'thresholds' => $d->effectiveThresholds() ?: null,
+            'custom_oids' => $d->template_id ? \Illuminate\Support\Facades\DB::table('template_oids')->where('template_id', $d->template_id)->where('enabled', true)->orderBy('id')->get()
+                ->map(fn ($o) => ['id' => $o->id, 'label' => $o->label, 'oid' => $o->oid, 'mode' => $o->mode, 'class' => $o->class, 'unit' => $o->unit,
+                    'scale' => (float) $o->scale, 'group' => $o->grp])->values()->all() : [],
             'snmp' => $d->snmp_enabled ? array_filter([
                 'version' => $d->snmp_version, 'port' => (int) $d->snmp_port,
                 'community' => $d->snmp_version === '3' ? null : $open($d->snmp_community_enc),

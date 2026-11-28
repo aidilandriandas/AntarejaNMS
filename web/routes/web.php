@@ -123,6 +123,8 @@ Route::middleware('auth')->group(function () {
         Route::post('templat/{template}/cek', [TemplateController::class, 'storeCheck'])->name('templates.checks.store')->whereNumber('template');
         Route::put('templat/{template}/cek/{tcheck}', [TemplateController::class, 'updateCheck'])->name('templates.checks.update')->whereNumber(['template', 'tcheck']);
         Route::delete('templat/{template}/cek/{tcheck}', [TemplateController::class, 'destroyCheck'])->name('templates.checks.destroy')->whereNumber(['template', 'tcheck']);
+        Route::post('templat/{template}/oid', [TemplateController::class, 'storeOid'])->name('templates.oids.store')->whereNumber('template');
+        Route::delete('templat/{template}/oid/{toid}', [TemplateController::class, 'destroyOid'])->name('templates.oids.destroy')->whereNumber(['template', 'toid']);
         Route::get('log/aturan', [SyslogRuleController::class, 'index'])->name('logs.rules');
         Route::post('log/aturan', [SyslogRuleController::class, 'store'])->name('logs.rules.store');
         Route::post('log/aturan/uji', [SyslogRuleController::class, 'test'])->name('logs.rules.test')->middleware('throttle:20,1');

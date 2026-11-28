@@ -91,6 +91,12 @@ class Topology
         foreach (DB::table('device_links')->get() as $l) {
             $addEdge($l->a_device_id, $l->a_if_index, $l->b_device_id, $l->b_if_index, 'manual', $l->id, $l->note);
         }
+        // Semua merek, termasuk perangkat yang hanya di-ping: MAC perangkat (dari interface SNMP-nya atau dari ARP untuk
+        // IP-nya) yang terlihat di port tepi switch = perangkat itu tersambung ke port tersebut. Tabel MAC (BRIDGE-MIB /
+        // Q-BRIDGE-MIB) dan ARP standar, jadi tidak bergantung vendor. Tetangga LLDP/CDP/radio yang sama digabung.
+        foreach (self::macLinks($ids) as $m) {
+            $addEdge($m->sw, $m->if_index, $m->dev, null, 'mac');
+        }
         foreach ($devices as $d) {
             if ($d->parent_id && ! isset($pairs[min($d->id, $d->parent_id) . '-' . max($d->id, $d->parent_id)])) {
                 $addEdge($d->id, null, $d->parent_id, null, 'induk');
@@ -204,5 +210,30 @@ class Topology
                 'unknown_neighbors' => collect($nodes)->where('state', 'external')->count(),
             ],
         ];
+    }
+
+    /**
+     * Lokasi perangkat terdaftar di port switch dari tabel MAC: [dev, sw, if_index] per perangkat (lokasi terbaru,
+     * terlihat 24 jam terakhir). MAC perangkat: MAC interface hasil SNMP-nya, atau MAC dari ARP untuk IP host-nya.
+     */
+    public static function macLinks(array $ids): \Illuminate\Support\Collection
+    {
+        if (! $ids) {
+            return collect();
+        }
+
+        return collect(DB::select(<<<'SQL'
+            SELECT DISTINCT ON (d.id) d.id AS dev, ml.device_id AS sw, ml.if_index
+            FROM devices d
+            JOIN LATERAL (
+                SELECT lower(i.mac) AS mac FROM interfaces i WHERE i.device_id = d.id AND i.mac IS NOT NULL
+                UNION
+                SELECT lower(a.mac) FROM arp_entries a
+                WHERE d.host ~ '^[0-9]{1,3}(\.[0-9]{1,3}){3}$' AND a.ip = (CASE WHEN d.host ~ '^[0-9]{1,3}(\.[0-9]{1,3}){3}$' THEN d.host END)::inet
+            ) m ON true
+            JOIN mac_locations ml ON ml.mac = m.mac AND ml.device_id <> d.id AND ml.last_seen > now() - interval '1 day'
+            WHERE d.id = ANY(?::bigint[]) AND ml.device_id = ANY(?::bigint[])
+            ORDER BY d.id, ml.last_seen DESC
+        SQL, ['{' . implode(',', array_map('intval', $ids)) . '}', '{' . implode(',', array_map('intval', $ids)) . '}']));
     }
 }

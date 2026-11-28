@@ -34,19 +34,39 @@ type Device struct {
 	Category        string
 	ThresholdsJSON  []byte
 	CollectorID     *int64 // collector site yang memantau; nil = collector pusat
+	// Sensor OID khusus dari templat perangkat (merek tanpa profil bawaan)
+	CustomOIDs []CustomOID
+}
+
+// CustomOID satu sensor OID khusus dari templat (tabel template_oids).
+type CustomOID struct {
+	ID    int64   `json:"id"`
+	Label string  `json:"label"`
+	OID   string  `json:"oid"`
+	Mode  string  `json:"mode"`
+	Class string  `json:"class"`
+	Unit  string  `json:"unit,omitempty"`
+	Scale float64 `json:"scale"`
+	Group string  `json:"group,omitempty"`
 }
 
 type Store struct{ DB *pgxpool.Pool }
 
 const deviceCols = `id, name, host, ping_enabled, snmp_enabled, snmp_version, snmp_port,
 	snmp_community_enc, snmp_v3_user, snmp_v3_level, snmp_v3_auth_proto, snmp_v3_auth_enc, snmp_v3_priv_proto, snmp_v3_priv_enc,
-	status, status_changed_at, fail_streak, last_rtt_ms, snmp_ok, last_snmp_at, uptime_seconds, sys_object_id, category, (COALESCE((SELECT t.thresholds FROM device_templates t WHERE t.id = devices.template_id), '{}'::jsonb) || devices.thresholds), collector_id`
+	status, status_changed_at, fail_streak, last_rtt_ms, snmp_ok, last_snmp_at, uptime_seconds, sys_object_id, category, (COALESCE((SELECT t.thresholds FROM device_templates t WHERE t.id = devices.template_id), '{}'::jsonb) || devices.thresholds), collector_id,
+	COALESCE((SELECT json_agg(json_build_object('id', o.id, 'label', o.label, 'oid', o.oid, 'mode', o.mode, 'class', o.class, 'unit', o.unit,
+		'scale', o.scale, 'group', o.grp) ORDER BY o.id) FROM template_oids o WHERE o.template_id = devices.template_id AND o.enabled), '[]')::text`
 
 func scanDevice(r pgx.Row) (Device, error) {
 	var d Device
+	var custom string
 	err := r.Scan(&d.ID, &d.Name, &d.Host, &d.PingEnabled, &d.SNMPEnabled, &d.SNMPVersion, &d.SNMPPort,
 		&d.CommunityEnc, &d.V3User, &d.V3Level, &d.V3AuthProto, &d.V3AuthEnc, &d.V3PrivProto, &d.V3PrivEnc,
-		&d.Status, &d.StatusChangedAt, &d.FailStreak, &d.LastRTT, &d.SNMPOK, &d.LastSNMPAt, &d.UptimeSeconds, &d.SysObjectID, &d.Category, &d.ThresholdsJSON, &d.CollectorID)
+		&d.Status, &d.StatusChangedAt, &d.FailStreak, &d.LastRTT, &d.SNMPOK, &d.LastSNMPAt, &d.UptimeSeconds, &d.SysObjectID, &d.Category, &d.ThresholdsJSON, &d.CollectorID, &custom)
+	if err == nil && custom != "" && custom != "[]" {
+		_ = json.Unmarshal([]byte(custom), &d.CustomOIDs)
+	}
 	return d, err
 }
 

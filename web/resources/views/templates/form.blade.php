@@ -44,6 +44,36 @@
     </tbody></table>@endif
 </div></section>
 
+<section class="card" id="oid"><div class="hd"><h2>Sensor OID khusus</h2><span class="sub">untuk merek tanpa profil bawaan, mis. Cambium, Mimosa, Siklu</span></div><div class="bd">
+    @php($TC = \App\Http\Controllers\TemplateController::class)
+    @if($oids->isNotEmpty())
+    <div class="table-wrap" style="margin:calc(-1 * var(--space-sm)) calc(-1 * var(--space-md)) var(--space-sm)"><table class="t"><tbody>
+    @foreach($oids as $o)
+        <tr><td class="name">{{ $o->label }}<small>{{ $TC::OID_CLASSES[$o->class][0] ?? $o->class }}{{ $o->unit ? ', ' . $o->unit : '' }}{{ (float) $o->scale !== 1.0 ? ', dikali ' . rtrim(rtrim(number_format((float) $o->scale, 6, ',', ''), '0'), ',') : '' }}</small></td>
+            <td class="mono" style="font-size:12.5px">{{ $o->oid }}<div class="muted">{{ $o->mode === 'walk' ? 'kolom tabel, satu sensor per baris' : 'satu nilai' }}</div></td>
+            <td class="right"><form method="post" action="{{ route('templates.oids.destroy', [$t, $o->id]) }}" data-confirm="Hapus sensor {{ $o->label }} dari templat ini?">@csrf @method('DELETE')<button class="btn sm" aria-label="Hapus {{ $o->label }}"><x-icon name="trash"/></button></form></td></tr>
+    @endforeach
+    </tbody></table></div>
+    @endif
+    <form method="post" action="{{ route('templates.oids.store', $t) }}" class="form">@csrf
+        <div class="row">
+            <div class="field"><label for="o-label">Nama sensor</label><input class="input @error('label') is-err @enderror" id="o-label" name="label" maxlength="80" required value="{{ old('label') }}" placeholder="Sinyal radio"><x-field-error name="label"/></div>
+            <div class="field"><label for="o-oid">OID</label><input class="input mono @error('oid') is-err @enderror" id="o-oid" name="oid" maxlength="200" required value="{{ old('oid') }}" placeholder=".1.3.6.1.4.1.xxxx..."><x-field-error name="oid"/></div>
+        </div>
+        <div class="row r3">
+            <div class="field"><label for="o-mode">Bentuk</label><select class="input" id="o-mode" name="mode"><option value="get" @selected(old('mode') !== 'walk')>Satu nilai (OID lengkap)</option><option value="walk" @selected(old('mode') === 'walk')>Kolom tabel (satu per baris)</option></select></div>
+            <div class="field"><label for="o-class">Jenis</label><select class="input" id="o-class" name="class">@foreach($TC::OID_CLASSES as $k => [$lbl, $u])<option value="{{ $k }}" @selected(old('class', 'signal') === $k)>{{ $lbl }}{{ $u ? ' (' . $u . ')' : '' }}</option>@endforeach</select></div>
+            <div class="field"><label for="o-grp">Kelompok</label><select class="input" id="o-grp" name="grp">@foreach($TC::OID_GROUPS as $k => $v)<option value="{{ $k }}" @selected(old('grp', 'radio') === $k)>{{ $v }}</option>@endforeach</select></div>
+        </div>
+        <div class="row">
+            <div class="field"><label for="o-unit">Satuan <span class="muted">(opsional)</span></label><input class="input" id="o-unit" name="unit" maxlength="16" value="{{ old('unit') }}" placeholder="kosong = satuan jenis"></div>
+            <div class="field"><label for="o-scale">Dikali</label><input class="input @error('scale') is-err @enderror" type="number" step="any" id="o-scale" name="scale" value="{{ old('scale', 1) }}" required><div class="hint">Mis. 0,1 bila perangkat mengirim -655 untuk -65,5 dBm.</div><x-field-error name="scale"/></div>
+        </div>
+        <p class="hint muted" style="margin:0">Ambil OID dari MIB vendor perangkatnya. Sensor terbaca di semua perangkat bertemplat ini (juga lewat collector site), dinilai dengan ambang jenisnya (bawaan, templat, atau ambang khusus perangkat), digrafikkan, dan jadi problem bila kritis.</p>
+        <div class="form-foot"><button class="btn primary"><x-icon name="plus"/>Tambah sensor</button></div>
+    </form>
+</div></section>
+
 <section class="card" id="cek"><div class="hd"><h2>{{ $editCheck ? 'Ubah cek ' . $editCheck->name : 'Tambah cek' }}</h2>@if($editCheck)<a class="sub" href="{{ route('templates.edit', $t) }}">Batal ubah</a>@endif</div><div class="bd">
 <form method="post" action="{{ $editCheck ? route('templates.checks.update', [$t, $editCheck]) : route('templates.checks.store', $t) }}" class="form">@csrf @if($editCheck) @method('PUT') @endif
     <div class="row">

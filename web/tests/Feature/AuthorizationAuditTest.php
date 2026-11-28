@@ -74,6 +74,7 @@ class AuthorizationAuditTest extends TestCase
             'runbook' => DB::table('runbooks')->insertGetId(['title' => 'QA runbook', 'body' => 'langkah']),
             'template' => $tpl = DB::table('device_templates')->insertGetId(['name' => 'QA templat']),
             'tcheck' => DB::table('template_checks')->insertGetId(['template_id' => $tpl, 'name' => 'QA', 'type' => 'tcp', 'port' => '22']),
+            'toid' => DB::table('template_oids')->insertGetId(['template_id' => $tpl, 'label' => 'QA', 'oid' => '.1.3.6.1.2.1.1.3.0']),
             'isp' => DB::table('isp_links')->insertGetId(['name' => 'QA isp', 'device_id' => $dev]),
             'profile' => DB::table('camera_profiles')->insertGetId(['name' => 'QA profil']),
             'rule' => DB::table('syslog_rules')->insertGetId(['name' => 'QA', 'pattern' => 'x']),

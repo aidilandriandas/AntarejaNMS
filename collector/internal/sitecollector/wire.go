@@ -102,14 +102,15 @@ type Config struct {
 
 // DeviceConfig perangkat yang harus diukur. Kredensial hanya disimpan di memori site, tidak pernah di disk.
 type DeviceConfig struct {
-	ID          int64           `json:"id"`
-	Name        string          `json:"name"`
-	Host        string          `json:"host"`
-	Category    string          `json:"category"`
-	PingEnabled bool            `json:"ping_enabled"`
-	SNMPEnabled bool            `json:"snmp_enabled"`
-	Thresholds  json.RawMessage `json:"thresholds,omitempty"`
-	SNMP        *Credentials    `json:"snmp,omitempty"`
+	ID          int64             `json:"id"`
+	Name        string            `json:"name"`
+	Host        string            `json:"host"`
+	Category    string            `json:"category"`
+	PingEnabled bool              `json:"ping_enabled"`
+	SNMPEnabled bool              `json:"snmp_enabled"`
+	Thresholds  json.RawMessage   `json:"thresholds,omitempty"`
+	SNMP        *Credentials      `json:"snmp,omitempty"`
+	CustomOIDs  []store.CustomOID `json:"custom_oids,omitempty"`
 }
 
 type Credentials struct {
@@ -132,7 +133,7 @@ func (c *Credentials) snmp() snmp.Credentials {
 // device bentuk store.Device secukupnya untuk pengukuran di site.
 func (d DeviceConfig) device() store.Device {
 	return store.Device{ID: d.ID, Name: d.Name, Host: d.Host, Category: d.Category, PingEnabled: d.PingEnabled,
-		SNMPEnabled: d.SNMPEnabled, ThresholdsJSON: d.Thresholds}
+		SNMPEnabled: d.SNMPEnabled, ThresholdsJSON: d.Thresholds, CustomOIDs: d.CustomOIDs}
 }
 
 // withoutSecrets salinan daftar perangkat untuk disimpan di disk site.

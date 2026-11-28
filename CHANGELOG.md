@@ -111,6 +111,14 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
 - Perbaikan: keterangan kamera di grid CCTV tidak lagi diawali koma untuk kamera tanpa site, dan nama perangkat tidak
   diulang bila sama dengan nama kamera (kamera hasil tambah massal).
 - Teks layar, pesan notifikasi, dan laporan tidak lagi memakai titik tengah, panah, tanda pisah, atau elipsis.
+- **Topologi otomatis untuk semua merek**: perangkat apa pun, termasuk yang hanya di-ping (CCTV, NVR, PC), otomatis
+  tersambung ke port switch tempat MAC-nya terlihat. MAC diambil dari interface perangkat (bila ber-SNMP) atau dari
+  tabel ARP router untuk IP-nya, lalu dicocokkan ke tabel MAC switch (BRIDGE-MIB/Q-BRIDGE-MIB, standar semua vendor).
+  Hanya lokasi yang terlihat 24 jam terakhir; sambungan yang sama dari LLDP/CDP/radio digabung.
+- **Sensor OID khusus di Templat perangkat** (migrasi 0055 otomatis): untuk merek tanpa profil bawaan (mis. Cambium,
+  Mimosa, Siklu), isi OID dari MIB vendornya di templat: satu nilai atau satu kolom tabel, jenis (sinyal, CCQ, rate,
+  suhu, tegangan, dll.), satuan, dan pengali. Terbaca di semua perangkat bertemplat itu (collector pusat dan site),
+  digrafikkan, dinilai dengan ambang jenisnya, dan jadi problem bila kritis. Ikut ekspor/impor konfigurasi.
 - **SLA link ISP berbasis port** (migrasi 0053 otomatis): link ISP sekarang dipilih sebagai router dan port yang
   mengarah ke ISP; satu router boleh punya beberapa port ISP. Ketersediaan dari status port (port down = gangguan
   "Port ke ISP down"), trafik masuk/keluar port per langkah (rata-rata, puncak, persentil 95) dan pemakaian

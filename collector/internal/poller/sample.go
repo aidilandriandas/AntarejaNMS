@@ -61,6 +61,8 @@ type SNMPSample struct {
 
 	Routing *snmp.Routing `json:"routing,omitempty"` // sesi BGP & tetangga OSPF (router)
 	L2      *snmp.L2      `json:"l2,omitempty"`      // VLAN, PVID, STP (switch)
+	// Hanya sensor OID khusus yang terbaca (tanpa profil bawaan): tetap disimpan
+	CustomOnly bool `json:"custom_only,omitempty"`
 	// Link radio Ubiquiti (station airMAX/LTU, pasangan airFiber)
 	Wireless   []snmp.WirelessLink `json:"wireless,omitempty"`
 	WirelessOK bool                `json:"wireless_ok,omitempty"`
@@ -133,6 +135,13 @@ func (p *Poller) MeasureSNMP(d store.Device, cr snmp.Credentials, credErr error,
 	if sess, err := p.SNMP.Session(d.Host, cr); err == nil {
 		ids, detected, ok := prof(sys.ObjectID, sess)
 		s.Profiles, s.ProfilesDetected, s.ProfilesOK = ids, detected, ok
+		if len(d.CustomOIDs) > 0 {
+			// sensor OID khusus dari templat; ikut disimpan walau tidak ada profil bawaan yang cocok
+			s.Sensors = append(s.Sensors, CustomSensors(sess, d.CustomOIDs, d.Limits().Classes)...)
+			if !s.ProfilesOK || s.Profiles == "" {
+				s.CustomOnly = true
+			}
+		}
 		if ok && ids != "" {
 			for _, r := range profiles.Collect(sess, strings.Split(ids, ","), d.Limits().Classes) {
 				sn := Sensor{Key: r.Key, Class: r.Class, Group: r.Group, Label: r.Label, Unit: r.Unit, Text: r.Text, Status: r.Status}
@@ -349,7 +358,7 @@ func (p *Poller) ApplySNMP(ctx context.Context, d store.Device, s SNMPSample) bo
 		}
 		p.Log.Info("profil perangkat", "perangkat", d.ID, "profil", s.Profiles)
 	}
-	if s.ProfilesOK && s.Profiles != "" {
+	if (s.ProfilesOK && s.Profiles != "") || s.CustomOnly {
 		rows := make([]store.SensorRow, 0, len(s.Sensors))
 		dev := dl["device_id"]
 		for _, r := range s.Sensors {

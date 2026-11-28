@@ -10,6 +10,7 @@ use App\Models\TemplateCheck;
 use App\Services\Audit;
 use App\Services\TemplateSync;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -34,9 +35,49 @@ class TemplateController extends Controller
         return redirect()->route('templates.edit', $t)->with('ok', "Templat {$t->name} dibuat. Tambahkan cek layanan bila perlu, lalu pasang ke perangkat lewat Ubah perangkat atau Ubah massal.");
     }
 
+    /** Kelas sensor OID khusus: kunci => [label, satuan bawaan]. Kelas berambang ikut ambang bawaan/khusus. */
+    public const OID_CLASSES = [
+        'signal' => ['Sinyal radio', 'dBm'], 'ccq' => ['CCQ', '%'], 'quality' => ['Kualitas link', '%'], 'capacity' => ['Kapasitas link', '%'],
+        'rate' => ['Rate / throughput', 'Mbps'], 'noise' => ['Noise floor', 'dBm'], 'distance' => ['Jarak', 'km'], 'temperature' => ['Suhu', '°C'],
+        'cpu' => ['CPU', '%'], 'memory' => ['Memori', '%'], 'voltage' => ['Tegangan', 'V'], 'power' => ['Daya', 'W'], 'battery' => ['Baterai', '%'],
+        'other' => ['Lainnya (tanpa ambang)', ''],
+    ];
+
+    public const OID_GROUPS = ['radio' => 'Radio', 'sistem' => 'Sistem', 'daya' => 'Daya', 'lingkungan' => 'Lingkungan'];
+
+    public function storeOid(Request $request, DeviceTemplate $template)
+    {
+        $d = $request->validate([
+            'label' => ['required', 'string', 'max:80'],
+            'oid' => ['required', 'string', 'max:200', 'regex:/^\.?[0-9]+(\.[0-9]+)+$/'],
+            'mode' => ['required', 'in:get,walk'],
+            'class' => ['required', \Illuminate\Validation\Rule::in(array_keys(self::OID_CLASSES))],
+            'unit' => ['nullable', 'string', 'max:16'],
+            'scale' => ['required', 'numeric', 'not_in:0', 'between:-1000000,1000000'],
+            'grp' => ['required', \Illuminate\Validation\Rule::in(array_keys(self::OID_GROUPS))],
+        ], ['oid.regex' => 'OID berupa angka bertitik, mis. .1.3.6.1.4.1.17713.21.1.2.3.0']);
+        $d['oid'] = '.' . ltrim($d['oid'], '.');
+        $d['unit'] = $d['unit'] ?? self::OID_CLASSES[$d['class']][1];
+        DB::table('template_oids')->insert($d + ['template_id' => $template->id, 'created_at' => now(), 'updated_at' => now()]);
+        Audit::log('created', "Sensor OID \"{$d['label']}\" ({$d['oid']}) ditambahkan ke templat {$template->name}", $template);
+
+        return redirect()->to(route('templates.edit', $template) . '#oid')->with('ok', "Sensor {$d['label']} ditambahkan. Nilainya muncul di halaman perangkat bertemplat ini setelah satu putaran SNMP.");
+    }
+
+    public function destroyOid(DeviceTemplate $template, int $toid)
+    {
+        $o = DB::table('template_oids')->where('id', $toid)->where('template_id', $template->id)->first();
+        abort_unless($o, 404);
+        DB::table('template_oids')->where('id', $toid)->delete();
+        DB::table('device_sensors')->whereIn('device_id', $template->devices()->pluck('id'))->where(fn ($q) => $q->where('key', "ox:{$toid}")->orWhere('key', 'like', "ox:{$toid}:%"))->delete();
+        Audit::log('deleted', "Sensor OID \"{$o->label}\" dihapus dari templat {$template->name}", $template);
+
+        return redirect()->to(route('templates.edit', $template) . '#oid')->with('ok', "Sensor {$o->label} dihapus.");
+    }
+
     public function edit(DeviceTemplate $template)
     {
-        return view('templates.form', ['t' => $template->load('checks'), 'devices' => $template->devices()->with('site')->orderBy('name')->get(),
+        return view('templates.form', ['t' => $template->load('checks'), 'oids' => DB::table('template_oids')->where('template_id', $template->id)->orderBy('id')->get(), 'devices' => $template->devices()->with('site')->orderBy('name')->get(),
             'editCheck' => request()->integer('cek') ? $template->checks->firstWhere('id', request()->integer('cek')) : null,
             'triggers' => \App\Models\Trigger::where('scope', 'template')->where('template_id', $template->id)->orderBy('name')->get()]);
     }

@@ -141,7 +141,9 @@ class ConfigTransfer
                 'exporter_url' => $t->exporter_url, 'exporter_services' => $t->exporter_services,
                 'checks' => DB::table('template_checks')->where('template_id', $t->id)->orderBy('name')->get()->map(fn ($c) => collect((array) $c)
                     ->only(['name', 'type', 'url', 'port', 'query', 'expect_status', 'expect_text', 'expect_answer', 'verify_tls', 'interval_s', 'timeout_s',
-                        'slow_ms', 'cert_warn_days', 'severity', 'enabled'])->all())->values()])->values(),
+                        'slow_ms', 'cert_warn_days', 'severity', 'enabled'])->all())->values(),
+                'oids' => DB::table('template_oids')->where('template_id', $t->id)->orderBy('id')->get()->map(fn ($o) => collect((array) $o)
+                    ->only(['label', 'oid', 'mode', 'class', 'unit', 'scale', 'grp', 'enabled'])->all())->values()])->values(),
             'syslog_rules' => DB::table('syslog_rules')->orderBy('name')->get()->map(fn ($r) => ['name' => $r->name, 'pattern' => $r->pattern, 'is_regex' => (bool) $r->is_regex,
                 'max_severity' => $r->max_severity, 'app' => $r->app, 'site' => $siteCode[$r->site_id] ?? null, 'device' => $r->device_id ? ($devKey[$r->device_id] ?? null) : null,
                 'min_count' => $r->min_count, 'window_s' => $r->window_s, 'clear_s' => $r->clear_s, 'severity' => $r->severity, 'enabled' => (bool) $r->enabled])->values(),
@@ -422,6 +424,21 @@ class ConfigTransfer
                     'exporter_services' => self::str($t['exporter_services'] ?? null, 500), 'updated_at' => $now];
                 $tid = DB::table('device_templates')->where('name', $name)->value('id');
                 $tid ? DB::table('device_templates')->where('id', $tid)->update($row) : ($tid = DB::table('device_templates')->insertGetId($row + ['name' => $name, 'created_at' => $now]));
+                if (is_array($t['oids'] ?? null)) {
+                    DB::table('template_oids')->where('template_id', $tid)->delete();
+                    foreach ($t['oids'] as $o) {
+                        $oid = self::str($o['oid'] ?? null, 200);
+                        $label = self::str($o['label'] ?? null, 80);
+                        if (! $oid || ! $label || ! preg_match('/^\.?[0-9]+(\.[0-9]+)+$/', $oid)) {
+                            continue;
+                        }
+                        DB::table('template_oids')->insert(['template_id' => $tid, 'label' => $label, 'oid' => '.' . ltrim($oid, '.'),
+                            'mode' => ($o['mode'] ?? '') === 'walk' ? 'walk' : 'get', 'class' => array_key_exists($o['class'] ?? '', \App\Http\Controllers\TemplateController::OID_CLASSES) ? $o['class'] : 'other',
+                            'unit' => self::str($o['unit'] ?? null, 16), 'scale' => is_numeric($o['scale'] ?? null) && (float) $o['scale'] != 0 ? (float) $o['scale'] : 1,
+                            'grp' => array_key_exists($o['grp'] ?? '', \App\Http\Controllers\TemplateController::OID_GROUPS) ? $o['grp'] : 'radio', 'enabled' => (bool) ($o['enabled'] ?? true),
+                            'created_at' => $now, 'updated_at' => $now]);
+                    }
+                }
                 if (is_array($t['checks'] ?? null)) {
                     DB::table('template_checks')->where('template_id', $tid)->delete();
                     foreach ($t['checks'] as $c) {
