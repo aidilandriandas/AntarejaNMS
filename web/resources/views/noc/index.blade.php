@@ -13,14 +13,14 @@
 <body class="noc-body">
 <div class="noc" data-noc data-url="{{ route('noc.data') }}" data-state-url="{{ route('noc.state') }}" data-topo-url="{{ route('topology.data') }}" data-live-url="{{ route('topology.live') }}" data-login="{{ route('login') }}">
     <header class="n-head n-panel">
-        <a class="brand" href="{{ route('dashboard') }}" title="Kembali ke aplikasi"><img class="mark" src="/brand/logo.png" alt="" width="34" height="34"><span><b>ANTAREJA NOC</b><small>NETWORK OPERATIONS CENTER</small></span></a>
+        <a class="brand" href="{{ route('dashboard') }}" title="Kembali ke aplikasi"><img class="mark" src="/brand/logo.png" alt="" width="34" height="34"><span><b>ANTAREJA NOC</b><small>Network operations center</small></span></a>
         <div class="n-alarm ok" data-alarm role="status" aria-live="polite"><x-icon name="shield"/><span>Memuat</span></div>
         <span class="n-spacer"></span>
         <span class="n-oncall" data-oncall title="Yang sedang piket"></span>
-        <span class="n-live" data-live title="Perubahan dicek tiap 5 detik"><i></i><span>LIVE</span></span>
-        <button type="button" class="n-btn" data-sound title="Bunyi saat ada problem High/Disaster baru"><x-icon name="volume-x"/><span>SUARA MATI</span></button>
+        <span class="n-live" data-live title="Perubahan dicek tiap 5 detik"><i></i><span>Live</span></span>
+        <button type="button" class="n-btn" data-sound title="Sirene saat perangkat down dan problem High/Disaster baru"><x-icon name="volume-x"/><span>Suara mati</span></button>
         <select class="n-select" data-site aria-label="Filter site">
-            <option value="">SEMUA SITE</option>
+            <option value="">Semua site</option>
             @foreach($sites as $s)<option value="{{ $s->id }}">{{ $s->code }}, {{ $s->name }}</option>@endforeach
         </select>
         <div class="n-clock"><b data-clock>--.--.--</b><small data-date></small></div>
@@ -28,7 +28,7 @@
     </header>
 
     <section class="n-left">
-        <div class="n-panel n-kpi" data-k-avail><div class="lbl">Ketersediaan</div><div class="val">?<small>%</small></div><div class="meter"><span></span></div><div class="sub"></div></div>
+        <div class="n-panel n-kpi" data-k-avail><div class="lbl">Ketersediaan</div><div class="n-avail"><div class="n-ring" data-ring><svg viewBox="0 0 112 112" aria-hidden="true"><circle class="track" cx="56" cy="56" r="48"/><circle class="arc" cx="56" cy="56" r="48"/></svg><div class="val">?<small>%</small></div></div><div class="sub"></div></div><div class="meter"><span></span></div></div>
         <div class="n-duo">
             <div class="n-panel n-kpi ok" data-k-up><div class="lbl">Online</div><div class="val">?</div></div>
             <div class="n-panel n-kpi" data-k-down><div class="lbl">Down</div><div class="val">?</div></div>
@@ -40,7 +40,7 @@
     <section class="n-center n-panel">
         <h2><span data-view-title>Dinding status</span>
             <span class="n-tabs" role="tablist">
-                <button type="button" data-view="wall">DINDING</button><button type="button" data-view="map">TOPOLOGI</button>@if($hasGeo)<button type="button" data-view="geo">PETA</button>@endif<button type="button" data-view="auto" title="Bergantian tiap 30 detik (dinding, topologi{{ $hasGeo ? ', peta' : '' }})">OTOMATIS</button>
+                <button type="button" data-view="wall">Dinding</button><button type="button" data-view="map">Topologi</button>@if($hasGeo)<button type="button" data-view="geo">Peta</button>@endif<button type="button" data-view="auto" title="Bergantian tiap 30 detik (dinding, topologi{{ $hasGeo ? ', peta' : '' }})">Otomatis</button>
             </span></h2>
         <div class="n-views">
             <div class="n-view" data-v="wall"><div class="n-wall" data-wall></div></div>
@@ -55,6 +55,7 @@
         <div class="n-panel n-grow"><h2>Kejadian 1 jam <b data-ev-n></b></h2><ul class="n-list" data-events></ul></div>
     </section>
 </div>
+<div class="n-flash" data-flash hidden aria-live="assertive"><div class="box"><span class="radar"></span><span class="radar r2"></span><div class="k" data-flash-k></div><div class="h" data-flash-h></div><div class="s" data-flash-s></div></div></div>
 <div class="n-overlay" data-overlay hidden><div><b>Sesi berakhir</b>Login ulang (centang "Ingat saya") untuk melanjutkan layar NOC.<br><br><a href="{{ route('login') }}">Login</a></div></div>
 </body>
 </html>

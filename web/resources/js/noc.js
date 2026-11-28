@@ -18,6 +18,8 @@ let heard = null; // id problem High/Disaster baru yang sudah dibunyikan
 let sig = null; // sidik keadaan terakhir dari server
 let lastFull = Date.now();
 let busy = false;
+let prevState = null; // status tiap perangkat di dinding pada render sebelumnya (untuk deteksi baru down/pulih)
+const freshDown = new Map(); // id perangkat yang baru down, kapan, untuk efek gelombang di kotaknya
 const site = $('[data-site]');
 site.value = store.get('ant-noc-site') || '';
 
@@ -34,11 +36,11 @@ const hm = (iso) => new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit',
 function tick() {
     const now = new Date(Date.now() + serverOffset);
     $('[data-clock]').textContent = now.toLocaleTimeString('id-ID', { hour12: false });
-    $('[data-date]').textContent = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
+    $('[data-date]').textContent = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     const age = (Date.now() - lastOk) / 1000;
     const live = $('[data-live]');
     live.className = `n-live${age > 90 ? ' lost' : age > 40 ? ' stale' : ''}`;
-    $('span', live).textContent = age > 90 ? 'TERPUTUS' : age > 40 ? 'TERTUNDA' : 'LIVE';
+    $('span', live).textContent = age > 90 ? 'Terputus' : age > 40 ? 'Tertunda' : 'Live';
     $$('[data-since]').forEach((el) => { el.firstChild.textContent = ago(el.dataset.since); });
 }
 setInterval(tick, 1000);
@@ -52,35 +54,94 @@ const icon = (n) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${n =
     : '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9.5l4 5M21 9.5l-4 5"/>'}</svg>`;
 function renderSound() {
     soundBtn.className = `n-btn ${soundOn ? 'on' : 'hint'}`;
-    soundBtn.innerHTML = soundOn ? `${icon('on')}<span>SUARA</span>` : `${icon('off')}<span>SUARA MATI, KLIK</span>`;
+    soundBtn.innerHTML = soundOn ? `${icon('on')}<span>Suara aktif</span>` : `${icon('off')}<span>Suara mati, klik</span>`;
 }
+// Semua bunyi lewat kompresor supaya bisa keras tanpa pecah di speaker TV.
+let out = null;
+function ctx() {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    if (audio.state === 'suspended') audio.resume();
+    if (!out) {
+        const comp = audio.createDynamicsCompressor();
+        comp.threshold.value = -10;
+        comp.knee.value = 6;
+        comp.ratio.value = 8;
+        comp.attack.value = 0.003;
+        comp.release.value = 0.2;
+        out = audio.createGain();
+        out.gain.value = 1;
+        out.connect(comp);
+        comp.connect(audio.destination);
+    }
+    return audio;
+}
+function tone(t, f1, f2, dur, type, vol) {
+    const o = audio.createOscillator();
+    const g = audio.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f1, t);
+    if (f2 !== f1) o.frequency.linearRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+    g.gain.setValueAtTime(vol, t + dur - 0.04);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g);
+    g.connect(out);
+    o.start(t);
+    o.stop(t + dur + 0.02);
+}
+// level: down = sirene naik turun keras (perangkat down), crit = problem High/Disaster baru, up = pulih, warn = uji
 function beep(level) {
-    if (!soundOn) return;
+    if (!soundOn) return 0;
     try {
-        audio = audio || new (window.AudioContext || window.webkitAudioContext)();
-        if (audio.state === 'suspended') audio.resume();
-        const t = audio.currentTime;
-        const tones = level === 'crit' ? [880, 660, 880, 660, 880, 660] : [740, 740];
-        tones.forEach((f, i) => {
-            const o = audio.createOscillator();
-            const g = audio.createGain();
-            o.type = 'square';
-            o.frequency.value = f;
-            g.gain.setValueAtTime(0.0001, t + i * 0.22);
-            g.gain.exponentialRampToValueAtTime(0.16, t + i * 0.22 + 0.02);
-            g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.22 + 0.2);
-            o.connect(g);
-            g.connect(audio.destination);
-            o.start(t + i * 0.22);
-            o.stop(t + i * 0.22 + 0.21);
-        });
-    } catch (e) { /* audio tidak tersedia */ }
+        ctx();
+        const t = audio.currentTime + 0.05;
+        if (level === 'down') {
+            // tiga siklus sirene dua lapis (sawtooth + square) supaya terdengar dari ujung ruang kontrol
+            for (let i = 0; i < 3; i++) {
+                const s0 = t + i * 0.9;
+                tone(s0, 620, 1250, 0.45, 'sawtooth', 0.55);
+                tone(s0 + 0.45, 1250, 620, 0.45, 'sawtooth', 0.55);
+                tone(s0, 310, 625, 0.45, 'square', 0.25);
+                tone(s0 + 0.45, 625, 310, 0.45, 'square', 0.25);
+            }
+            return 2800;
+        }
+        if (level === 'crit') {
+            [988, 740, 988, 740, 988, 740].forEach((f, i) => tone(t + i * 0.2, f, f, 0.18, 'square', 0.45));
+            return 1300;
+        }
+        if (level === 'up') {
+            [523, 659, 784].forEach((f, i) => tone(t + i * 0.13, f, f, 0.22, 'triangle', 0.45));
+            return 600;
+        }
+        [740, 988].forEach((f, i) => tone(t + i * 0.18, f, f, 0.16, 'square', 0.35));
+        return 400;
+    } catch (e) { return 0; /* audio tidak tersedia */ }
 }
+// Pengumuman suara bahasa Indonesia setelah sirene, kalau browser punya suaranya
+function say(text, delay) {
+    if (!soundOn || !('speechSynthesis' in window)) return;
+    setTimeout(() => {
+        try {
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'id-ID';
+            const v = speechSynthesis.getVoices().find((x) => x.lang && x.lang.toLowerCase().startsWith('id'));
+            if (v) u.voice = v;
+            u.volume = 1;
+            u.rate = 0.95;
+            speechSynthesis.cancel();
+            speechSynthesis.speak(u);
+        } catch (e) { /* tidak ada suara */ }
+    }, delay);
+}
+// Browser menahan audio sampai ada interaksi; klik atau tombol apa pun di layar membukanya lagi setelah dimuat ulang
+['pointerdown', 'keydown'].forEach((ev) => document.addEventListener(ev, () => { if (soundOn) { try { ctx(); } catch (e) { /* */ } } }, { once: true }));
 soundBtn.addEventListener('click', () => {
     soundOn = !soundOn;
     store.set('ant-noc-sound', soundOn ? 'on' : 'off');
     renderSound();
-    if (soundOn) beep('warn'); // bunyi uji sekaligus membuka izin audio
+    if (soundOn) say('Suara layar NOC aktif.', beep('warn')); // bunyi uji sekaligus membuka izin audio
 });
 renderSound();
 
@@ -127,6 +188,41 @@ function setMode(m) {
 }
 $$('[data-view]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.view)));
 
+// ---------- Peringatan besar saat perangkat down / pulih ----------
+const flash = $('[data-flash]');
+let flashT = null;
+function showFlash(kind, list) {
+    const one = list[0];
+    const more = list.length > 1 ? ` dan ${list.length - 1} perangkat lain` : '';
+    flash.className = `n-flash${kind === 'up' ? ' up' : ''}`;
+    $('[data-flash-k]', flash).textContent = kind === 'up' ? 'Perangkat pulih' : 'Perangkat down';
+    $('[data-flash-h]', flash).textContent = one.name;
+    $('[data-flash-s]', flash).textContent = `${one.site}, ${one.host}${more}`;
+    flash.hidden = false;
+    document.body.classList.toggle('alert-on', kind !== 'up');
+    clearTimeout(flashT);
+    flashT = setTimeout(() => { flash.hidden = true; document.body.classList.remove('alert-on'); }, kind === 'up' ? 3500 : 7000);
+}
+// Klik peringatan menutupnya lebih cepat
+flash.style.pointerEvents = 'auto';
+flash.addEventListener('click', () => { flash.hidden = true; document.body.classList.remove('alert-on'); });
+
+// Angka naik/turun halus ke nilai baru
+function count(el, to, fmt = (v) => String(Math.round(v))) {
+    const from = Number(el.dataset.n ?? to);
+    el.dataset.n = to;
+    if (from === to || matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = fmt(to); return; }
+    const t0 = performance.now();
+    const step = (now) => {
+        const k = Math.min(1, (now - t0) / 700);
+        el.textContent = fmt(from + (to - from) * (1 - (1 - k) ** 3));
+        if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+    const box = el.closest('.n-kpi');
+    if (box) { box.classList.remove('bump'); void box.offsetWidth; box.classList.add('bump'); }
+}
+
 // ---------- Render data ----------
 function render(d) {
     serverOffset = new Date(d.time).getTime() - Date.now();
@@ -136,32 +232,54 @@ function render(d) {
     alarm.innerHTML = `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${al.level === 'ok'
         ? '<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5L16 9.5"/>'
         : '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>'}</svg><span>${esc(al.text)}</span>`;
-    document.title = `${al.level === 'crit' ? '⚠ ' : ''}Layar NOC | ANTAREJA NMS`;
+    document.title = `${al.level === 'crit' ? '(!) ' : ''}Layar NOC | ANTAREJA NMS`;
 
     // Siapa yang piket: nama dan jam selesai; kosong = beri tahu supaya ruang NOC tahu tidak ada yang dihubungi
     const oc = $('[data-oncall]');
     if (oc && d.oncall) {
         oc.className = `n-oncall${d.oncall.length ? '' : ' none'}`;
         oc.innerHTML = d.oncall.length
-            ? `<small>PIKET</small><b>${d.oncall.map((o) => esc(o.name)).join(', ')}</b><small>SAMPAI ${esc(d.oncall[0].until)}</small>`
-            : `<small>PIKET</small><b>TIDAK ADA</b>${d.oncall_next?.length ? `<small>BERIKUTNYA ${esc(d.oncall_next[0].name)} ${esc(d.oncall_next[0].from)}</small>` : ''}`;
+            ? `<small>Piket</small><b>${d.oncall.map((o) => esc(o.name)).join(', ')}</b><small>sampai ${esc(d.oncall[0].until)}</small>`
+            : `<small>Piket</small><b>Tidak ada</b>${d.oncall_next?.length ? `<small>berikutnya ${esc(d.oncall_next[0].name)} ${esc(d.oncall_next[0].from)}</small>` : ''}`;
     }
 
     // Suara: problem High/Disaster baru yang belum di-ACK & tidak ditekan (dari server, tidak terbatas daftar yang tampil)
     const ids = d.problems.map((p) => p.id);
     const fresh = d.fresh || [];
-    if (heard !== null && fresh.some((id) => !heard.has(id))) beep('crit');
+    const newCrit = heard !== null && fresh.some((id) => !heard.has(id));
     heard = new Set([...(heard || []), ...fresh]);
+
+    // Perangkat yang baru down / baru pulih sejak render sebelumnya (dari status dinding, bukan daftar problem)
+    const now = Date.now();
+    const wentDown = prevState ? d.wall.filter((w) => w.state === 'down' && prevState.has(w.id) && prevState.get(w.id) !== 'down') : [];
+    const cameUp = prevState ? d.wall.filter((w) => w.state === 'ok' && prevState.get(w.id) === 'down') : [];
+    prevState = new Map(d.wall.map((w) => [w.id, w.state]));
+    wentDown.forEach((w) => freshDown.set(w.id, now));
+    freshDown.forEach((t, id) => { if (now - t > 60000) freshDown.delete(id); });
+    if (wentDown.length) {
+        showFlash('down', wentDown);
+        const ms = beep('down');
+        const w = wentDown[0];
+        say(wentDown.length > 1 ? `Perhatian. ${wentDown.length} perangkat down. ${w.name} dan lainnya.` : `Perhatian. Perangkat ${w.name} di ${w.site} down.`, ms);
+    } else if (newCrit) {
+        beep('crit');
+    } else if (cameUp.length) {
+        showFlash('up', cameUp);
+        beep('up');
+    }
 
     const k = d.kpi;
     const av = k.availability;
     const ka = $('[data-k-avail]');
     $('.val', ka).innerHTML = `${av === null ? '?' : av.toFixed(av === 100 ? 0 : 2).replace('.', ',')}<small>%</small>`;
+    const ring = $('[data-ring]');
+    ring.className = `n-ring ${av === null || av >= 99 ? '' : av >= 95 ? 'warn' : 'crit'}`;
+    $('.arc', ring).style.strokeDashoffset = String(301.6 * (1 - (av || 0) / 100));
     $('.meter', ka).className = `meter ${av === null || av >= 99 ? '' : av >= 95 ? 'warn' : 'crit'}`;
     $('.meter span', ka).style.width = `${av || 0}%`;
     $('.sub', ka).textContent = `${k.up} / ${k.up + k.down} perangkat online${k.unknown ? `, ${k.unknown} menunggu` : ''}`;
-    $('[data-k-up] .val').textContent = k.up;
-    $('[data-k-down] .val').textContent = k.down;
+    count($('[data-k-up] .val'), k.up);
+    count($('[data-k-down] .val'), k.down);
     $('[data-k-down]').className = `n-panel n-kpi ${k.down ? 'crit' : 'ok'}`;
 
     const max = Math.max(1, ...d.severity.map((s) => s.n));
@@ -190,9 +308,9 @@ function render(d) {
         const up = list.filter((w) => ['ok', 'problem'].includes(w.state)).length;
         return `<div class="n-wsec"><h3><b>${esc(s)}</b><em>${up}/${list.length} online${bad ? `, <span style="color:var(--crit)">${bad} down</span>` : ''}</em></h3><div class="n-tiles">${
             list.map((w) => {
-                const sub = w.state === 'down' ? `DOWN${w.since ? `, ${ago(w.since)}` : ''}` : w.state === 'impacted' ? 'terdampak induk' : w.state === 'maintenance' ? 'maintenance'
+                const sub = w.state === 'down' ? `Down${w.since ? `, ${ago(w.since)}` : ''}` : w.state === 'impacted' ? 'terdampak induk' : w.state === 'maintenance' ? 'maintenance'
                     : w.rtt != null ? `${Number(w.rtt).toFixed(w.rtt >= 100 ? 0 : 1).replace('.', ',')} ms${w.loss ? `, loss ${Math.round(w.loss)}%` : ''}` : w.host;
-                return `<a class="n-tile ${w.state}" href="/perangkat/${w.id}" target="_blank" rel="noopener" title="${esc(`${w.name}, ${w.host}${w.reason ? `, ${w.reason}` : ''}`)}"><span class="tn">${esc(w.name)}</span><span class="ts">${esc(sub)}</span></a>`;
+                return `<a class="n-tile ${w.state}${freshDown.has(w.id) ? ' fresh' : ''}" href="/perangkat/${w.id}" target="_blank" rel="noopener" title="${esc(`${w.name}, ${w.host}${w.reason ? `, ${w.reason}` : ''}`)}"><span class="tn">${esc(w.name)}</span><span class="ts">${esc(sub)}</span></a>`;
             }).join('')}</div></div>`;
     }).join('') || '<div class="n-list"><div class="empty">Belum ada perangkat</div></div>';
 
@@ -200,18 +318,18 @@ function render(d) {
     $('[data-prob-n]').textContent = d.kpi.problems > d.kpi.shown ? `${d.kpi.shown} dari ${d.kpi.problems}` : (d.kpi.problems || '');
     $('[data-problems]').innerHTML = d.problems.length ? d.problems.map((p) => {
         const isNew = seen && !seen.includes(p.id);
-        const status = p.suppressed ? 'DITEKAN' : p.acked ? `ACK ${esc(p.acked_by || '')}` : 'BELUM ACK';
+        const status = p.suppressed ? 'Ditekan' : p.acked ? `ACK ${esc(p.acked_by || '')}` : 'Belum ACK';
         return `<li class="${isNew ? 'new' : ''} ${p.acked || p.suppressed ? 'dim' : ''}"><a href="${p.url}" target="_blank" rel="noopener">
             <span class="sbar" style="background:${TONE[p.tone]}"></span>
-            <span style="min-width:0"><div class="t">${esc(p.title)}</div><div class="m">${esc(p.sev_label.toUpperCase())}${p.site ? `, ${esc(p.site)}` : ''}${p.suppressed ? `, ${esc(p.suppressed)}` : ''}</div></span>
+            <span style="min-width:0"><div class="t">${esc(p.title)}</div><div class="m">${esc(p.sev_label)}${p.site ? `, ${esc(p.site)}` : ''}${p.suppressed ? `, ${esc(p.suppressed)}` : ''}</div></span>
             <span class="age" data-since="${p.since}">${ago(p.since)}<small class="${p.acked || p.suppressed ? '' : 'nack'}">${status}</small></span></a></li>`;
-    }).join('') : '<li class="empty">TIDAK ADA PROBLEM AKTIF</li>';
+    }).join('') : '<li class="empty">Tidak ada problem aktif</li>';
     seen = ids;
 
     $('[data-ev-n]').textContent = d.events.length || '';
     $('[data-events]').innerHTML = d.events.length ? d.events.map((e) => `<li><div class="row"><span class="sbar" style="background:${TONE[e.tone]}"></span>
         <span style="min-width:0"><div class="t" style="font-weight:400">${esc(e.message)}</div><div class="m">${esc(e.label)}</div></span><span class="age">${hm(e.at)}</span></div></li>`).join('')
-        : '<li class="empty">TIDAK ADA KEJADIAN 1 JAM TERAKHIR</li>';
+        : '<li class="empty">Tidak ada kejadian 1 jam terakhir</li>';
 }
 
 async function refresh() {
@@ -241,6 +359,7 @@ site.addEventListener('change', () => {
     store.set('ant-noc-site', site.value);
     seen = null;
     heard = null;
+    prevState = null;
     refresh();
     topo.load().then(() => topo.fit()).catch(() => {});
 });

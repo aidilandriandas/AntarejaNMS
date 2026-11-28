@@ -115,6 +115,11 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
   tersambung ke port switch tempat MAC-nya terlihat. MAC diambil dari interface perangkat (bila ber-SNMP) atau dari
   tabel ARP router untuk IP-nya, lalu dicocokkan ke tabel MAC switch (BRIDGE-MIB/Q-BRIDGE-MIB, standar semua vendor).
   Hanya lokasi yang terlihat 24 jam terakhir; sambungan yang sama dari LLDP/CDP/radio digabung.
+- **Tampilan baru Layar NOC**: panel kaca di atas latar gelap yang bergerak pelan, cincin ketersediaan, angka yang
+  bergerak ke nilai baru, dan teks biasa (bukan huruf besar semua). Saat perangkat baru down, layar menampilkan
+  peringatan besar berisi nama perangkat dan site selama 7 detik, kotaknya berdenyut, lalu sirene keras tiga kali
+  dan pengumuman suara bahasa Indonesia (bila browser punya suara Indonesia). Perangkat pulih diberi tanda hijau dan
+  nada pendek. Suara tetap harus dinyalakan sekali lewat tombol *Suara* karena aturan browser.
 - **Sensor OID khusus di Templat perangkat** (migrasi 0055 otomatis): untuk merek tanpa profil bawaan (mis. Cambium,
   Mimosa, Siklu), isi OID dari MIB vendornya di templat: satu nilai atau satu kolom tabel, jenis (sinyal, CCQ, rate,
   suhu, tegangan, dll.), satuan, dan pengali. Terbaca di semua perangkat bertemplat itu (collector pusat dan site),
