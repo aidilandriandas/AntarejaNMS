@@ -1,6 +1,7 @@
 package snmp
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 
@@ -60,5 +61,27 @@ func TestParseWireless(t *testing.T) {
 	}
 	if normMAC("0418d6aabbcc") != "04:18:d6:aa:bb:cc" || normMAC("00:00:00:00:00:00") != "" || normMAC("x") != "" {
 		t.Fatal("normMAC")
+	}
+}
+
+// AP PTMP dengan dua radio (indeks wlan 1 dan 2) dan banyak station: semua terbaca, satu baris per station.
+func TestParseWirelessPTMP(t *testing.T) {
+	rows := map[string]any{}
+	for i, wl := range []string{"1", "1", "1", "2", "2"} {
+		idx := "." + wl + ".24.90.214.0.80." + strconv.Itoa(10+i)
+		rows[oidUbntSta+".2"+idx] = []byte("STATION " + strconv.Itoa(i+1))
+		rows[oidUbntSta+".3"+idx] = -60 - i
+		rows[oidUbntSta+".10"+idx] = "10.17.50." + strconv.Itoa(10+i)
+	}
+	got, err := parseWireless(fakeWalk(rows))
+	if err != nil || len(got) != 5 {
+		t.Fatal("5 station dari dua radio", len(got), err)
+	}
+	seen := map[string]bool{}
+	for _, l := range got {
+		if seen[l.MAC] || l.Signal == nil || l.IP == "" {
+			t.Fatalf("station ganda atau tidak lengkap: %+v", l)
+		}
+		seen[l.MAC] = true
 	}
 }

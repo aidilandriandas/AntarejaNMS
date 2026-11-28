@@ -18,13 +18,16 @@ class WirelessController extends Controller
             ->when(($f['kondisi'] ?? null) === 'putus', fn ($q) => $q->where('w.connected', false))
             ->when(($f['kondisi'] ?? null) === 'belum', fn ($q) => $q->where('w.connected', true)->whereNull('w.remote_device_id'));
         $links = $q->orderBy('w.connected')->orderByRaw('w.signal_dbm ASC NULLS LAST')->orderBy('d.name')->limit(500)->get();
-        $all = Wireless::query()->get(['w.connected', 'w.signal_dbm', 'w.remote_device_id']);
+        $all = Wireless::query()->get(['w.device_id', 'w.mac', 'w.connected', 'w.signal_dbm', 'w.remote_device_id']);
+        // Satu link fisik bisa dilaporkan dua sisi (AP melihat station, station melihat AP): hitung per pasangan perangkat
+        $pair = fn ($w) => $w->remote_device_id ? min($w->device_id, $w->remote_device_id) . '-' . max($w->device_id, $w->remote_device_id) : "{$w->device_id}/{$w->mac}";
+        $up = $all->where('connected', true);
 
         return view('wireless.index', ['links' => $links, 'f' => $f, 'stats' => [
-            'total' => $all->where('connected', true)->count(),
-            'weak' => $all->where('connected', true)->filter(fn ($w) => $w->signal_dbm !== null && $w->signal_dbm <= Wireless::SIGNAL_WARN)->count(),
-            'lost' => $all->where('connected', false)->count(),
-            'unknown' => $all->where('connected', true)->whereNull('remote_device_id')->count(),
+            'total' => $up->unique($pair)->count(),
+            'weak' => $up->filter(fn ($w) => $w->signal_dbm !== null && $w->signal_dbm <= Wireless::SIGNAL_WARN)->unique($pair)->count(),
+            'lost' => $all->where('connected', false)->unique($pair)->count(),
+            'unknown' => $up->whereNull('remote_device_id')->count(),
         ]]);
     }
 }
