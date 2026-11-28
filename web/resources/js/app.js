@@ -753,3 +753,35 @@ $$('[data-pick-list]').forEach((form) => {
     form.addEventListener('change', sync);
     sync();
 });
+
+// Saring baris tabel (Kelola kamera): teks + kondisi; diingat selama tab terbuka supaya tetap ada setelah Ubah/Simpan
+$$('[data-row-filter-card]').forEach((card) => {
+    const input = card.querySelector('[data-row-filter]');
+    const state = card.querySelector('[data-row-state]');
+    if (!input) return;
+    const rows = $$('[data-row]', card);
+    const count = card.querySelector('[data-row-count]');
+    const none = card.querySelector('[data-row-none]');
+    const KEY = `antareja.filter.${location.pathname}`;
+    const apply = () => {
+        const words = input.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+        const st = state?.value || '';
+        let n = 0;
+        rows.forEach((r) => {
+            const ok = words.every((w) => r.dataset.text.includes(w)) && (!st || r.dataset.state === st);
+            r.hidden = !ok;
+            if (ok) n++;
+        });
+        count.textContent = n === rows.length ? `${rows.length}` : `${n} dari ${rows.length}`;
+        if (none) none.hidden = n > 0;
+        try { sessionStorage.setItem(KEY, JSON.stringify([input.value, st])); } catch { /* abaikan */ }
+    };
+    try {
+        const [q, st] = JSON.parse(sessionStorage.getItem(KEY) || '["", ""]');
+        input.value = q || '';
+        if (state) state.value = st || '';
+    } catch { /* abaikan */ }
+    input.addEventListener('input', apply);
+    state?.addEventListener('change', apply);
+    apply();
+});

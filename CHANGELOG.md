@@ -115,6 +115,9 @@ server pusat. Collector site memakai image collector yang sama (lihat `deploy/si
   membuka live view bila tinggal satu. Halaman perangkat kamera punya tombol **Lihat CCTV** yang langsung membuka live
   view, dan daftar Perangkat menampilkan tombol *Lihat* di baris kamera. Sebelumnya klik dari hasil cari selalu ke
   halaman perangkat (ping dan grafik), bukan ke gambar kamera.
+- **Cari di Kelola kamera**: saring daftar kamera menurut nama, IP, site, atau profil, dan menurut kondisi gambar
+  (bermasalah, belum dicek, nonaktif). Saringan tetap ada setelah Ubah atau Simpan. Tiap baris punya tombol *Lihat*
+  untuk live view.
 - **Kontrol ISO/IEC 27001:2022** (pemetaan lengkap di `docs/ISO27001.md`). Migrasi 0050 dan 0051 otomatis.
   - Log audit tahan ubah: hash SHA-256 berantai per baris; database menolak ubah dan hapus kecuali pemangkasan
     sesuai batas simpan. Halaman *Jejak audit* punya saringan (pengguna, aksi, tanggal, teks), *Ekspor CSV* beserta

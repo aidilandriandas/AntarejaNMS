@@ -5,13 +5,24 @@
 <div class="page-head"><div><h1>Kelola kamera</h1><p>Gambar setiap kamera dicek otomatis tiap 15 menit (gelap, tertutup/buram, beku, tanpa sinyal); kamera yang terkait perangkat menjadi problem bila bermasalah. Untuk NVR Hikvision: satu baris per kanal dengan host NVR. Path bawaan Hikvision: <code>/Streaming/Channels/{ch}01</code> (main) dan <code>{ch}02</code> (sub).</p></div>
     <div class="actions"><a class="btn" href="#profil">Profil login</a><a class="btn primary" href="#massal"><x-icon name="plus"/>Tambah banyak{{ $candidates->count() ? ' (' . $candidates->count() . ')' : '' }}</a></div></div>
 <div class="grid g-main">
-    <section class="card"><div class="hd"><h2>Kamera</h2><span class="sub">{{ $cams->count() }}</span></div><div class="bd flush">
+    <section class="card" data-row-filter-card><div class="hd"><h2>Kamera</h2><span class="sub" data-row-count>{{ $cams->count() }}</span></div>
+        @if($cams->isNotEmpty())
+        <div class="filters">
+            <input class="input" type="search" placeholder="Cari nama, IP, site, atau profil" aria-label="Cari kamera" data-row-filter style="min-width:240px">
+            <select class="input" aria-label="Kondisi gambar" data-row-state style="width:auto">
+                <option value="">Semua kondisi</option><option value="bad">Bermasalah</option><option value="unchecked">Belum dicek</option><option value="off">Nonaktif</option>
+            </select>
+        </div>
+        @endif
+        <div class="bd flush">
         @if($cams->isEmpty())<div class="empty">Belum ada kamera.</div>@else
         <div class="table-wrap"><table class="t">
             <thead><tr><th>Nama</th><th>Sumber</th><th>Site</th><th>Gambar</th><th></th></tr></thead>
             <tbody>
             @foreach($cams as $c)
-                <tr class="{{ $c->enabled ? '' : 'is-off' }} {{ $edit?->id === $c->id ? 'is-sel' : '' }}">
+                <tr class="{{ $c->enabled ? '' : 'is-off' }} {{ $edit?->id === $c->id ? 'is-sel' : '' }}" data-row
+                    data-text="{{ mb_strtolower(implode(' ', array_filter([$c->name, $c->host, $c->site?->code, $c->site?->name, $c->device?->name, $c->profile?->name, $c->username]))) }}"
+                    data-state="{{ ! $c->enabled ? 'off' : (! $c->health ? 'unchecked' : ($c->health === 'ok' ? 'ok' : 'bad')) }}">
                     <td class="name">{{ $c->name }}<small>{{ $c->device ? ($c->device->name !== $c->name ? $c->device->name : 'perangkat ' . $c->device->host) : 'tanpa perangkat' }}{{ $c->enabled ? '' : ', nonaktif' }}</small></td>
                     <td class="mono" style="font-size:12.5px">{{ $c->host }}:{{ $c->rtsp_port }}, kanal {{ $c->channel }}<div class="muted">{{ $c->profile ? 'profil ' . $c->profile->name : ($c->username ? 'user ' . $c->username : 'tanpa login') }}</div></td>
                     <td>{{ $c->site?->code ?? 'tidak ada' }}</td>
@@ -19,13 +30,15 @@
                         <div class="muted" style="font-size:12px">{{ $c->health_at?->diffForHumans() }}{{ $c->brightness !== null ? ', terang ' . round($c->brightness) . ', detail ' . round($c->detail_score) : '' }}</div>
                         @else<span class="muted">belum dicek</span>@endif</td>
                     <td class="right nowrap">
+                        @if($c->enabled)<a class="btn sm" href="{{ route('cctv.index', ['kamera' => $c->id]) }}" aria-label="Lihat live {{ $c->name }}"><x-icon name="camera"/>Lihat</a>@endif
                         <a class="btn sm" href="{{ route('cctv.manage', ['ubah' => $c->id]) }}#ubah"><x-icon name="edit"/>Ubah</a>
                         <form method="post" action="{{ route('cctv.destroy', $c) }}" style="display:inline" data-confirm="Hapus kamera {{ $c->name }}?">@csrf @method('DELETE')<button class="btn sm danger" aria-label="Hapus"><x-icon name="trash"/></button></form>
                     </td>
                 </tr>
             @endforeach
             </tbody>
-        </table></div>@endif
+        </table></div>
+        <div class="empty" data-row-none hidden>Tidak ada kamera yang cocok.</div>@endif
     </div></section>
     <div class="stack">
     @if($edit)
